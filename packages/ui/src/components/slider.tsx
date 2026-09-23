@@ -1,51 +1,61 @@
 'use client';
 
+import { Slider as SliderPrimitive } from '@base-ui/react/slider';
+
 import * as React from 'react';
-import * as SliderPrimitive from '@radix-ui/react-slider';
 
 import { cn } from '../lib/cn';
 
-/**
- * Slider: track tebal ink, thumb kotak 24x24 border putih (PRD Bab 4).
- * Mendukung multi-thumb: jumlah thumb mengikuti `value`/`defaultValue`.
- * `thumbLabels` memberi nama aksesibel per thumb (default `Nilai n`).
- * Tap target kecil; untuk kiosk bungkus dengan padding sentuh sendiri.
- */
-export const Slider = React.forwardRef<
-  React.ComponentRef<typeof SliderPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof SliderPrimitive.Root> & {
-    /** Label aksesibel per thumb; default `Nilai n`. */
-    thumbLabels?: readonly string[];
-  }
->(({ className, thumbLabels, ...props }, ref) => {
-  const values = props.value ?? props.defaultValue ?? [0];
+function Slider({
+  className,
+  defaultValue,
+  value,
+  min = 0,
+  max = 100,
+  ...props
+}: React.ComponentProps<typeof SliderPrimitive.Root>) {
+  const _values = React.useMemo(
+    () => (Array.isArray(value) ? value : Array.isArray(defaultValue) ? defaultValue : [min, max]),
+    [value, defaultValue, min, max],
+  );
 
   return (
     <SliderPrimitive.Root
-      ref={ref}
+      data-slot="slider"
+      defaultValue={defaultValue}
+      value={value}
+      min={min}
+      max={max}
+      thumbAlignment="edge"
       className={cn(
-        'relative flex w-full touch-none items-center select-none',
-        'data-[disabled]:cursor-not-allowed data-[disabled]:opacity-60',
+        'data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full',
         className,
       )}
       {...props}
     >
-      <SliderPrimitive.Track className="relative h-1.5 w-full grow overflow-hidden rounded-none border-[3px] border-snapbox-ink bg-snapbox-ink">
-        <SliderPrimitive.Range className="absolute h-full bg-snapbox-primary" />
-      </SliderPrimitive.Track>
-      {values.map((_, index) => (
-        <SliderPrimitive.Thumb
-          key={index}
-          aria-label={thumbLabels?.[index] ?? `Nilai ${index + 1}`}
-          className={cn(
-            'block h-6 w-6 rounded-none border-2 border-white bg-snapbox-ink shadow-snapbox-pressed',
-            'transition-transform hover:scale-110',
-            'focus-visible:ring-2 focus-visible:ring-snapbox-secondary focus-visible:outline-none',
-            'focus-visible:ring-offset-2 focus-visible:ring-offset-snapbox-background',
-          )}
-        />
-      ))}
+      <SliderPrimitive.Control
+        data-slot="slider-control"
+        className="relative flex w-full touch-none items-center select-none data-disabled:opacity-50 data-[orientation=vertical]:h-full data-[orientation=vertical]:min-h-44 data-[orientation=vertical]:w-auto data-[orientation=vertical]:flex-col"
+      >
+        <SliderPrimitive.Track
+          data-slot="slider-track"
+          className="relative grow overflow-hidden rounded-base border-2 border-border bg-secondary-background select-none data-[orientation=horizontal]:h-3 data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-3"
+        >
+          <SliderPrimitive.Indicator
+            data-slot="slider-range"
+            className="bg-main select-none data-[orientation=horizontal]:h-full data-[orientation=vertical]:w-full"
+          />
+        </SliderPrimitive.Track>
+        {Array.from({ length: _values.length }, (_, index) => (
+          <SliderPrimitive.Thumb
+            data-slot="slider-thumb"
+            key={index}
+            className="block size-5 shrink-0 rounded-full border-2 border-border bg-white ring-offset-white transition-colors select-none has-focus-visible:ring-2 has-focus-visible:ring-ring has-focus-visible:ring-offset-2 has-focus-visible:outline-none data-disabled:pointer-events-none data-disabled:opacity-50"
+          />
+        ))}
+      </SliderPrimitive.Control>
     </SliderPrimitive.Root>
   );
-});
-Slider.displayName = 'Slider';
+}
+
+export { Slider };

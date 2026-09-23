@@ -1,0 +1,14 @@
+# State lokal Supabase CLI: tidak pernah jadi artefak deploy.
+.branches
+.temp
+
+# Rahasia lokal (kunci service_role dari `supabase status`, dsb.).
+.env
+.env.*
+
+*.log
+
+# CATATAN: `migrations/` SENGAJA tetap dilacak. Migrasi adalah artefak deploy
+# (dijalankan `supabase db push` ke project remote), sama alasannya dengan
+# `packages/db/migrations` di `packages/db/drizzle.config.ts`. Mengabaikannya
+# akan membuat lingkungan baru tidak bisa direproduksi dari repo.

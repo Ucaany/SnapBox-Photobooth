@@ -38,3 +38,7 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
+
+# Supabase CLI local state (migrasi tetap dilacak: artefak deploy).
+supabase/.branches/
+supabase/.temp/

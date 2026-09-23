@@ -1,0 +1,338 @@
+/*
+ * Styling canonical SnapBox UI, disalin dari neobrutalism.dev (ekmas).
+ *
+ * Token kanonik (warna, radius 5px, box-shadow, font weight) ada di blok
+ * `:root` di bawah dan di-mapping ke Tailwind lewat `@theme inline`.
+ *
+ * Konsumen WAJIB meng-import file ini (lewat `@snapbox/ui/styles.css`) agar
+ * semua token dan utilitas neobrutalism ter-generate, dan WAJIB menyediakan
+ * tiga variabel font `--font-space-grotesk`, `--font-inter`, dan
+ * `--font-jetbrains-mono` (mis. via `next/font`), sesuai mandat tipografi
+ * PRD Bab 4, karena token font di bawah merujuk ke variabel-variabel tersebut.
+ */
+
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@plugin '@tailwindcss/typography';
+
+:root {
+  --border-radius: 5px;
+  --box-shadow-x: 4px;
+  --box-shadow-y: 4px;
+  --reverse-box-shadow-x: -4px;
+  --reverse-box-shadow-y: -4px;
+
+  --heading-font-weight: 700;
+  --base-font-weight: 500;
+  /* Body memakai Inter (PRD Bab 4). Variabel di-set oleh next/font di <html>. */
+  --base-font-family: var(--font-inter, 'Inter'), ui-sans-serif, system-ui, sans-serif;
+
+  --background: hsl(214, 95%, 93%);
+  --secondary-background: oklch(100% 0 0);
+  --foreground: oklch(0% 0 0);
+  --main-foreground: oklch(0% 0 0);
+
+  --main: hsl(217, 100%, 66%);
+  --border: oklch(0% 0 0);
+  --ring: oklch(0% 0 0);
+  --overlay: oklch(0% 0 0 / 0.8);
+
+  --shadow: var(--box-shadow-x) var(--box-shadow-y) 0px 0px var(--border);
+
+  --chart-1: #5294ff;
+  --chart-2: #ff4d50;
+  --chart-3: #facc00;
+  --chart-4: #05e17a;
+  --chart-5: #7a83ff;
+  --chart-active-dot: #000;
+}
+
+@theme inline {
+  /* Keluarga font PRD Bab 4: heading, body, teknis. */
+  --font-display: var(--font-space-grotesk, 'Space Grotesk'), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter, 'Inter'), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono, 'JetBrains Mono'), ui-monospace, monospace;
+
+  --color-main: var(--main);
+  --color-background: var(--background);
+  --color-secondary-background: var(--secondary-background);
+  --color-foreground: var(--foreground);
+  --color-main-foreground: var(--main-foreground);
+  --color-border: var(--border);
+  --color-overlay: var(--overlay);
+  --color-ring: var(--ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --spacing-boxShadowX: var(--box-shadow-x);
+  --spacing-boxShadowY: var(--box-shadow-y);
+  --spacing-reverseBoxShadowX: var(--reverse-box-shadow-x);
+  --spacing-reverseBoxShadowY: var(--reverse-box-shadow-y);
+
+  --radius-base: var(--border-radius);
+
+  --shadow-shadow: var(--shadow);
+  --shadow-nav: 4px 4px 0px 0px var(--border);
+
+  --font-weight-base: var(--base-font-weight);
+  --font-weight-heading: var(--heading-font-weight);
+
+  --animate-marquee: marquee 5s linear infinite;
+  --animate-marquee2: marquee2 5s linear infinite;
+  --animate-orbit: orbit 180s linear infinite;
+  --animate-orbit-reverse: orbit 180s linear infinite reverse;
+
+  --spacing-container: 1300px;
+
+  @keyframes marquee {
+    0% {
+      transform: translateX(0%);
+    }
+    100% {
+      transform: translateX(-100%);
+    }
+  }
+
+  @keyframes marquee2 {
+    0% {
+      transform: translateX(100%);
+    }
+    100% {
+      transform: translateX(0%);
+    }
+  }
+
+  @keyframes orbit {
+    from {
+      rotate: 0deg;
+    }
+    to {
+      rotate: 360deg;
+    }
+  }
+}
+
+@layer base {
+  body {
+    @apply relative font-base text-foreground;
+    font-family: var(--base-font-family);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-heading;
+    font-family: var(--font-display);
+  }
+}
+
+body,
+.scrollbar {
+  --sb-track-color: #ffffff;
+  --sb-thumb-color: #000000;
+}
+
+.scrollbar::-webkit-scrollbar {
+  width: 16px;
+}
+
+body::-webkit-scrollbar {
+  width: 20px;
+}
+
+.toc-scrollbar::-webkit-scrollbar {
+  width: 0px;
+}
+
+body::-webkit-scrollbar-track,
+.scrollbar::-webkit-scrollbar-track {
+  background: var(--sb-track-color);
+}
+
+body::-webkit-scrollbar-track {
+  border-left: 4px solid #000;
+}
+
+body::-webkit-scrollbar-thumb,
+.scrollbar::-webkit-scrollbar-thumb {
+  background: var(--sb-thumb-color);
+}
+
+.code::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.code::-webkit-scrollbar-thumb {
+  background: white;
+}
+
+.code::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+  border: 0 !important;
+}
+
+.code::-webkit-scrollbar-corner {
+  background: transparent !important;
+  border: 0 !important;
+}
+
+.command-scrollbar::-webkit-scrollbar {
+  width: 10px;
+}
+
+.command-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.command-scrollbar::-webkit-scrollbar-thumb {
+  background: #000;
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  body,
+  .scrollbar {
+    scrollbar-color: var(--sb-thumb-color) var(--sb-track-color);
+  }
+
+  .command-scrollbar {
+    scrollbar-color: #000 transparent;
+  }
+}
+
+/* 8-bit pixel utilities (from 8bit.cnlibs.com) */
+@utility px-rounded-md {
+  --px: var(--pixel-size, 3px);
+  --px2: calc(var(--pixel-size, 3px) * 2);
+  --px-shape: polygon(
+    0 var(--px2),
+    var(--px) var(--px2),
+    var(--px) var(--px),
+    var(--px2) var(--px),
+    var(--px2) 0,
+    calc(100% - var(--px2)) 0,
+    calc(100% - var(--px2)) var(--px),
+    calc(100% - var(--px)) var(--px),
+    calc(100% - var(--px)) var(--px2),
+    100% var(--px2),
+    100% calc(100% - var(--px2)),
+    calc(100% - var(--px)) calc(100% - var(--px2)),
+    calc(100% - var(--px)) calc(100% - var(--px)),
+    calc(100% - var(--px2)) calc(100% - var(--px)),
+    calc(100% - var(--px2)) 100%,
+    var(--px2) 100%,
+    var(--px2) calc(100% - var(--px)),
+    var(--px) calc(100% - var(--px)),
+    var(--px) calc(100% - var(--px2)),
+    0 calc(100% - var(--px2))
+  );
+  clip-path: var(--px-shape);
+  border-radius: 0;
+}
+
+@utility px-border-md {
+  isolation: isolate;
+  position: relative;
+
+  &::before {
+    --px: var(--pixel-size, 3px);
+    --px2: calc(var(--pixel-size, 3px) * 2);
+    --pw: var(--px-border-width, 2px);
+    --pxw: calc(var(--px) + var(--pw));
+    --px2w: calc(var(--px2) + var(--pw));
+    inset: var(--px-border-offset, 0px);
+    z-index: -1;
+    pointer-events: none;
+    content: '';
+    background: var(--px-border-color, var(--border));
+    clip-path: polygon(
+      0 var(--px2),
+      var(--px) var(--px2),
+      var(--px) var(--px),
+      var(--px2) var(--px),
+      var(--px2) 0,
+      calc(100% - var(--px2)) 0,
+      calc(100% - var(--px2)) var(--px),
+      calc(100% - var(--px)) var(--px),
+      calc(100% - var(--px)) var(--px2),
+      100% var(--px2),
+      100% calc(100% - var(--px2)),
+      calc(100% - var(--px)) calc(100% - var(--px2)),
+      calc(100% - var(--px)) calc(100% - var(--px)),
+      calc(100% - var(--px2)) calc(100% - var(--px)),
+      calc(100% - var(--px2)) 100%,
+      var(--px2) 100%,
+      var(--px2) calc(100% - var(--px)),
+      var(--px) calc(100% - var(--px)),
+      var(--px) calc(100% - var(--px2)),
+      0 calc(100% - var(--px2)),
+      0 var(--px2),
+      var(--pw) var(--px2w),
+      var(--pw) calc(100% - var(--px2w)),
+      var(--pxw) calc(100% - var(--px2w)),
+      var(--pxw) calc(100% - var(--pxw)),
+      var(--px2w) calc(100% - var(--pxw)),
+      var(--px2w) calc(100% - var(--pw)),
+      calc(100% - var(--px2w)) calc(100% - var(--pw)),
+      calc(100% - var(--px2w)) calc(100% - var(--pxw)),
+      calc(100% - var(--pxw)) calc(100% - var(--pxw)),
+      calc(100% - var(--pxw)) calc(100% - var(--px2w)),
+      calc(100% - var(--pw)) calc(100% - var(--px2w)),
+      calc(100% - var(--pw)) var(--px2w),
+      calc(100% - var(--pxw)) var(--px2w),
+      calc(100% - var(--pxw)) var(--pxw),
+      calc(100% - var(--px2w)) var(--pxw),
+      calc(100% - var(--px2w)) var(--pw),
+      var(--px2w) var(--pw),
+      var(--px2w) var(--pxw),
+      var(--pxw) var(--pxw),
+      var(--pxw) var(--px2w),
+      var(--pw) var(--px2w)
+    );
+    position: absolute;
+  }
+}
+
+@utility px-ring {
+  isolation: isolate;
+  position: relative;
+
+  &:focus-visible {
+    background-color: var(--px-ring-color, var(--ring));
+  }
+
+  &::after {
+    inset: var(--px-face-offset, var(--px-ring-width, 2px));
+    z-index: -2;
+    pointer-events: none;
+    content: '';
+    background: var(--px-bg, transparent);
+    clip-path: var(--px-shape, none);
+    position: absolute;
+  }
+}
+
+@layer components {
+  /* Landing hero star ring on phones: as large as fits below the 70px navbar,
+     never smaller than the 300px it started with. The desktop size is set by
+     the md: utilities on the element. */
+  [data-slot='star-ring'] {
+    --rx: max(300px, calc(50vh - 67px));
+    --ry: max(300px, calc(50vh - 67px));
+  }
+
+  @supports (height: 1dvh) {
+    [data-slot='star-ring'] {
+      --rx: max(300px, calc(50dvh - 67px));
+      --ry: max(300px, calc(50dvh - 67px));
+    }
+  }
+}

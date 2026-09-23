@@ -69,10 +69,7 @@ export const staggerItem: Variants = {
  *   sudah menonaktifkan animasi saat `prefers-reduced-motion: reduce`).
  * @returns Varian dengan transisi durasi nol dan tanpa perpindahan posisi.
  */
-function useAccessibleVariants(
-  variants: Variants,
-  shouldReduceMotion: boolean | null,
-): Variants {
+function useAccessibleVariants(variants: Variants, shouldReduceMotion: boolean | null): Variants {
   return React.useMemo(() => {
     if (!shouldReduceMotion) return variants;
 
@@ -180,7 +177,11 @@ export function StaggerItem({
  * koordinasi router, dan itu milik app, bukan paket komponen. Di sini cukup
  * masuk lembut agar tidak ada lompatan saat navigasi.
  */
-export function PageTransition({ className, children, ...rest }: MotionWrapperProps): React.JSX.Element {
+export function PageTransition({
+  className,
+  children,
+  ...rest
+}: MotionWrapperProps): React.JSX.Element {
   const shouldReduceMotion = useReducedMotion();
   const accessible = useAccessibleVariants(slideUp, shouldReduceMotion);
 

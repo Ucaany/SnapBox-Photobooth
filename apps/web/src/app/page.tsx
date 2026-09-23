@@ -1,12 +1,21 @@
 import type { Metadata } from 'next';
 
-import FoundationsGallery from './foundations-gallery';
+import { ComponentGallery } from './component-gallery';
 
+/**
+ * Halaman galeri komponen neobrutalism `@snapbox/ui`.
+ *
+ * Rute `/` sengaja menampilkan katalog komponen sebagai bukti visual bahwa
+ * seluruh 62+ komponen terpasang benar. Halaman bersifat internal: tidak untuk
+ * mesin pencari, jadi `robots` di-noindex dan follow.
+ */
 export const metadata: Metadata = {
-  title: 'Design System Foundations',
+  title: 'Galeri Komponen',
+  description:
+    'Katalog komponen neobrutalism SnapBox: aksi, formulir, data, umpan balik, navigasi, dan overlay.',
   robots: { index: false, follow: false },
 };
 
 export default function Page() {
-  return <FoundationsGallery />;
+  return <ComponentGallery />;
 }

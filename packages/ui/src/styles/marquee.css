@@ -1,0 +1,60 @@
+/*
+ * Styles for the @devnomic/marquee component used on the home page.
+ *
+ * The library's own stylesheet ships unlayered copies of generic Tailwind
+ * utilities (.flex-col, .overflow-hidden, ...) which override the real
+ * utilities on every page this file is loaded on. Only the marquee-specific
+ * rules are kept here, scoped to the marquee's own elements. Generic classes
+ * the library applies (flex, flex-row, flex-col, shrink-0, overflow-hidden)
+ * come from Tailwind.
+ */
+
+@keyframes marquee-left {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(-100% - var(--gap)));
+  }
+}
+
+@keyframes marquee-up {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(calc(-100% - var(--gap)));
+  }
+}
+
+/* Outer container: `group flex gap-[1rem] overflow-hidden` */
+.group.overflow-hidden.gap-\[1rem\] {
+  gap: var(--gap, 20px);
+}
+
+/* Scrolling rows: `flex justify-around gap-[1rem] [--gap:1rem] shrink-0` */
+.animate-marquee-left,
+.animate-marquee-up {
+  justify-content: space-around;
+  gap: var(--gap, 20px);
+}
+
+.animate-marquee-left {
+  animation: marquee-left var(--duration, 100s) linear infinite;
+}
+
+.animate-marquee-up {
+  animation: marquee-up var(--duration, 40s) linear infinite;
+}
+
+.direction-reverse {
+  animation-direction: reverse;
+}
+
+.\[--gap\:1rem\] {
+  --gap: 20px;
+}
+
+.group:hover .group-hover\:\[animation-play-state\:paused\] {
+  animation-play-state: paused;
+}

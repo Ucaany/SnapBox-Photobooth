@@ -30,18 +30,14 @@ export function ThemeToggle({ className, label = 'Ubah tema' }: ThemeToggleProps
   return (
     <Button
       type="button"
-      variant="outline"
+      variant="neutral"
       size="icon"
       className={className}
       aria-label={isDark ? `${label}: aktifkan terang` : `${label}: aktifkan gelap`}
       aria-pressed={isDark}
       onClick={() => setTheme(isDark ? 'light' : 'dark')}
     >
-      {isDark ? (
-        <MoonIcon className="h-5 w-5" />
-      ) : (
-        <SunIcon className="h-5 w-5" />
-      )}
+      {isDark ? <MoonIcon className="h-5 w-5" /> : <SunIcon className="h-5 w-5" />}
     </Button>
   );
 }
@@ -69,7 +65,7 @@ function SunIcon({ className }: IconProps) {
   );
 }
 
-/** Ikon bulan. `arihidden` di elemen induk sudah menutup kebutuhan a11y. */
+/** Ikon bulan. `aria-hidden` di elemen induk sudah menutup kebutuhan a11y. */
 function MoonIcon({ className }: IconProps) {
   return (
     <svg

@@ -1,0 +1,87 @@
+# =============================================================================
+# SnapBox Photobooth - konfigurasi Supabase CLI
+# Task 0.4 (Supabase Setup) - PRD Bab 10.1, Bab 10.3, Bab 10.4, Bab 10.6, Bab 10.7
+#
+# Berkas ini mengonfigurasi stack LOKAL (`supabase start`) untuk pengembangan.
+# `supabase/migrations/` adalah riwayat migrasi yang SAMA dengan project remote:
+# begitu di-link, `supabase db push` mengirimnya ke project remote apa pun tanpa
+# konflik karena nama file sudah bertimestamp dan berurutan.
+# =============================================================================
+
+# project_id adalah identitas lokal saja. Project ref remote SENGAJA tidak
+# disimpan di sini: itu nilai per-lingkungan yang dipegang CLI (`supabase link`)
+# atau secret CI, bukan sesuatu yang pantas masuk repo.
+project_id = "snapbox"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[db.pooler]
+# Pooler (PgBouncer/Supavisor) adalah urusan platform ter-hosting (PRD Bab 10.4).
+# Di lokal, CLI menjalankan Postgres langsung dan koneksi langsung ke port 54322,
+# jadi pooler tidak perlu diaktifkan.
+enabled = false
+
+[studio]
+enabled = true
+port = 54323
+
+[inbucket]
+enabled = true
+port = 54324
+
+[storage]
+enabled = true
+# Batas atas global. Batas per-bucket yang sebenarnya (dan MIME yang diizinkan)
+# ditegakkan di `supabase/migrations/20260101000200_storage_buckets.sql`; nilai
+# di sini hanya plafon agar Postgres tidak menyimpan objek raksasa tak sengaja.
+file_size_limit = "100MiB"
+
+[realtime]
+enabled = true
+# Nama channel adalah sumber kebenaran tunggal di `packages/shared/src/events.ts`
+# (booth:{id}, tenant:{id}, user:{id}, broadcast:all). Transport yang dipakai
+# adalah Broadcast/Presence; Postgres Changes SENGAJA tidak dipakai (lihat catatan
+# yang sama di `supabase/migrations/20260101000300_realtime.sql`), jadi tidak ada
+# tabel aplikasi yang ditambahkan ke publication supabase_realtime.
+
+[auth]
+enabled = true
+# Supabase Auth BUKAN identity provider SnapBox; Firebase yang jadi IdP
+# (PRD Bab 10.3). Blok ini hanya ada supaya Realtime bisa menukar token Firebase
+# menjadi JWT bertanda tangan Supabase dan supaya `supabase start` bisa jalan.
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["http://localhost:3000"]
+jwt_expiry = 3600
+enable_signup = false
+
+[auth.email]
+enable_signup = false
+double_confirm_changes = false
+
+[auth.third_party.firebase]
+# Firebase project yang sama dengan `NEXT_PUBLIC_FIREBASE_PROJECT_ID` di
+# `.env.example`. Project id Firebase adalah pengenal publik, bukan secret.
+enabled = true
+project_id = "snapbox"
+
+[analytics]
+# Analytics Supabase tidak ada di stack PRD; dimatikan agar pemakaian sumber
+# daya lokal tetap rendah.
+enabled = false
+
+# ponytail: idealnya Supabase Auth dipangkas sampai hanya menyisakan
+# `auth.third_party.firebase` (email/password, magic link, OAuth semuanya mati
+# total). Ditunda sampai pengerasan Realtime di Fase 6 karena saat ini
+# `supabase start` masih butuh blok [auth] dasar untuk hidup. Jalur upgrade:
+# setelah Realtime dipatok, hapus [auth.email], naikkan config CLI, lalu jalankan
+# ulang `supabase start` untuk memastikan tidak ada fitur Auth yang dipakai.

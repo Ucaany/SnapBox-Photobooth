@@ -1,60 +1,46 @@
 'use client';
 
-import * as React from 'react';
+import { mergeProps } from '@base-ui/react/merge-props';
+import { useRender } from '@base-ui/react/use-render';
 import { cva, type VariantProps } from 'class-variance-authority';
 
 import { cn } from '../lib/cn';
 
-/**
- * Badge pill: border 2px, uppercase kecil. Warna tidak pernah jadi satu-satunya
- * pembeda status (PRD Bab 4) — konsumen wajib menyertakan ikon/label teks.
- */
-export const badgeVariants = cva(
-  [
-    'inline-flex items-center gap-1 rounded-full border-2 border-snapbox-ink',
-    'px-2.5 py-0.5 font-display text-[11px] font-bold uppercase leading-none tracking-wide',
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-snapbox-secondary',
-    'focus-visible:ring-offset-2 focus-visible:ring-offset-snapbox-background',
-  ].join(' '),
+const badgeVariants = cva(
+  'inline-flex items-center justify-center rounded-base border-2 border-border px-2.5 py-0.5 text-xs font-base w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] overflow-hidden',
   {
     variants: {
-      tone: {
-        success: '',
-        warning: '',
-        danger: '',
-        neutral: '',
-        accent: '',
-      },
       variant: {
-        solid: '',
-        outline: 'bg-transparent',
+        default: 'bg-background text-foreground',
+        neutral: 'bg-secondary-background text-foreground',
       },
     },
-    compoundVariants: [
-      { tone: 'success', variant: 'solid', class: 'bg-snapbox-success text-white' },
-      { tone: 'success', variant: 'outline', class: 'text-snapbox-success' },
-      { tone: 'warning', variant: 'solid', class: 'bg-snapbox-warning text-snapbox-ink' },
-      { tone: 'warning', variant: 'outline', class: 'text-snapbox-warning' },
-      { tone: 'danger', variant: 'solid', class: 'bg-snapbox-danger text-white' },
-      { tone: 'danger', variant: 'outline', class: 'text-snapbox-danger' },
-      { tone: 'neutral', variant: 'solid', class: 'bg-snapbox-surface text-snapbox-ink' },
-      { tone: 'neutral', variant: 'outline', class: 'text-snapbox-ink' },
-      { tone: 'accent', variant: 'solid', class: 'bg-snapbox-accent text-white' },
-      { tone: 'accent', variant: 'outline', class: 'text-snapbox-accent' },
-    ],
     defaultVariants: {
-      tone: 'neutral',
-      variant: 'solid',
+      variant: 'default',
     },
   },
 );
 
-export interface BadgeProps
-  extends React.HTMLAttributes<HTMLSpanElement>, VariantProps<typeof badgeVariants> {}
+function Badge({
+  className,
+  variant,
+  render,
+  ...props
+}: useRender.ComponentProps<'span'> & VariantProps<typeof badgeVariants>) {
+  return useRender({
+    defaultTagName: 'span',
+    render,
+    props: mergeProps<'span'>(
+      {
+        className: cn(badgeVariants({ variant }), className),
+      },
+      props,
+    ),
+    state: {
+      slot: 'badge',
+      variant: variant ?? 'default',
+    },
+  });
+}
 
-export const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
-  ({ className, tone, variant, ...props }, ref) => (
-    <span ref={ref} className={cn(badgeVariants({ tone, variant }), className)} {...props} />
-  ),
-);
-Badge.displayName = 'Badge';
+export { Badge, badgeVariants };

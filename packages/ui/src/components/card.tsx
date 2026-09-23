@@ -1,67 +1,77 @@
-'use client';
-
 import * as React from 'react';
 
 import { cn } from '../lib/cn';
 
-/**
- * Kartu neobrutalism: border 4px ink, shadow 6px, latar warm white, sudut
- * `rounded-lg` (maksimal sedang — hindari rounded berlebihan, PRD Bab 4).
- */
-export const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
+function Card({
+  className,
+  size = 'default',
+  ...props
+}: React.ComponentProps<'div'> & { size?: 'default' | 'sm' }) {
+  return (
     <div
-      ref={ref}
+      data-slot="card"
+      data-size={size}
       className={cn(
-        'rounded-lg border-4 border-snapbox-ink bg-snapbox-background text-snapbox-ink',
-        'shadow-snapbox',
+        'group/card flex flex-col gap-(--card-spacing) rounded-base border-2 border-border bg-background py-(--card-spacing) font-base text-foreground shadow-shadow [--card-spacing:--spacing(6)] data-[size=sm]:[--card-spacing:--spacing(4)]',
         className,
       )}
       {...props}
     />
-  ),
-);
-Card.displayName = 'Card';
+  );
+}
 
-/** Header kartu dengan pemisah bawah 3px. */
-export const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
+function CardHeader({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
     <div
-      ref={ref}
-      className={cn('flex flex-col gap-1.5 border-b-[3px] border-snapbox-ink p-5', className)}
+      data-slot="card-header"
+      className={cn(
+        '@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-(--card-spacing) has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-(--card-spacing)',
+        className,
+      )}
       {...props}
     />
-  ),
-);
-CardHeader.displayName = 'CardHeader';
+  );
+}
 
-/** Judul kartu: Space Grotesk, tebal, tracking rapat. */
-export const CardTitle = React.forwardRef<
-  HTMLHeadingElement,
-  React.HTMLAttributes<HTMLHeadingElement>
->(({ className, ...props }, ref) => (
-  <h3
-    ref={ref}
-    className={cn('font-display text-lg font-bold tracking-[-0.02em]', className)}
-    {...props}
-  />
-));
-CardTitle.displayName = 'CardTitle';
+function CardTitle({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
+    <div data-slot="card-title" className={cn('leading-none font-heading', className)} {...props} />
+  );
+}
 
-/** Badan kartu. */
-export const CardBody = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => <div ref={ref} className={cn('p-5', className)} {...props} />,
-);
-CardBody.displayName = 'CardBody';
+function CardDescription({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
+    <div data-slot="card-description" className={cn('text-sm font-base', className)} {...props} />
+  );
+}
 
-/** Footer kartu dengan pemisah atas 3px. */
-export const CardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
+function CardAction({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
     <div
-      ref={ref}
-      className={cn('flex items-center gap-3 border-t-[3px] border-snapbox-ink p-5', className)}
+      data-slot="card-action"
+      className={cn('col-start-2 row-span-2 row-start-1 self-start justify-self-end', className)}
       {...props}
     />
-  ),
-);
-CardFooter.displayName = 'CardFooter';
+  );
+}
+
+function CardContent({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
+    <div data-slot="card-content" className={cn('px-(--card-spacing)', className)} {...props} />
+  );
+}
+
+function CardFooter({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
+    <div
+      data-slot="card-footer"
+      className={cn(
+        'flex items-center px-(--card-spacing) [.border-t]:pt-(--card-spacing)',
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent, CardAction };

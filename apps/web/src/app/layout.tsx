@@ -8,8 +8,12 @@ import './globals.css';
 
 /**
  * Font di-self-host lewat next/font sehingga tidak ada request ke Google di
- * runtime (relevan untuk CSP kiosk). Variabel CSS-nya dipetakan ke token tema
- * `--font-*-loaded` di globals.css.
+ * runtime (relevan untuk CSP kiosk).
+ *
+ * Tiga keluarga font sesuai mandat PRD Bab 4 (Tipografi):
+ * - `--font-space-grotesk` -> heading (dikonsumsi `--font-display`).
+ * - `--font-inter`         -> body (dikonsumsi `--font-sans` dan `--base-font-family`).
+ * - `--font-jetbrains-mono`-> teknis/mono (dikonsumsi `--font-mono`).
  */
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
@@ -25,7 +29,7 @@ const inter = Inter({
   weight: ['400', '500', '600'],
 });
 
-const jetBrainsMono = JetBrains_Mono({
+const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-jetbrains-mono',
@@ -68,7 +72,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="id-ID"
       suppressHydrationWarning
-      className={`${spaceGrotesk.variable} ${inter.variable} ${jetBrainsMono.variable}`}
+      className={`${spaceGrotesk.variable} ${inter.variable} ${jetbrainsMono.variable} scroll-smooth`}
     >
       {/*
         Skrip blocking di dalam `<head>` menerapkan tema tersimpan sebelum
@@ -78,7 +82,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body className="bg-snapbox-background font-sans text-snapbox-ink antialiased">
+      <body className="bg-background font-sans text-foreground antialiased">
         {/*
           Urutan provider: ThemeProvider terluar karena tema mengendalikan
           seluruh pohon, lalu ToastProvider di dalamnya supaya toast mewarisi
