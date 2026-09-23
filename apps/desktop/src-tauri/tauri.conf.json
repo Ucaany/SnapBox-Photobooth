@@ -1,0 +1,48 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "SnapBox Kiosk",
+  "version": "0.1.0",
+  "identifier": "id.snapbox.kiosk",
+  "build": {
+    "beforeDevCommand": "pnpm --filter @snapbox/desktop dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "pnpm --filter @snapbox/desktop build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "kiosk",
+        "title": "SnapBox Kiosk",
+        "width": 1920,
+        "height": 1080,
+        "resizable": false,
+        "fullscreen": true,
+        "decorations": false,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' data: blob: https://*.supabase.co; media-src 'self' blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co https://api.snapbox.id; style-src 'self' 'unsafe-inline'; script-src 'self'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis", "deb"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "category": "Utility",
+    "shortDescription": "Kiosk photobooth SnapBox",
+    "longDescription": "Aplikasi kiosk SnapBox: sesi foto, cetak, dan sinkronisasi konfigurasi dengan dasbor SnapBox.",
+    "linux": {
+      "deb": {
+        "depends": ["libwebkit2gtk-4.1-0", "libgtk-3-0"]
+      }
+    }
+  }
+}

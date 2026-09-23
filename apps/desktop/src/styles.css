@@ -1,0 +1,82 @@
+/*
+ * Token visual kiosk.
+ *
+ * Sumber nilai sama dengan web (PRD Bab 4). Disalin sebagai CSS variable biasa
+ * karena frontend kiosk memakai Vite, bukan pipeline Tailwind. Tema per-tenant
+ * dari `kiosk_themes` akan menimpa variable ini saat runtime (Fase 5).
+ */
+:root {
+  --kiosk-primary: #ffdd00;
+  --kiosk-accent: #8b5cf6;
+  --kiosk-background: #fffef5;
+  --kiosk-ink: #141414;
+
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--kiosk-background);
+  color: var(--kiosk-ink);
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  /* Kiosk tidak boleh punya scrollbar (PRD Bab 7.1). */
+  overflow: hidden;
+}
+
+/* Layar boot: teks besar, target sentuh lega, kontras tinggi (PRD Bab 4). */
+.kiosk-shell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  height: 100%;
+  padding: 48px;
+  text-align: center;
+}
+
+.kiosk-title {
+  margin: 0;
+  font-family: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  font-size: clamp(2.5rem, 6vw, 5rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+.kiosk-copy {
+  max-width: 48ch;
+  margin: 0;
+  font-size: 1.25rem;
+  line-height: 1.6;
+}
+
+.kiosk-status {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.kiosk-badge {
+  border: 3px solid var(--kiosk-ink);
+  border-radius: 9999px;
+  background: var(--kiosk-primary);
+  padding: 8px 20px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+}

@@ -1,0 +1,121 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+/*
+ * Paket UI workspace dikirim sebagai sumber TypeScript (lihat `transpilePackages`
+ * di next.config.ts), jadi Tailwind harus memindai sourcenya secara eksplisit
+ * agar class yang dipakai komponen `@snapbox/ui` ikut ter-generate.
+ * Path relatif terhadap file ini: apps/web/src/app -> root -> packages/ui/src.
+ *
+ * PENTING (drift): utilitas animasi overlay (`animate-in`, `animate-out`,
+ * `fade-in-0`, `fade-out-0`, `zoom-in-95`, `zoom-out-95`, `slide-in-from-top-1`)
+ * berasal dari paket `tw-animate-css` (devDependency apps/web), BUKAN core
+ * Tailwind v4. Import `@import 'tw-animate-css';` di atas wajib ada, dan setiap
+ * app baru yang meng-konsumsi `@snapbox/ui` juga harus meng-import-nya, jika
+ * tidak semua animasi overlay jadi no-op tanpa error.
+ */
+@source '../../../../packages/ui/src';
+
+/*
+ * Token tema SnapBox.
+ * Sumber nilai: PRD Bab 4 (Skema Warna Neobrutalism).
+ *
+ * Aturan pakai: komponen mengacu ke token ini (mis. `bg-snapbox-primary`),
+ * DILARANG menulis ulang nilai hex di dalam komponen.
+ */
+@theme {
+  --color-snapbox-primary: #ffdd00;
+  --color-snapbox-secondary: #8b5cf6;
+  --color-snapbox-accent: #ff1f8f;
+  --color-snapbox-success: #16a34a;
+  --color-snapbox-danger: #dc2626;
+  --color-snapbox-warning: #f59e0b;
+  --color-snapbox-background: #fffef5;
+  --color-snapbox-surface: #f5f0dc;
+  --color-snapbox-ink: #141414;
+
+  /*
+   * Variabel next/font (layout.tsx) harus di depan agar face self-host menang di
+   * web. Literal family ditaruh di slot fallback `var()` -- bukan setelahnya --
+   * karena Tailwind `@theme` memancarkan `--font-display` sebagai CSS var nyata:
+   * kalau `--font-space-grotesk` tak terdefinisi (konsumen non-Next seperti
+   * kiosk/desktop Tauri), segmen kosong membuat seluruh declaration invalid dan
+   * browser membuangnya. Slot fallback menjamin list selalu valid.
+   */
+  --font-display: var(--font-space-grotesk, 'Space Grotesk'), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter, 'Inter'), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono, 'JetBrains Mono'), ui-monospace, monospace;
+
+  --radius-snapbox: 0.375rem;
+
+  /* Ketebalan border neobrutalism. */
+  --border-snapbox: 3px;
+  --border-snapbox-thick: 4px;
+  --border-snapbox-badge: 2px;
+
+  --shadow-snapbox-sm: 4px 4px 0 0 var(--color-snapbox-ink);
+  --shadow-snapbox: 6px 6px 0 0 var(--color-snapbox-ink);
+  --shadow-snapbox-lg: 8px 8px 0 0 var(--color-snapbox-ink);
+  --shadow-snapbox-pressed: 2px 2px 0 0 var(--color-snapbox-ink);
+}
+
+@layer base {
+  /*
+   * Jaring pengaman untuk konsumen non-Next (mis. dokumentasi statis): layout.tsx
+   * sudah memasang class Tailwind di <body>, tapi token dasar tetap di sini.
+   */
+  body {
+    background: var(--color-snapbox-background);
+    color: var(--color-snapbox-ink);
+    font-family: var(--font-sans);
+  }
+
+  :focus-visible {
+    /* Focus state wajib terlihat (PRD Bab 4 + WCAG 2.2 AA). */
+    outline: 3px solid var(--color-snapbox-secondary);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/*
+ * Kosakata neobrutalism bersama. Sengaja minimal: hanya primitif yang dipakai
+ * berulang oleh komponen `@snapbox/ui`, bukan satu utilitas per varian.
+ */
+@layer utilities {
+  .nb-border {
+    border: var(--border-snapbox) solid var(--color-snapbox-ink);
+  }
+
+  .nb-shadow-sm {
+    box-shadow: var(--shadow-snapbox-sm);
+  }
+
+  .nb-shadow {
+    box-shadow: var(--shadow-snapbox);
+  }
+
+  .nb-shadow-lg {
+    box-shadow: var(--shadow-snapbox-lg);
+  }
+
+  .nb-press {
+    transition:
+      transform 120ms ease,
+      box-shadow 120ms ease;
+  }
+
+  .nb-press:active {
+    transform: translate(2px, 2px);
+    box-shadow: var(--shadow-snapbox-pressed);
+  }
+}

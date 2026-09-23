@@ -1,0 +1,52 @@
+{
+  "name": "@snapbox/ui",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Komponen UI neobrutalism SnapBox. Base component dibangun di Task 0.2.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./lib/cn": "./src/lib/cn.ts",
+    "./components/*": "./src/components/*.tsx",
+    "./styles.css": "./src/styles.css"
+  },
+  "scripts": {
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf .turbo"
+  },
+  "dependencies": {
+    "@radix-ui/react-accordion": "^1.2.20",
+    "@radix-ui/react-dialog": "^1.1.23",
+    "@radix-ui/react-dropdown-menu": "^2.1.24",
+    "@radix-ui/react-label": "^2.1.15",
+    "@radix-ui/react-progress": "^1.1.16",
+    "@radix-ui/react-select": "^2.3.7",
+    "@radix-ui/react-slider": "^1.4.7",
+    "@radix-ui/react-slot": "^1.3.3",
+    "@radix-ui/react-tabs": "^1.1.21",
+    "@radix-ui/react-tooltip": "^1.2.16",
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
+    "framer-motion": "^13.4.1",
+    "lucide-react": "^1.47.0",
+    "tailwind-merge": "3.7.0"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "typescript": "5.9.3"
+  }
+}

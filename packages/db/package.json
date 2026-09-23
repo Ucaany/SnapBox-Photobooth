@@ -1,0 +1,33 @@
+{
+  "name": "@snapbox/db",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Skema Drizzle + migrasi Supabase PostgreSQL SnapBox.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema.ts",
+    "./client": "./src/client.ts"
+  },
+  "scripts": {
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "tsc --noEmit",
+    "generate": "drizzle-kit generate",
+    "migrate": "drizzle-kit migrate",
+    "push": "drizzle-kit push",
+    "studio": "drizzle-kit studio",
+    "seed": "tsx src/seed.ts",
+    "clean": "rm -rf .turbo"
+  },
+  "dependencies": {
+    "@snapbox/shared": "workspace:*",
+    "drizzle-orm": "0.45.3",
+    "postgres": "3.4.9"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.2",
+    "drizzle-kit": "0.31.11",
+    "tsx": "4.20.6",
+    "typescript": "5.9.3"
+  }
+}

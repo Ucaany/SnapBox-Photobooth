@@ -1,0 +1,27 @@
+{
+  "name": "@snapbox/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Kontrak bersama SnapBox: skema Zod, tipe domain, event catalog realtime, standar error API.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./env": "./src/env.ts",
+    "./errors": "./src/errors.ts",
+    "./events": "./src/events.ts",
+    "./domain": "./src/domain.ts",
+    "./auth": "./src/auth.ts"
+  },
+  "scripts": {
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf .turbo"
+  },
+  "dependencies": {
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.6",
+    "typescript": "5.9.3"
+  }
+}

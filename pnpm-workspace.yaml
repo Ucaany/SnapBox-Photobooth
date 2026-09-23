@@ -1,0 +1,31 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+allowBuilds:
+  # esbuild: postinstall mengunduh binary native. Tanpa ini Vite dan tsx tidak jalan.
+  esbuild: true
+  # unrs-resolver: resolver native untuk eslint-import-resolver-typescript.
+  unrs-resolver: true
+minimumReleaseAgeExclude:
+  - '@next/env@15.5.26'
+  - '@next/eslint-plugin-next@15.5.26'
+  - '@next/swc-darwin-arm64@15.5.26'
+  - '@next/swc-darwin-x64@15.5.26'
+  - '@next/swc-linux-arm64-gnu@15.5.26'
+  - '@next/swc-linux-arm64-musl@15.5.26'
+  - '@next/swc-linux-x64-gnu@15.5.26'
+  - '@next/swc-linux-x64-musl@15.5.26'
+  - '@next/swc-win32-arm64-msvc@15.5.26'
+  - '@next/swc-win32-x64-msvc@15.5.26'
+  - '@turbo/darwin-64@2.11.3'
+  - '@turbo/darwin-arm64@2.11.3'
+  - '@turbo/linux-64@2.11.3'
+  - '@turbo/linux-arm64@2.11.3'
+  - '@turbo/windows-64@2.11.3'
+  - '@turbo/windows-arm64@2.11.3'
+  - eslint-config-next@15.5.26
+  - next@15.5.26
+  - prettier@3.9.9
+  - turbo@2.11.3
+  - framer-motion@13.4.1
+  - motion-dom@13.4.1
