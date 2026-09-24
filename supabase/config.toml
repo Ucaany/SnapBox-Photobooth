@@ -9,25 +9,32 @@
 # =============================================================================
 
 # =============================================================================
-# project_id - DIBACA DUA JALUR: `supabase start` (LOKAL) dan `supabase db push`
-#              (REMOTE). Nilai ini BUKAN sekadar identitas lokal.
+# project_id - FIELD LOKAL. TIDAK menentukan tujuan `supabase db push`.
 # =============================================================================
-# * Untuk LOKAL (`supabase start`), "snapbox" hanyalah placeholder agar stack
-#   lokal hidup. Nilai ini boleh dibiarkan.
-# * Untuk REMOTE (`supabase db push`, `supabase link`), nilai ini WAJIB diganti
-#   PER ENVIRONMENT (dev/staging/prod). Bila dibiarkan "snapbox", verifikasi
-#   Firebase third-party (`[auth.third_party.firebase] project_id` di bawah)
-#   diarahkan ke project Firebase yang SALAH, sehingga Realtime/Storage
-#   mengotorisasi token dari project yang bukan milik environment itu.
+# Nilai ini dipakai `supabase start` untuk mengisi stack LOKAL, dan ikut
+# terkirim saat `supabase config push`. Ia BUKAN target remote: `supabase db
+# push` memilih project remote dari `--project-ref <ref>` atau hasil `supabase
+# link`, atau `--db-url`. Jadi menyalin nilai ini ke nilai remote tidak
+# mengarahkan push ke mana pun; tolak ukur sebenarnya adalah flag/link CLI.
+# * Untuk LOKAL, "snapbox" hanyalah placeholder agar stack lokal hidup.
+# * Field yang MEMANG menentukan perilaku per environment adalah `project_id`
+#   di `[auth.third_party.firebase]` di bawah: itu Firebase project yang dipakai
+#   Supabase untuk MEMVALIDASI JWT. Salah isi di sana = Realtime/Storage
+#   mengotorisasi token dari project Firebase yang bukan milik environment itu.
+#   Nilai itu WAJIB benar per environment (dev/staging/prod), bukan hasil salinan
+#   dari field top-level ini.
 # * Nilai OTORITATIF ada di env `NEXT_PUBLIC_FIREBASE_PROJECT_ID`. File ini TIDAK
 #   menarik nilai itu otomatis: CLI membaca TOML mentah, jadi nilainya harus
-#   disamakan sendiri per environment.
+#   disamakan sendiri per environment. Pemeriksa: `pnpm check:firebase-project-id`
+#   (scripts/check-firebase-project-id.mjs) memastikan kedua `project_id` di
+#   berkas ini sama dan, bila env diset, sama dengan env.
 #
 # Strategi override (pilih satu, JANGAN commit nilai remote ke repo):
-#   # 1. Override sekali jalan sebelum push (CI step / shell):
-#   sed -i.bak "s/^project_id = .*/project_id = \"$NEXT_PUBLIC_FIREBASE_PROJECT_ID\"/" supabase/config.toml
-#   # 2. Atau tautkan CLI secara eksplisit: `supabase link --project-ref <ref>`
+#   # 1. Tautkan CLI secara eksplisit: `supabase link --project-ref <ref>`
 #   #    lalu `supabase db push` (ref remote dipegang CLI/secret, bukan repo).
+#   # 2. Atau `supabase db push --project-ref <ref>` / `--db-url`.
+#   # 3. Samakan `project_id` Firebase di bawah dengan env per environment
+#   #    (mis. `sed` sekali jalan di CI) agar JWT divalidasi terhadap project benar.
 # Project id Firebase adalah pengenal publik, bukan secret.
 project_id = "snapbox"
 
@@ -89,8 +96,10 @@ double_confirm_changes = false
 
 [auth.third_party.firebase]
 # "snapbox" hanyalah PLACEHOLDER lokal, dipakai agar `supabase start` jalan.
-# Wajib sama dengan Firebase project id per lingkungan (dev/staging/prod);
-# nilai otoritatif ada di env `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, bukan di sini.
+# PENTING: nilai DI SINI yang menentukan validasi JWT (project Firebase yang
+# dipakai Supabase memverifikasi token), jadi WAJIB benar per lingkungan
+# (dev/staging/prod). Nilai otoritatif ada di env `NEXT_PUBLIC_FIREBASE_PROJECT_ID`;
+# samakan manual dan cek dengan `pnpm check:firebase-project-id`.
 # Project id Firebase adalah pengenal publik, bukan secret.
 enabled = true
 project_id = "snapbox"

@@ -22,13 +22,14 @@
 -- mengautorisasi koneksi memakai sesi Firebase itu (bukan Supabase Auth).
 -- ----------------------------------------------------------------------------
 
-do $$
-begin
-  if to_regclass('realtime.messages') is not null then
-    execute 'alter table realtime.messages enable row level security';
-  end if;
-end
-$$;
+-- CATATAN RLS realtime.messages: Supabase SUDAH mengaktifkan RLS pada
+-- `realtime.messages` secara default, jadi tidak ada gunanya menuliskannya ulang.
+-- Sejak perubahan izin Supabase April 2025, role `postgres` BUKAN pemilik
+-- `realtime.messages` (dimiliki `supabase_realtime_admin`), sehingga
+-- `alter table realtime.messages enable row level security` DITOLAK dan
+-- menggagalkan `supabase db reset` tanpa membuat satu pun policy di bawah.
+-- Karena itu statement itu SENGAJA tidak ditulis di sini: RLS-nya sudah aktif
+-- dari Supabase.
 
 -- ----------------------------------------------------------------------------
 -- Policy draft pada realtime.messages
@@ -96,10 +97,15 @@ begin
         or app.is_ceo()
       )
   $pol$;
-  execute $cmt$
-    comment on policy snapbox_realtime_select on realtime.messages is
-      'DRAFT defense-in-depth: sadar-extension. Broadcast: channel tenant/user pemanggil, atau broadcast:all (khusus CEO via app.is_ceo()). Presence (extension=''presence''): channel tenant/user pemanggil saja, channel global dilarang. Publish tetap service_role-only dari server.'
-  $cmt$;
+  -- DRAFT defense-in-depth: sadar-extension. Broadcast: channel tenant/user
+  -- pemanggil, atau broadcast:all (khusus CEO via app.is_ceo()).
+  -- Presence (extension='presence'): channel tenant/user pemanggil saja,
+  -- channel global dilarang. Publish tetap service_role-only dari server.
+  -- CATATAN: `comment on policy` di sini DIHAPUS karena role `postgres` bukan
+  -- pemilik `realtime.messages` (pemiliknya `supabase_realtime_admin`); sejak
+  -- perubahan izin Supabase April 2025 statement itu gagal dengan
+  -- SQLSTATE 42501 dan menggagalkan seluruh migrasi. Teksnya dipindahkan ke
+  -- komentar biasa di atas, jadi tidak ada informasi yang hilang.
 
   -- Presence track menulis ke realtime.messages dengan
   -- `extension = 'presence'`; tanpa policy INSERT, presence diam-diam mati.
@@ -118,10 +124,11 @@ begin
         )
       )
   $pol$;
-  execute $cmt$
-    comment on policy snapbox_realtime_presence_insert on realtime.messages is
-      'DRAFT defense-in-depth: authenticated hanya boleh track presence pada channel tenant/user miliknya. Broadcast publish tetap service_role-only.'
-  $cmt$;
+  -- DRAFT defense-in-depth: authenticated hanya boleh track presence pada
+  -- channel tenant/user miliknya. Broadcast publish tetap service_role-only.
+  -- CATATAN: `comment on policy` di sini juga DIHAPUS (alasan sama seperti
+  -- policy `snapbox_realtime_select` di atas: `postgres` bukan pemilik
+  -- `realtime.messages`).
 
   -- Channel `booth:{id}`: policy-nya TIDAK dibuat di sini karena migration ini
   -- berjalan LEBIH DULU daripada `packages/db/migrations/*` (Drizzle, Task 0.8)

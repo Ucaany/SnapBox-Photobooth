@@ -46,15 +46,16 @@ on conflict (id) do update
 -- melewati RLS pada `storage.objects`, sehingga penegakkan sebenarnya ada di
 -- pembangkit signed URL dan otorisasi service layer (ADR-004).
 
--- Supabase sudah mengaktifkan RLS pada storage.objects; statement di bawah
--- ada supaya file ini juga berjalan di Postgres polos.
-do $$
-begin
-  if to_regclass('storage.objects') is not null then
-    execute 'alter table storage.objects enable row level security';
-  end if;
-end
-$$;
+-- CATATAN RLS storage.objects: Supabase SUDAH mengaktifkan RLS pada
+-- `storage.objects` secara default, jadi tidak ada gunanya menuliskannya ulang.
+-- Sejak perubahan izin Supabase April 2025, role `postgres` BUKAN pemilik
+-- `storage.objects` (dimiliki `supabase_storage_admin`), sehingga
+-- `alter table storage.objects enable row level security` DITOLAK dan
+-- menggagalkan `supabase db reset` tanpa membuat satu pun policy di bawah.
+-- Karena itu statement itu SENGAJA tidak ditulis di sini: RLS-nya sudah aktif
+-- sebagai default Supabase. Pemeriksaan pasca-loop di berkas ini HANYA
+-- memverifikasi JUMLAH policy (>= 12), BUKAN `relrowsecurity`; jaminan RLS
+-- aktif diverifikasi terpisah oleh acceptance test Task 0.4, bukan di sini.
 
 -- ----------------------------------------------------------------------------
 -- Policy draft per bucket
@@ -103,22 +104,24 @@ begin
       'create policy %I on storage.objects for select to authenticated using (bucket_id = %L and name like %L || app.current_tenant_id()::text || %L)',
       'snapbox_' || v_bucket || '_select', v_bucket, 'tenant/', '/%'
     );
-    execute format(
-      'comment on policy %I on storage.objects is %L',
-      'snapbox_' || v_bucket || '_select',
-      'DRAFT defense-in-depth: baca objek hanya pada prefix tenant pemanggil. service_role bypass RLS; signed URL tetap kontrol akses otoritatif.'
-    );
+    -- DRAFT defense-in-depth: baca objek hanya pada prefix tenant pemanggil.
+    -- service_role bypass RLS; signed URL tetap kontrol akses otoritatif.
+    -- CATATAN: `comment on policy` di sini DIHAPUS karena role `postgres` bukan
+    -- pemilik `storage.objects` (pemiliknya `supabase_storage_admin`); sejak
+    -- perubahan izin Supabase April 2025 statement itu gagal dengan
+    -- SQLSTATE 42501 dan menggagalkan seluruh migrasi. Teksnya dipindahkan ke
+    -- komentar biasa di atas, jadi tidak ada informasi yang hilang.
 
     execute format('drop policy if exists %I on storage.objects', 'snapbox_' || v_bucket || '_insert');
     execute format(
       'create policy %I on storage.objects for insert to authenticated with check (bucket_id = %L and name like %L || app.current_tenant_id()::text || %L)',
       'snapbox_' || v_bucket || '_insert', v_bucket, 'tenant/', '/%'
     );
-    execute format(
-      'comment on policy %I on storage.objects is %L',
-      'snapbox_' || v_bucket || '_insert',
-      'DRAFT defense-in-depth: tulis objek hanya pada prefix tenant pemanggil. service_role bypass RLS. Upgrade: tambah policy UPDATE/DELETE saat upload langsung browser diperkenalkan.'
-    );
+    -- DRAFT defense-in-depth: tulis objek hanya pada prefix tenant pemanggil.
+    -- service_role bypass RLS. Upgrade: tambah policy UPDATE/DELETE saat upload
+    -- langsung browser diperkenalkan.
+    -- CATATAN: `comment on policy` di sini juga DIHAPUS (alasan sama seperti
+    -- policy `_select` di atas: `postgres` bukan pemilik `storage.objects`).
   end loop;
 
   -- Verifikasi pasca-loop: pastikan policy benar-benar terdaftar, bukan hanya
