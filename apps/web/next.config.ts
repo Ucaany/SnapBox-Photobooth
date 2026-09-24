@@ -1,3 +1,4 @@
+import { withSentryConfig } from '@sentry/nextjs/config';
 import type { NextConfig } from 'next';
 
 /**
@@ -42,4 +43,37 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+/**
+ * Tanpa token auth, upload source map ke Sentry tidak mungkin. Kita mematikan
+ * langkah itu alih-alih membiarkan build GAGAL di lokal/CI yang belum punya
+ * `SENTRY_AUTH_TOKEN`. Build produksi yang ber-token tetap meng-upload source map
+ * agar stack trace tidak minified.
+ */
+const hasSentryAuthToken = Boolean(process.env.SENTRY_AUTH_TOKEN);
+
+/**
+ * Pembungkus Sentry:
+ * - `org`/`project`/`authToken`: identitas project untuk upload source map.
+ *   Diset HANYA bila variabelnya ada: tsconfig memakai
+ *   `exactOptionalPropertyTypes`, jadi menyematkan `undefined` eksplisit akan
+ *   ditolak tipe `SentryBuildOptions`.
+ * - `tunnelRoute`: event client dikirim lewat origin sendiri (adblocker bypass).
+ *   Route `/monitoring-tunnel` ini harus dikecualikan dari robots.txt (Task 1.1)
+ *   supaya tidak diindeks dan tidak tumpang tindih dengan `/api/health`.
+ * - `widenClientFileUpload`: unggah chunk client lebih banyak untuk stack trace
+ *   yang lebih akurat.
+ * - `sourcemaps.disable`: matikan upload source map saat token tidak ada
+ *   (lihat `hasSentryAuthToken` di atas). Build tidak boleh gagal karena ini.
+ * - `silent`: bisu di CI (kecuali `CI === 'true'`) agar log build tidak ramai.
+ * - `telemetry: false`: tidak mengirim telemetry build ke Sentry.
+ */
+export default withSentryConfig(nextConfig, {
+  ...(process.env.SENTRY_ORG ? { org: process.env.SENTRY_ORG } : {}),
+  ...(process.env.SENTRY_PROJECT ? { project: process.env.SENTRY_PROJECT } : {}),
+  ...(process.env.SENTRY_AUTH_TOKEN ? { authToken: process.env.SENTRY_AUTH_TOKEN } : {}),
+  tunnelRoute: '/monitoring-tunnel',
+  widenClientFileUpload: true,
+  sourcemaps: { disable: !hasSentryAuthToken },
+  silent: process.env.CI !== 'true',
+  telemetry: false,
+});

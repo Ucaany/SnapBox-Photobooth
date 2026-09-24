@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
+    "@sentry/nextjs": "11.0.0",
     "@snapbox/db": "workspace:*",
     "@snapbox/shared": "workspace:*",
     "@snapbox/ui": "workspace:*",

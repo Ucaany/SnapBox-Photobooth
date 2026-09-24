@@ -33,9 +33,11 @@ Sistem token, komponen, dan konvensi styling berasal dari neobrutalism.dev.
   `--ring`, `--overlay`, `--shadow`, `--border-radius: 5px`,
   `--spacing-boxShadowX` / `--spacing-boxShadowY`, `--font-weight-base` /
   `--font-weight-heading`, dan `--chart-1`..`--chart-5`.
-- **Komponen**: 64 berkas `.tsx` di `packages/ui/src/components/` (62 di
-  antaranya berasal dari referensi; sisanya `index.ts` barrel dan `motion.tsx`,
-  lihat bagian penyimpangan), memakai primitif `@base-ui/react` (36 berkas
+- **Komponen**: `packages/ui/src/components/` berisi 65 berkas, yaitu 64 berkas
+  `.tsx` plus barrel `index.ts` yang bertipe `.ts` (bukan `.tsx`). Dari 64
+  berkas `.tsx` itu, 63 adalah komponen referensi neobrutalism.dev dan satu
+  berkas (`motion.tsx`) adalah artefak Task 0.3 yang bukan dari referensi, lihat
+  bagian penyimpangan. Komponen memakai primitif `@base-ui/react` (36 berkas
   mengimpornya).
 - **Galeri**: rute `/` di `apps/web/src/app/page.tsx` menampilkan seluruh
   komponen sebagai bukti visual.

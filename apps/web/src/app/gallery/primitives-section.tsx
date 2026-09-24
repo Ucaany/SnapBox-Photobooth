@@ -27,16 +27,8 @@ import {
   ButtonGroup,
   ButtonGroupSeparator,
   ButtonGroupText,
-  Calendar,
-  ChartContainer,
-  ChartLegend,
-  ChartLegendContent,
-  ChartStyle,
-  ChartTooltip,
-  ChartTooltipContent,
   Checkbox,
   ComboboxDemo,
-  DataTableDemo,
   Empty,
   EmptyContent,
   EmptyDescription,
@@ -139,9 +131,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@snapbox/ui';
-import { useState } from 'react';
+import dynamic from 'next/dynamic';
+import { Fragment, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { z } from 'zod';
 
 /* ------------------------------------------------------------------------- *
@@ -288,7 +280,6 @@ const WifiIcon = ({ className }: IconProps) => (
     <path d="M8.5 16.429a5 5 0 0 1 7 0" />
   </SvgIcon>
 );
-import type { ChartConfig } from '@snapbox/ui';
 import type { ReactNode } from 'react';
 
 /* ------------------------------------------------------------------------- *
@@ -339,6 +330,52 @@ function SectionHeader({
 }
 
 /* ------------------------------------------------------------------------- *
+ * Blok berat dimuat malas.
+ *
+ * `recharts`, `@tanstack/react-table`, dan `react-day-picker` adalah tiga
+ * dependency paling berat di halaman ini. Ketiganya dipisah ke berkas sendiri
+ * dan dimuat lewat `next/dynamic` dengan `ssr: false` supaya keluar dari jalur
+ * kritis `/`. `loading` memakai `Skeleton` dari `@snapbox/ui` agar tata letak
+ * tidak melompat saat chunk tiba. `ssr: false` aman karena berkas ini client
+ * component.
+ * ------------------------------------------------------------------------- */
+
+const ChartLoading = () => (
+  <div className="rounded-base border-2 border-border bg-secondary-background p-4">
+    <Skeleton className="h-56 w-full" />
+  </div>
+);
+
+const DataTableLoading = () => (
+  <div className="flex flex-col gap-3">
+    <Skeleton className="h-10 w-full" />
+    <Skeleton className="h-40 w-full" />
+  </div>
+);
+
+const CalendarLoading = () => <Skeleton className="h-72 w-full max-w-sm" />;
+
+const SessionTrendChart = dynamic(
+  () => import('./gallery-charts').then((mod) => mod.SessionTrendChart),
+  { ssr: false, loading: ChartLoading },
+);
+
+const OutletRevenueChart = dynamic(
+  () => import('./gallery-charts').then((mod) => mod.OutletRevenueChart),
+  { ssr: false, loading: ChartLoading },
+);
+
+const LazyDataTableDemo = dynamic(
+  () => import('./gallery-heavy-data').then((mod) => mod.DataTableBlock),
+  { ssr: false, loading: DataTableLoading },
+);
+
+const LazyCalendarBlock = dynamic(
+  () => import('./gallery-heavy-data').then((mod) => mod.CalendarBlock),
+  { ssr: false, loading: CalendarLoading },
+);
+
+/* ------------------------------------------------------------------------- *
  * Data contoh. Semua angka jelas placeholder untuk konteks photobooth.
  * ------------------------------------------------------------------------- */
 
@@ -378,30 +415,6 @@ const BOOTH_ROWS: ReadonlyArray<{
   { booth: 'Booth C2', outlet: 'Senayan Park', status: 'UNPAIRED', paper: 'Belum dipasang' },
 ];
 
-const SESSION_TREND = [
-  { hari: 'Senin', sesi: 82 },
-  { hari: 'Selasa', sesi: 96 },
-  { hari: 'Rabu', sesi: 74 },
-  { hari: 'Kamis', sesi: 120 },
-  { hari: 'Jumat', sesi: 158 },
-  { hari: 'Sabtu', sesi: 214 },
-  { hari: 'Minggu', sesi: 196 },
-];
-
-const OUTLET_REVENUE = [
-  { outlet: 'Grand Indonesia', pendapatan: 12400000 },
-  { outlet: 'Kota Kasablanka', pendapatan: 9800000 },
-  { outlet: 'Senayan Park', pendapatan: 7400000 },
-];
-
-const CHART_SESSIONS_CONFIG = {
-  sesi: { label: 'Sesi foto', color: 'var(--chart-1)' },
-} satisfies ChartConfig;
-
-const CHART_REVENUE_CONFIG = {
-  pendapatan: { label: 'Pendapatan (Rupiah)', color: 'var(--chart-5)' },
-} satisfies ChartConfig;
-
 const PACKAGES: ReadonlyArray<{ id: string; name: string; price: string; quota: string }> = [
   { id: 'paket-strip', name: 'Paket Strip 2x6', price: 'Rp 25.000', quota: '3 sesi' },
   { id: 'paket-polaroid', name: 'Paket Polaroid', price: 'Rp 35.000', quota: '4 sesi' },
@@ -429,15 +442,22 @@ const QUESTIONNAIRE_ITEMS = [
  * Rangkaian subsection. Dipisah per kelompok agar tiap berkas tetap terbaca.
  * ------------------------------------------------------------------------- */
 
+const RENTANG_RINGKASAN = [
+  { id: 'hari-ini', label: 'Hari ini' },
+  { id: 'minggu-ini', label: 'Minggu ini' },
+  { id: 'bulan-ini', label: 'Bulan ini' },
+] as const;
+
 function ActionsSection() {
   const [favorit, setFavorit] = useState(false);
   const [mode, setMode] = useState('cetak');
+  const [rentangRingkasan, setRentangRingkasan] = useState<string>('hari-ini');
 
   return (
     <>
       <Block
         label="Button: varian dan ukuran"
-        note="Empat varian dan delapan ukuran, plus satu tombol nonaktif sebagai state disabled."
+        note="Baris ini memperlihatkan skala ukuran dan varian tampilan tombol, bukan kontrol dengan aksi. Nilai variant dan size diubah lewat props, bukan lewat klik."
       >
         <div className="flex flex-wrap items-center gap-3">
           <Button>Simpan pengaturan</Button>
@@ -466,14 +486,30 @@ function ActionsSection() {
         </div>
       </Block>
 
-      <Block label="ButtonGroup" note="Grup tombol dengan pemisah untuk tiga aksi berurutan.">
+      <Block
+        label="ButtonGroup"
+        note="Grup tombol dengan pemisah untuk memilih rentang ringkasan. Rentang aktif ditampilkan di bawah supaya perubahan state bisa diperiksa."
+      >
         <ButtonGroup>
-          <Button variant="neutral">Hari ini</Button>
-          <ButtonGroupSeparator />
-          <Button variant="neutral">Minggu ini</Button>
-          <ButtonGroupSeparator />
-          <Button variant="neutral">Bulan ini</Button>
+          {RENTANG_RINGKASAN.map((rentang, index) => (
+            <Fragment key={rentang.id}>
+              {index > 0 ? <ButtonGroupSeparator /> : null}
+              <Button
+                variant={rentangRingkasan === rentang.id ? 'default' : 'neutral'}
+                aria-pressed={rentangRingkasan === rentang.id}
+                onClick={() => setRentangRingkasan(rentang.id)}
+              >
+                {rentang.label}
+              </Button>
+            </Fragment>
+          ))}
         </ButtonGroup>
+        <p className="text-sm font-base">
+          Rentang ringkasan terpilih:{' '}
+          <span className="font-heading">
+            {RENTANG_RINGKASAN.find((rentang) => rentang.id === rentangRingkasan)?.label}
+          </span>
+        </p>
       </Block>
 
       <Block
@@ -535,6 +571,30 @@ function ActionsSection() {
   );
 }
 
+/**
+ * Catatan operator dipisah menjadi komponen sendiri.
+ *
+ * Alasannya bukan kerapian: state `pesan` di root `FormsSection` membuat setiap
+ * ketikan me-render ulang seluruh section, termasuk `<Calendar>` react-day-picker
+ * yang berat. Dengan memindahkan state ke komponen ini, hanya field ini yang
+ * render ulang saat mengetik; Calendar dan blok lain tidak tersentuh.
+ */
+function CatatanOperatorField() {
+  const [pesan, setPesan] = useState('');
+
+  return (
+    <div className="flex flex-col gap-2">
+      <Label htmlFor="gallery-catatan-teks">Catatan operator</Label>
+      <Textarea
+        id="gallery-catatan-teks"
+        placeholder="Tulis catatan serah terima shift"
+        value={pesan}
+        onChange={(event) => setPesan(event.target.value)}
+      />
+    </div>
+  );
+}
+
 function FormsSection() {
   const [termasukCetak, setTermasukCetak] = useState(true);
   const [kirimEmail, setKirimEmail] = useState(false);
@@ -543,8 +603,6 @@ function FormsSection() {
   const [outlet, setOutlet] = useState('grand-indonesia');
   const [kertas, setKertas] = useState('2x6');
   const [otp, setOtp] = useState('');
-  const [tanggal, setTanggal] = useState<Date | undefined>(undefined);
-  const [pesan, setPesan] = useState('');
 
   const previewValues = [
     ['Checkbox termasuk cetak', termasukCetak ? 'ya' : 'tidak'],
@@ -554,7 +612,6 @@ function FormsSection() {
     ['Select outlet', outlet],
     ['NativeSelect kertas', kertas],
     ['InputOTP', otp === '' ? 'belum diisi' : otp],
-    ['Calendar', tanggal ? tanggal.toLocaleDateString('id-ID') : 'belum dipilih'],
   ] as const;
 
   return (
@@ -587,15 +644,7 @@ function FormsSection() {
               Kode voucher sudah dipakai pada 12 Agustus.
             </p>
           </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="gallery-catatan-teks">Catatan operator</Label>
-            <Textarea
-              id="gallery-catatan-teks"
-              placeholder="Tulis catatan serah terima shift"
-              value={pesan}
-              onChange={(event) => setPesan(event.target.value)}
-            />
-          </div>
+          <CatatanOperatorField />
           <div className="flex flex-col gap-2">
             <Label htmlFor="gallery-input-disabled">Nomor seri perangkat</Label>
             <Input id="gallery-input-disabled" defaultValue="SBX-000-114" disabled />
@@ -735,20 +784,7 @@ function FormsSection() {
       </Block>
 
       <Block label="Calendar" note="Mode single dengan state tanggal terpilih.">
-        <div className="flex flex-col gap-3">
-          <Calendar
-            mode="single"
-            selected={tanggal}
-            onSelect={setTanggal}
-            className="max-w-full overflow-x-auto"
-          />
-          <p className="text-sm font-base">
-            Tanggal jadwal maintenance:{' '}
-            <span className="font-heading">
-              {tanggal ? tanggal.toLocaleDateString('id-ID') : 'belum dipilih'}
-            </span>
-          </p>
-        </div>
+        <LazyCalendarBlock />
       </Block>
 
       <Block
@@ -1041,54 +1077,21 @@ function DataSection() {
         label="DataTableDemo"
         note="Tabel interaktif dengan filter, sort, pilihan kolom, dan paginasi."
       >
-        <div className="w-full min-w-0">
-          <DataTableDemo />
-        </div>
+        <LazyDataTableDemo />
       </Block>
 
       <Block
         label="ChartContainer: tren sesi"
         note="Grafik garis area jumlah sesi foto per hari, data contoh satu minggu."
       >
-        <div className="rounded-base border-2 border-border bg-secondary-background p-4">
-          <ChartContainer config={CHART_SESSIONS_CONFIG} className="h-56 w-full">
-            <AreaChart accessibilityLayer data={SESSION_TREND} margin={{ left: 8, right: 8 }}>
-              <ChartStyle id="chart-sesi" config={CHART_SESSIONS_CONFIG} />
-              <CartesianGrid vertical={false} />
-              <XAxis dataKey="hari" tickLine={false} axisLine={false} tickMargin={8} />
-              <YAxis tickLine={false} axisLine={false} width={32} />
-              <ChartTooltip content={<ChartTooltipContent />} />
-              <Area
-                dataKey="sesi"
-                type="monotone"
-                fill="var(--color-sesi)"
-                fillOpacity={0.4}
-                stroke="var(--color-sesi)"
-                strokeWidth={2}
-              />
-            </AreaChart>
-          </ChartContainer>
-          <ChartLegend content={<ChartLegendContent nameKey="sesi" />} />
-        </div>
+        <SessionTrendChart />
       </Block>
 
       <Block
         label="ChartContainer: pendapatan per outlet"
         note="Grafik batang pendapatan kotor per outlet, data contoh dalam Rupiah."
       >
-        <div className="rounded-base border-2 border-border bg-secondary-background p-4">
-          <ChartContainer config={CHART_REVENUE_CONFIG} className="h-56 w-full">
-            <BarChart accessibilityLayer data={OUTLET_REVENUE} margin={{ left: 8, right: 8 }}>
-              <ChartStyle id="chart-pendapatan" config={CHART_REVENUE_CONFIG} />
-              <CartesianGrid vertical={false} />
-              <XAxis dataKey="outlet" tickLine={false} axisLine={false} tickMargin={8} />
-              <YAxis tickLine={false} axisLine={false} width={56} />
-              <ChartTooltip content={<ChartTooltipContent />} />
-              <Bar dataKey="pendapatan" fill="var(--color-pendapatan)" radius={4} />
-            </BarChart>
-          </ChartContainer>
-          <ChartLegend content={<ChartLegendContent nameKey="pendapatan" />} />
-        </div>
+        <OutletRevenueChart />
       </Block>
 
       <Block label="Kbd dan KbdGroup" note="Panduan pintasan papan tik untuk konsol perangkat.">
@@ -1569,15 +1572,15 @@ function FeedbackSection() {
 
       <Block
         label="Pintasan terkait"
-        note="Tombol ini menggabungkan pemilih perangkat dan indikator proses dalam satu baris."
+        note="Tombol di sini benar-benar berfungsi: dua tombol melompat ke section galeri yang sesuai, dan tombol status menampilkan toast keadaan perangkat."
       >
         <div className="flex flex-wrap items-center gap-3">
-          <Button variant="neutral">
+          <Button variant="neutral" render={<a href="#gallery-data" />}>
             <MonitorIcon />
             Konsol perangkat
             <ArrowRightIcon />
           </Button>
-          <Button variant="neutral">
+          <Button variant="neutral" render={<a href="#gallery-navigation" />}>
             <SmartphoneIcon />
             Kiosk seluler
           </Button>
@@ -1587,7 +1590,16 @@ function FeedbackSection() {
           </span>
           <ButtonGroup>
             <ButtonGroupText>Status</ButtonGroupText>
-            <Button variant="neutral" size="sm">
+            <Button
+              variant="neutral"
+              size="sm"
+              onClick={() => {
+                toast.add({
+                  title: 'Perangkat tersambung',
+                  description: 'Enam booth melaporkan status online.',
+                });
+              }}
+            >
               <CheckIcon />
               Tersambung
             </Button>
@@ -1602,7 +1614,7 @@ const GROUP_TITLES: Record<GalleryGroup, { title: string; description: string }>
   actions: {
     title: 'Aksi',
     description:
-      'Tombol, grup tombol, toggle, badge status, dan indikator proses. Setiap kontrol mengubah state atau memicu aksi nyata.',
+      'Tombol, grup tombol, toggle, badge status, dan indikator proses. Kontrol yang dipakai untuk memilih benar-benar mengubah state; baris varian dan ukuran hanya memperlihatkan skala tampilan.',
   },
   forms: {
     title: 'Formulir',

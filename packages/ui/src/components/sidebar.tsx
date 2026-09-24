@@ -394,7 +394,7 @@ function SidebarGroupAction({ className, render, ...props }: useRender.Component
         className: cn(
           'absolute top-3.5 right-3 flex aspect-square w-5 items-center justify-center rounded-base p-0 outline-hidden transition-transform focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0',
           // Increases the hit area of the button on mobile.
-          'after:absolute after:-inset-2 md:after:hidden',
+          'after:absolute after:pointer-events-none after:-inset-2 md:after:hidden',
           'group-data-[collapsible=icon]:hidden',
           className,
         ),
@@ -528,7 +528,7 @@ function SidebarMenuAction({
         className: cn(
           '[&_svg]:text-foreground hover:[&_svg]:text-main-foreground text-main-foreground hover:bg-main hover:outline-border outline-transparent outline-2 absolute top-1.5 right-1 flex aspect-square w-5 items-center justify-center rounded-base p-0 transition-transform focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0',
           // Increases the hit area of the button on mobile.
-          'after:absolute after:-inset-2 md:after:hidden',
+          'after:absolute after:pointer-events-none after:-inset-2 md:after:hidden',
           'peer-data-[size=sm]/menu-button:top-1',
           'peer-data-[size=default]/menu-button:top-1.5',
           'peer-data-[size=lg]/menu-button:top-2.5',
@@ -573,9 +573,13 @@ function SidebarMenuSkeleton({
 }: React.ComponentProps<'div'> & {
   showIcon?: boolean;
 }) {
-  // Random width between 50 to 90%.
-  const width = React.useMemo(() => {
-    return `${Math.floor(Math.random() * 40) + 50}%`;
+  // Lebar awal sengaja deterministik ("70%") supaya render SSR dan hydration
+  // pertama identik. Kalau memakai Math.random() di useMemo, nilai SSR dan nilai
+  // saat hydration berbeda sehingga React melaporkan hydration mismatch. Jadi
+  // lebar acak baru dihitung setelah mount lewat useEffect.
+  const [width, setWidth] = React.useState('70%');
+  React.useEffect(() => {
+    setWidth(`${Math.floor(Math.random() * 40) + 50}%`);
   }, []);
 
   return (

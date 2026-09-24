@@ -18,11 +18,11 @@ type SectionHandle = {
 };
 
 /**
- * Daftar section galeri. W5b cukup menambah dua entri dari
- * `overlays-section.tsx` dan `navigation-section.tsx` di sini, tanpa
- * menyentuh struktur shell.
+ * Daftar section galeri.
  *
- * Entri `overlays` dan `navigation` dipasang oleh W5b.
+ * Setiap entri memasangkan satu id anchor dengan label navigasi dan komponen
+ * isinya. Urutan array menentukan urutan section di halaman sekaligus urutan
+ * tautan di daftar isi. Menambah section berarti menambah satu entri di sini.
  */
 const SECTION_HANDLES: SectionHandle[] = [
   { id: 'actions', label: 'Aksi', content: <PrimitivesSection group="actions" /> },

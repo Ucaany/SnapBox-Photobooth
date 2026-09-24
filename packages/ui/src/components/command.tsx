@@ -22,6 +22,19 @@ import { cn } from '../lib/cn';
  */
 const scopedLists = new Set<HTMLElement>();
 let originalScrollIntoView: typeof Element.prototype.scrollIntoView | null = null;
+const scrollGuard: typeof Element.prototype.scrollIntoView = function (this: Element, ...args) {
+  for (const scoped of scopedLists) {
+    if (scoped.contains(this)) {
+      scrollWithin(scoped, this);
+      return;
+    }
+  }
+
+  const original = originalScrollIntoView;
+  if (original !== null) {
+    original.apply(this, args);
+  }
+};
 
 function scrollWithin(list: HTMLElement, element: Element) {
   const listRect = list.getBoundingClientRect();
@@ -35,11 +48,10 @@ function scrollWithin(list: HTMLElement, element: Element) {
 }
 
 function uninstallScrollGuard() {
-  if (originalScrollIntoView === null) {
-    return;
+  if (Element.prototype.scrollIntoView === scrollGuard && originalScrollIntoView !== null) {
+    Element.prototype.scrollIntoView = originalScrollIntoView;
   }
 
-  Element.prototype.scrollIntoView = originalScrollIntoView;
   originalScrollIntoView = null;
   scopedLists.clear();
 }
@@ -52,15 +64,7 @@ function installScrollGuard(list: HTMLElement) {
   }
 
   originalScrollIntoView = Element.prototype.scrollIntoView;
-  Element.prototype.scrollIntoView = function (this: Element, ...args) {
-    for (const scoped of scopedLists) {
-      if (scoped.contains(this)) {
-        scrollWithin(scoped, this);
-        return;
-      }
-    }
-    originalScrollIntoView!.apply(this, args);
-  };
+  Element.prototype.scrollIntoView = scrollGuard;
 }
 
 function Command({ className, ...props }: React.ComponentProps<typeof CommandPrimitive>) {

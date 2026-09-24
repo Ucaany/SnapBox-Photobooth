@@ -10,7 +10,7 @@ const buttonVariants = cva(
   // Pseudo-element transparan (h-11, terpusat) hanya memperluas area sentuh; varian
   // yang sudah >= 44px tidak terpengaruh karena berada di dalam area itu. Ini pola
   // "naikkan tap target tanpa mengubah tampilan visual" yang diminta untuk R-03.
-  'relative inline-flex items-center justify-center whitespace-nowrap rounded-base text-sm font-base ring-offset-white transition-all gap-2 before:absolute before:inset-x-0 before:top-1/2 before:-mt-[22px] before:h-11 before:content-[""] [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-disabled:pointer-events-none data-disabled:opacity-50',
+  'relative inline-flex items-center justify-center whitespace-nowrap rounded-base text-sm font-base ring-offset-white transition-all gap-2 before:absolute before:pointer-events-none before:inset-x-0 before:top-1/2 before:-mt-[22px] before:h-11 before:content-[""] [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-disabled:pointer-events-none data-disabled:opacity-50',
   {
     variants: {
       variant: {

@@ -1,0 +1,55 @@
+{
+  "$comment": "Rencana WAF + Turnstile SnapBox, PRD Bab 8.4 (baris 860-874) dan PRD Bab 8.2. DRAFT review-only: TIDAK ada yang dieksekusi terhadap Cloudflare. managedRules mencatat ruleset pihak pertama Cloudflare yang harus diaktifkan; customRules adalah ruleset phase http_request_firewall_custom. Setiap aturan skip/challenge di bawah harus konsisten dengan pengecualian Turnstile di turnstile-widget.json.",
+  "managedRules": {
+    "$comment": "PRD Bab 8.4: proteksi SQL injection, XSS, malicious bots, suspicious requests, API abuse.",
+    "cloudflareManagedRuleset": {
+      "$comment": "PRD Bab 8.4: ruleset bawaan Cloudflare untuk SQLi/XSS/suspicious request. Aktifkan dengan action default block pada kategori high/medium, log pada low.",
+      "enabled": true,
+      "action": "block"
+    },
+    "owaspCoreRuleset": {
+      "$comment": "PRD Bab 8.4 + PRD Bab 8.2: OWASP Core Ruleset menutup SQLi dan XSS berlapis dengan sanitasi DOMPurify + Zod di aplikasi.",
+      "enabled": true,
+      "paranoia_level": 1,
+      "action": "block"
+    },
+    "botFightMode": {
+      "$comment": "PRD Bab 8.4: proteksi malicious bots. Bot Fight Mode dipilih daripada Super Bot Fight Mode karena zona berada pada paket tanpa SBFM; jika paket naik, ganti ke SBFM dengan definitely-automated = block.",
+      "enabled": true,
+      "mode": "bot_fight_mode"
+    }
+  },
+  "customRules": [
+    {
+      "name": "webhook-post-only",
+      "$comment": "PRD Bab 8.2 + PRD Bab 10.3: endpoint webhook hanya menerima POST dari gateway ber-signature. Metode lain langsung block sebelum sampai origin.",
+      "expression": "(http.request.uri.path wildcard \"/api/webhooks/*\" and not http.request.method eq \"POST\")",
+      "action": "block",
+      "enabled": true
+    },
+    {
+      "name": "api-abuse-managed-challenge",
+      "$comment": "PRD Bab 8.4: API abuse + suspicious requests. Sinyal frekuensi tinggi diberi managed challenge, bukan block, supaya klien sah yang burst sesaat bisa lolos verifikasi.",
+      "expression": "(starts_with(http.request.uri.path, \"/api/\") and cf.threat_score gt 14)",
+      "action": "managed_challenge",
+      "enabled": true
+    },
+    {
+      "name": "skip-monitoring-health-and-sentry-tunnel",
+      "$comment": "Pengecualian wajib: /monitoring-tunnel (Sentry tunnel, PRD Bab 10.5 jalur telemetry) dan /api/health (uptime monitor PRD 8.6) TIDAK boleh kena challenge atau rate limit apa pun. /api/sentry-example bersifat SEMENTARA dan harus dihapus dari daftar ini saat rutenya dihapus.",
+      "expression": "(http.request.uri.path eq \"/monitoring-tunnel\" or starts_with(http.request.uri.path, \"/monitoring-tunnel/\") or http.request.uri.path eq \"/api/health\" or http.request.uri.path eq \"/api/sentry-example\")",
+      "action": "skip",
+      "skip": {
+        "ruleset": "current"
+      },
+      "enabled": true
+    },
+    {
+      "name": "block-known-bad-bots-on-api",
+      "$comment": "PRD Bab 8.4: malicious bots. Bot terverifikasi buruk dijalur API diblokir; bot baik (monitoring) tidak masuk karena skip di atas.",
+      "expression": "(starts_with(http.request.uri.path, \"/api/\") and cf.client.bot and not cf.verified_bot_category in {\"Monitoring & Analytics\"})",
+      "action": "block",
+      "enabled": true
+    }
+  ]
+}

@@ -1,10 +1,10 @@
 import { defineConfig } from 'drizzle-kit';
 
-const databaseUrl = process.env.DATABASE_URL;
+const databaseUrl = process.env.DIRECT_URL ?? process.env.DATABASE_URL;
 
 if (!databaseUrl) {
   throw new Error(
-    'DATABASE_URL belum diset. Migrasi butuh koneksi langsung (bukan pooler mode transaction).',
+    'DIRECT_URL atau DATABASE_URL belum diset. Drizzle migrasi membutuhkan koneksi direct PostgreSQL, bukan transaction pooler.',
   );
 }
 

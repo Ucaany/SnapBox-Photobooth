@@ -158,7 +158,7 @@ function CalendarDayButton({
       data-today={modifiers.today}
       className={cn(
         buttonVariants({ variant: 'noShadow' }),
-        'size-9 bg-secondary-background p-0 font-base text-foreground',
+        'relative size-9 bg-secondary-background p-0 font-base text-foreground before:absolute before:inset-x-0 before:top-1/2 before:-mt-[22px] before:h-11 before:content-[""]',
         modifiers.today && 'bg-transparent',
         (selectedSingle || inRange) && 'bg-main text-main-foreground',
         // Days of a range share one border per row: a day drops the border

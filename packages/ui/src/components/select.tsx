@@ -7,10 +7,18 @@ import * as React from 'react';
 
 import { cn } from '../lib/cn';
 
+// Base UI GroupLabel harus berada di dalam Group. Lacak itu supaya label berdiri
+// sendiri (seperti yang Radix izinkan) tetap render, bukan melempar error.
+const SelectGroupContext = React.createContext(false);
+
 const Select = SelectPrimitive.Root;
 
 function SelectGroup({ ...props }: React.ComponentProps<typeof SelectPrimitive.Group>) {
-  return <SelectPrimitive.Group data-slot="select-group" {...props} />;
+  return (
+    <SelectGroupContext.Provider value={true}>
+      <SelectPrimitive.Group data-slot="select-group" {...props} />
+    </SelectGroupContext.Provider>
+  );
 }
 
 function SelectValue({ className, ...props }: React.ComponentProps<typeof SelectPrimitive.Value>) {
@@ -126,15 +134,26 @@ function SelectLabel({
   className,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.GroupLabel>) {
+  const inGroup = React.useContext(SelectGroupContext);
+  const labelClassName = cn(
+    'border-2 border-transparent py-1.5 pr-8 pl-2 text-sm font-base text-foreground',
+    className,
+  );
+
+  // Di luar Group, GroupLabel Base UI tidak punya context dan melempar, jadi
+  // fallback ke elemen div biasa (yang justru itu yang dirender Radix).
+  if (!inGroup) {
+    return (
+      <div
+        data-slot="select-label"
+        className={labelClassName}
+        {...(props as React.ComponentProps<'div'>)}
+      />
+    );
+  }
+
   return (
-    <SelectPrimitive.GroupLabel
-      data-slot="select-label"
-      className={cn(
-        'border-2 border-transparent py-1.5 pr-8 pl-2 text-sm font-base text-foreground',
-        className,
-      )}
-      {...props}
-    />
+    <SelectPrimitive.GroupLabel data-slot="select-label" className={labelClassName} {...props} />
   );
 }
 

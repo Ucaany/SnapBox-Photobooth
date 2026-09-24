@@ -1,3 +1,14 @@
+# Pipeline CI untuk repo ini.
+#
+# Verifikasi adalah SATU pipeline wajib (job `verify`) dengan tahap-tahap yang
+# diberi nama terpisah sehingga tiap tahap tampil independen di GitHub Checks:
+# lint, guard token/claims, typecheck, test, build, lalu format.
+#
+# Preview deploy hanya berjalan untuk pull request dari cabang di repo yang
+# sama (bukan fork), dan hanya bila tiga secret Vercel tersedia. Pull request
+# dari fork tidak mendapat akses secret, jadi job-nya otomatis terlewat.
+# Tanpa secret, tahap preview dilewati dengan catatan, bukan gagal.
+
 name: CI
 
 on:
@@ -16,7 +27,7 @@ env:
 
 jobs:
   verify:
-    name: Lint, Typecheck, Build
+    name: Lint, Typecheck, Test, Build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -49,12 +60,29 @@ jobs:
       - name: Token sync guard
         run: pnpm check:token-sync
 
+      - name: Claims sync guard
+        run: pnpm check:claims-sync
+
+      - name: Infra drafts guard
+        run: pnpm check:infra-drafts
+
+      - name: Env example guard
+        run: pnpm check:env-example
+
       - name: Typecheck
         run: pnpm typecheck
 
-      # `next build` tidak dijalankan karena butuh kredensial Supabase/Firebase
-      # yang tidak tersedia di CI pull request. Build produksi terjadi di Vercel,
-      # yang sudah menerima env dari dasbor project.
+      - name: Test
+        run: pnpm test
+
+      # Build kini dijalankan di CI dan hanya butuh env inert non-secret.
+      # Sentry SDK bersifat DSN-gated (Task 0.6), jadi build tetap senyap
+      # tanpa secret apa pun. `CI=true` menandai mode CI agar Sentry senyap.
+      - name: Build
+        run: pnpm build
+        env:
+          CI: 'true'
+
       - name: Format check
         run: pnpm format:check
 
@@ -98,3 +126,53 @@ jobs:
       - name: Check
         run: cargo check --all-targets
         working-directory: apps/desktop/src-tauri
+
+  preview:
+    name: Preview Deploy
+    runs-on: ubuntu-latest
+    needs: verify
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.4.2
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        if: ${{ secrets.VERCEL_TOKEN != '' }}
+        run: pnpm install --frozen-lockfile
+
+      - name: Deploy preview
+        id: deploy
+        if: ${{ secrets.VERCEL_TOKEN != '' }}
+        working-directory: apps/web
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          pnpm dlx vercel@48 pull --yes --environment=preview --token "$VERCEL_TOKEN"
+          pnpm dlx vercel@48 build --token "$VERCEL_TOKEN"
+          url=$(pnpm dlx vercel@48 deploy --prebuilt --token "$VERCEL_TOKEN" | tail -n1)
+          echo "PREVIEW_URL=$url" >> "$GITHUB_OUTPUT"
+
+      - name: Publish summary
+        if: ${{ secrets.VERCEL_TOKEN != '' }}
+        run: |
+          echo "Preview Vercel: ${{ steps.deploy.outputs.PREVIEW_URL }}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Skip note
+        if: ${{ secrets.VERCEL_TOKEN == '' }}
+        run: |
+          echo "Preview dilewati: secret Vercel belum dikonfigurasi." >> "$GITHUB_STEP_SUMMARY"

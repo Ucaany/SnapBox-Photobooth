@@ -2,10 +2,14 @@ packages:
   - 'apps/*'
   - 'packages/*'
 allowBuilds:
+  '@firebase/util': true
   # esbuild: postinstall mengunduh binary native. Tanpa ini Vite dan tsx tidak jalan.
   esbuild: true
+  protobufjs: false
   # unrs-resolver: resolver native untuk eslint-import-resolver-typescript.
   unrs-resolver: true
+  # @sentry/cli: postinstall mengunduh binary untuk upload source map.
+  '@sentry/cli': true
 minimumReleaseAgeExclude:
   - '@next/env@15.5.26'
   - '@next/eslint-plugin-next@15.5.26'
@@ -23,6 +27,9 @@ minimumReleaseAgeExclude:
   - '@turbo/linux-arm64@2.11.3'
   - '@turbo/windows-64@2.11.3'
   - '@turbo/windows-arm64@2.11.3'
+  - '@sentry/nextjs@11.0.0'
+  - '@sentry/react@11.0.0'
+  - '@sentry/vite-plugin@5.4.0'
   - eslint-config-next@15.5.26
   - next@15.5.26
   - prettier@3.9.9

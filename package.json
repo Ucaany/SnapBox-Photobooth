@@ -6,7 +6,7 @@
   "license": "UNLICENSED",
   "packageManager": "pnpm@12.4.2",
   "engines": {
-    "node": ">=22.0.0",
+    "node": ">=22.12.0",
     "pnpm": ">=10.0.0"
   },
   "scripts": {
@@ -14,7 +14,7 @@
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
-    "test": "turbo run test",
+    "test": "node --test",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,mjs,cjs,json,md,css,yml,yaml}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,mjs,cjs,json,md,css,yml,yaml}\"",
     "clean": "turbo run clean",
@@ -24,7 +24,11 @@
     "supabase:db:push": "supabase db push",
     "supabase:db:reset": "supabase db reset",
     "prepare": "husky",
-    "check:token-sync": "node scripts/check-token-sync.mjs"
+    "check:token-sync": "node scripts/check-token-sync.mjs",
+    "check:firebase-project-id": "node scripts/check-firebase-project-id.mjs",
+    "check:claims-sync": "node scripts/check-claims-sync.mjs",
+    "check:infra-drafts": "node scripts/check-infra-drafts.mjs",
+    "check:env-example": "node scripts/check-env-example.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "19.8.1",

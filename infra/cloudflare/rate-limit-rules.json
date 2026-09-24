@@ -1,0 +1,114 @@
+{
+  "$comment": "Rencana rate limit SnapBox, PRD Bab 8.2 (baris 816-822). DRAFT review-only: TIDAK ada yang dieksekusi terhadap Cloudflare. Bentuk skema mengikuti Rulesets API Cloudflare pada phase http_ratelimit: satu ruleset berisi array rules, tiap rule punya ratelimit.characteristics (menerima ip.src, cf.colo.id, atau kunci header berbentuk http.request.headers[\"nama-header\"]), period detik, requests_per_period, mitigation_timeout detik, dan requests_to_origin boolean. Hanya ip.src yang tersedia tanpa bantuan: karakteristik email, device fingerprint, booth, dan tenant berasal dari body/identitas internal sehingga butuh Transform Rule atau Worker yang menyalinnya ke header sesuai penanda $requiresTransform / $requiresWorker dan PRD Bab 10.5.",
+  "rules": [
+    {
+      "name": "webhook-gateway-300-per-min-per-ip",
+      "$comment": "PRD Bab 8.2: /api/webhooks/* 300 req/min per IP (allowlist gateway IP). Allowlist gateway ditegakkan aturan terpisah di waf-custom-rules.json, bukan oleh ratelimit; ratelimit ini hanya plafon per IP.",
+      "expression": "(http.request.uri.path wildcard \"/api/webhooks/*\")",
+      "action": "block",
+      "ratelimit": {
+        "characteristics": ["ip.src"],
+        "period": 60,
+        "requests_per_period": 300,
+        "mitigation_timeout": 60,
+        "requests_to_origin": false
+      }
+    },
+    {
+      "name": "auth-10-per-min-per-ip",
+      "$comment": "PRD Bab 8.2: /api/auth/* 10 req/min per IP. Pasangan dari auth-5-per-min-per-email.",
+      "expression": "(http.request.uri.path wildcard \"/api/auth/*\")",
+      "action": "block",
+      "ratelimit": {
+        "characteristics": ["ip.src"],
+        "period": 60,
+        "requests_per_period": 10,
+        "mitigation_timeout": 60,
+        "requests_to_origin": false
+      }
+    },
+    {
+      "name": "auth-5-per-min-per-email",
+      "$comment": "PRD Bab 8.2: /api/auth/* 5 req/min per email. Email ada di body request, bukan header, sehingga ekspresi mencocokkan header http.request.headers[\"x-auth-email\"] yang harus disuntik oleh Transform Rule (http_request_transform). Tanpa Transform Rule aturan ini tidak akan pernah cocok.",
+      "$requiresTransform": "email",
+      "expression": "(http.request.uri.path wildcard \"/api/auth/*\" and http.request.headers[\"x-auth-email\"] ne \"\")",
+      "action": "block",
+      "ratelimit": {
+        "characteristics": ["http.request.headers[\"x-auth-email\"]"],
+        "period": 60,
+        "requests_per_period": 5,
+        "mitigation_timeout": 60,
+        "requests_to_origin": false
+      }
+    },
+    {
+      "name": "booth-60-per-min-per-device-fingerprint",
+      "$comment": "PRD Bab 8.2: /api/booth/* 60 req/min per device fingerprint. Header x-device-fingerprint disuntik Worker; identitas per device+tenant (jangan hanya IP karena NAT) mengikuti PRD 8.4 dan PRD Bab 10.5.",
+      "$requiresWorker": true,
+      "expression": "(http.request.uri.path wildcard \"/api/booth/*\" and http.request.headers[\"x-device-fingerprint\"] ne \"\")",
+      "action": "block",
+      "ratelimit": {
+        "characteristics": ["http.request.headers[\"x-device-fingerprint\"]"],
+        "period": 60,
+        "requests_per_period": 60,
+        "mitigation_timeout": 60,
+        "requests_to_origin": false
+      }
+    },
+    {
+      "name": "payment-create-30-per-min-per-booth",
+      "$comment": "PRD Bab 8.2: /api/payment/create 30 req/min per booth. Header x-booth-id disuntik Worker (PRD Bab 10.5).",
+      "$requiresWorker": true,
+      "expression": "(http.request.uri.path eq \"/api/payment/create\" and http.request.headers[\"x-booth-id\"] ne \"\")",
+      "action": "block",
+      "ratelimit": {
+        "characteristics": ["http.request.headers[\"x-booth-id\"]"],
+        "period": 60,
+        "requests_per_period": 30,
+        "mitigation_timeout": 60,
+        "requests_to_origin": false
+      }
+    },
+    {
+      "name": "contact-5-per-hour-per-ip",
+      "$comment": "PRD Bab 8.2: /api/contact 5 req/jam per IP. period dan mitigation_timeout satu jam (3600 detik).",
+      "expression": "(http.request.uri.path eq \"/api/contact\")",
+      "action": "block",
+      "ratelimit": {
+        "characteristics": ["ip.src"],
+        "period": 3600,
+        "requests_per_period": 5,
+        "mitigation_timeout": 3600,
+        "requests_to_origin": false
+      }
+    },
+    {
+      "name": "operator-20-per-min-per-booth",
+      "$comment": "PRD Bab 8.2: /api/operator/* 20 req/min per booth. Header x-booth-id disuntik Worker (PRD Bab 10.5).",
+      "$requiresWorker": true,
+      "expression": "(http.request.uri.path wildcard \"/api/operator/*\" and http.request.headers[\"x-booth-id\"] ne \"\")",
+      "action": "block",
+      "ratelimit": {
+        "characteristics": ["http.request.headers[\"x-booth-id\"]"],
+        "period": 60,
+        "requests_per_period": 20,
+        "mitigation_timeout": 60,
+        "requests_to_origin": false
+      }
+    },
+    {
+      "name": "pairing-10-per-min-per-tenant",
+      "$comment": "PRD Bab 8.2: /api/pairing/* 10 req/min per tenant. Header x-tenant-id disuntik Worker (PRD Bab 10.5).",
+      "$requiresWorker": true,
+      "expression": "(http.request.uri.path wildcard \"/api/pairing/*\" and http.request.headers[\"x-tenant-id\"] ne \"\")",
+      "action": "block",
+      "ratelimit": {
+        "characteristics": ["http.request.headers[\"x-tenant-id\"]"],
+        "period": 60,
+        "requests_per_period": 10,
+        "mitigation_timeout": 60,
+        "requests_to_origin": false
+      }
+    }
+  ]
+}

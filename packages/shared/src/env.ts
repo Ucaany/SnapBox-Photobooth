@@ -39,6 +39,8 @@ export const publicEnvSchema = z.object({
 /** Variabel server-only: akses database, auth admin, dan service role. */
 export const serverEnvSchema = z.object({
   DATABASE_URL: z.string().url(),
+  /** Optional direct connection used by Drizzle CLI; runtime uses DATABASE_URL. */
+  DIRECT_URL: z.string().url().optional(),
   SUPABASE_SERVICE_ROLE_KEY: nonEmpty,
   FIREBASE_ADMIN_PROJECT_ID: nonEmpty,
   FIREBASE_ADMIN_CLIENT_EMAIL: z.string().email(),

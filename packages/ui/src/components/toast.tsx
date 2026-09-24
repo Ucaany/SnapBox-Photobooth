@@ -134,7 +134,7 @@ function ToastClose({
       aria-label="Close toast"
       render={render}
       className={cn(
-        "relative shrink-0 text-foreground after:absolute after:-inset-2 after:content-[''] hover:opacity-70",
+        "relative shrink-0 text-foreground after:pointer-events-none after:absolute after:-inset-2 after:content-[''] hover:opacity-70",
         className,
       )}
       {...props}

@@ -1,0 +1,18 @@
+{
+  "$comment": "Rencana widget Turnstile SnapBox, PRD Bab 8.2 (Turnstile pada form kontak & sensitive unauthenticated endpoint) dan PRD Bab 8.4. DRAFT review-only: site key dan secret key sesungguhnya baru diterbitkan saat widget dibuat di dashboard Cloudflare; nilai hasilnya mengisi NEXT_PUBLIC_TURNSTILE_SITE_KEY (site key, boleh publik) dan TURNSTILE_SECRET_KEY (secret, server-only, JANGAN pernah diekspos ke browser sesuai larangan PRD Bab 8.2). Jangan tambah env var baru.",
+  "name": "snapbox-web-contact",
+  "domains": ["snapbox.id", "www.snapbox.id", "*.vercel.app"],
+  "mode": "managed",
+  "clearance_level": "interactive",
+  "ephemeral_id": false,
+  "$endpoints": {
+    "$comment": "PRD Bab 8.2: pasang pada form kontak dan endpoint unauthenticated sensitif yang belum terlindungi rate limit. /api/health, /monitoring-tunnel, serta /api/sentry-example (sementara) dikecualikan sesuai waf-custom-rules.json.",
+    "protected": ["/api/contact"],
+    "excluded": ["/monitoring-tunnel", "/api/health", "/api/sentry-example"]
+  },
+  "$verification": {
+    "$comment": "Verifikasi server-side: POST https://challenges.cloudflare.com/turnstile/v0/siteverify dengan TURNSTILE_SECRET_KEY + token dari widget. Jangan pernah mempercayai token yang belum diverifikasi.",
+    "method": "POST",
+    "endpoint": "https://challenges.cloudflare.com/turnstile/v0/siteverify"
+  }
+}
