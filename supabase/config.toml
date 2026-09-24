@@ -8,9 +8,27 @@
 # konflik karena nama file sudah bertimestamp dan berurutan.
 # =============================================================================
 
-# project_id adalah identitas lokal saja. Project ref remote SENGAJA tidak
-# disimpan di sini: itu nilai per-lingkungan yang dipegang CLI (`supabase link`)
-# atau secret CI, bukan sesuatu yang pantas masuk repo.
+# =============================================================================
+# project_id - DIBACA DUA JALUR: `supabase start` (LOKAL) dan `supabase db push`
+#              (REMOTE). Nilai ini BUKAN sekadar identitas lokal.
+# =============================================================================
+# * Untuk LOKAL (`supabase start`), "snapbox" hanyalah placeholder agar stack
+#   lokal hidup. Nilai ini boleh dibiarkan.
+# * Untuk REMOTE (`supabase db push`, `supabase link`), nilai ini WAJIB diganti
+#   PER ENVIRONMENT (dev/staging/prod). Bila dibiarkan "snapbox", verifikasi
+#   Firebase third-party (`[auth.third_party.firebase] project_id` di bawah)
+#   diarahkan ke project Firebase yang SALAH, sehingga Realtime/Storage
+#   mengotorisasi token dari project yang bukan milik environment itu.
+# * Nilai OTORITATIF ada di env `NEXT_PUBLIC_FIREBASE_PROJECT_ID`. File ini TIDAK
+#   menarik nilai itu otomatis: CLI membaca TOML mentah, jadi nilainya harus
+#   disamakan sendiri per environment.
+#
+# Strategi override (pilih satu, JANGAN commit nilai remote ke repo):
+#   # 1. Override sekali jalan sebelum push (CI step / shell):
+#   sed -i.bak "s/^project_id = .*/project_id = \"$NEXT_PUBLIC_FIREBASE_PROJECT_ID\"/" supabase/config.toml
+#   # 2. Atau tautkan CLI secara eksplisit: `supabase link --project-ref <ref>`
+#   #    lalu `supabase db push` (ref remote dipegang CLI/secret, bukan repo).
+# Project id Firebase adalah pengenal publik, bukan secret.
 project_id = "snapbox"
 
 [api]
@@ -57,8 +75,9 @@ enabled = true
 [auth]
 enabled = true
 # Supabase Auth BUKAN identity provider SnapBox; Firebase yang jadi IdP
-# (PRD Bab 10.3). Blok ini hanya ada supaya Realtime bisa menukar token Firebase
-# menjadi JWT bertanda tangan Supabase dan supaya `supabase start` bisa jalan.
+# (PRD Bab 10.3). `[auth.third_party.firebase]` membuat Supabase MEMVALIDASI
+# JWT Firebase secara langsung (tanpa penukaran token) sehingga Realtime/Storage
+# bisa mengotorisasi sesi Firebase; blok [auth] dasar ada agar `supabase start` jalan.
 site_url = "http://localhost:3000"
 additional_redirect_urls = ["http://localhost:3000"]
 jwt_expiry = 3600
@@ -69,8 +88,10 @@ enable_signup = false
 double_confirm_changes = false
 
 [auth.third_party.firebase]
-# Firebase project yang sama dengan `NEXT_PUBLIC_FIREBASE_PROJECT_ID` di
-# `.env.example`. Project id Firebase adalah pengenal publik, bukan secret.
+# "snapbox" hanyalah PLACEHOLDER lokal, dipakai agar `supabase start` jalan.
+# Wajib sama dengan Firebase project id per lingkungan (dev/staging/prod);
+# nilai otoritatif ada di env `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, bukan di sini.
+# Project id Firebase adalah pengenal publik, bukan secret.
 enabled = true
 project_id = "snapbox"
 

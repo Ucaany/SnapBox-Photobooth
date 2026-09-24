@@ -23,7 +23,8 @@
     "supabase:status": "supabase status",
     "supabase:db:push": "supabase db push",
     "supabase:db:reset": "supabase db reset",
-    "prepare": "husky"
+    "prepare": "husky",
+    "check:token-sync": "node scripts/check-token-sync.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "19.8.1",

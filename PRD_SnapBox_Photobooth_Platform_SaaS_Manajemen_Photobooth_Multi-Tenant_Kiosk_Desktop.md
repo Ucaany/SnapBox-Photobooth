@@ -368,7 +368,7 @@
    - **ARCHITECTURAL DECISION (ADR-001)**: Pairing code 6 karakter dianggap **legacy/weak** untuk production utama. Mekanisme final = QR + short-lived pairing token (JWT, 10 menit, one-time). Manual code tetap disediakan tapi dengan attempt limit, rate limit, audit, dan hashing server-side.
 
 ### C. Modul Owner — Frame Studio & Chroma Key
-1. **Cara Kerja**: Owner drag-drop file PNG/JPG ke `/owner-dashboard/frame-studio`. File diunggah ke Supabase Storage `frames/{tenant_id}/{uuid}.png`. Preview canvas dengan checkerboard. Aktifkan "Color Picker Chroma Key" → klik area background frame → simpan `transparent_color_hex` + `tolerance_delta` (default 15). Simpan → pilih booth + toggle "Active on Booth".
+1. **Cara Kerja**: Owner drag-drop file PNG/JPG ke `/owner-dashboard/frame-studio`. File diunggah ke Supabase Storage `tenant/{tenant_id}/frames/{uuid}.png`. Preview canvas dengan checkerboard. Aktifkan "Color Picker Chroma Key" → klik area background frame → simpan `transparent_color_hex` + `tolerance_delta` (default 15). Simpan → pilih booth + toggle "Active on Booth".
 2. **Aturan Sistem**:
    - Toleransi warna RGB delta 5–40 (default 15) per channel.
    - Frame wajib PNG/JPG, max 5 MB, dimensi minimum 800×600px.

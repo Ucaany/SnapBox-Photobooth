@@ -46,6 +46,9 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: Token sync guard
+        run: pnpm check:token-sync
+
       - name: Typecheck
         run: pnpm typecheck
 

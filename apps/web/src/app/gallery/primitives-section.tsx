@@ -493,21 +493,20 @@ function ActionsSection() {
           </span>
         </div>
         <div className="flex flex-col gap-3">
-          <div className="max-w-full overflow-x-auto">
-            <ToggleGroup
-              value={[mode]}
-              onValueChange={(value) => {
-                const next = value[0];
-                if (next) {
-                  setMode(next);
-                }
-              }}
-            >
-              <ToggleGroupItem value="cetak">Mode cetak</ToggleGroupItem>
-              <ToggleGroupItem value="pratinjau">Mode pratinjau</ToggleGroupItem>
-              <ToggleGroupItem value="hemat">Mode hemat kertas</ToggleGroupItem>
-            </ToggleGroup>
-          </div>
+          <ToggleGroup
+            className="max-w-full flex-wrap"
+            value={[mode]}
+            onValueChange={(value) => {
+              const next = value[0];
+              if (next) {
+                setMode(next);
+              }
+            }}
+          >
+            <ToggleGroupItem value="cetak">Mode cetak</ToggleGroupItem>
+            <ToggleGroupItem value="pratinjau">Mode pratinjau</ToggleGroupItem>
+            <ToggleGroupItem value="hemat">Mode hemat kertas</ToggleGroupItem>
+          </ToggleGroup>
           <span className="text-sm font-base">Mode terpilih: {mode}</span>
         </div>
       </Block>
@@ -583,7 +582,7 @@ function FormsSection() {
             <p
               id="gallery-kode-voucher-error"
               role="alert"
-              className="text-sm font-base text-red-500"
+              className="text-sm font-base text-red-700"
             >
               Kode voucher sudah dipakai pada 12 Agustus.
             </p>
@@ -1042,7 +1041,9 @@ function DataSection() {
         label="DataTableDemo"
         note="Tabel interaktif dengan filter, sort, pilihan kolom, dan paginasi."
       >
-        <DataTableDemo />
+        <div className="w-full min-w-0">
+          <DataTableDemo />
+        </div>
       </Block>
 
       <Block

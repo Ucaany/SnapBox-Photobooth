@@ -251,7 +251,7 @@ function SidebarTrigger({ className, onClick, ...props }: React.ComponentProps<t
       data-slot="sidebar-trigger"
       variant="noShadow"
       size="icon"
-      className={cn('size-7', className)}
+      className={cn('size-11', className)}
       onClick={(event) => {
         onClick?.(event);
         toggleSidebar();
@@ -308,7 +308,7 @@ function SidebarInput({ className, ...props }: React.ComponentProps<typeof Input
     <Input
       data-slot="sidebar-input"
       data-sidebar="input"
-      className={cn('h-8 w-full bg-secondary-background shadow-none', className)}
+      className={cn('h-11 w-full bg-secondary-background shadow-none', className)}
       {...props}
     />
   );
@@ -442,12 +442,13 @@ function SidebarMenuItem({ className, ...props }: React.ComponentProps<'li'>) {
 }
 
 const sidebarMenuButtonVariants = cva(
-  'peer/menu-button flex w-full items-center gap-2 overflow-hidden outline-2 outline-transparent rounded-base p-2 text-left text-sm ring-ring transition-[width,height,padding] hover:bg-main hover:text-main-foreground hover:outline-border focus-visible:outline-border focus-visible:text-main-foreground focus-visible:bg-main disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-active:bg-main data-active:text-main-foreground data-active:outline-border group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0',
+  'peer/menu-button flex w-full items-center gap-2 overflow-hidden outline-2 outline-transparent rounded-base p-2 text-left text-sm ring-ring transition-[width,height,padding] hover:bg-main hover:text-main-foreground hover:outline-border focus-visible:outline-border focus-visible:text-main-foreground focus-visible:bg-main disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-active:bg-main data-active:text-main-foreground data-active:outline-border group-data-[collapsible=icon]:size-11! group-data-[collapsible=icon]:p-2! [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0',
   {
     variants: {
+      // R-03: nav utama dinaikkan ke >=44px (mandat tap target PRD 8.12).
       size: {
-        default: 'h-8 text-sm',
-        sm: 'h-7 text-xs',
+        default: 'h-11 text-sm',
+        sm: 'h-10 text-xs',
         lg: 'h-12 text-sm group-data-[collapsible=icon]:p-0!',
       },
     },

@@ -162,7 +162,7 @@ function QuestionnaireInput({
       <QuestionnairePrimitive.Input
         data-slot="questionnaire-input"
         className={cn(
-          'flex h-10 min-h-10 w-full min-w-0 rounded-base border-2 border-border bg-secondary-background px-3 py-2 text-base font-base text-foreground focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 focus-visible:outline-hidden disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-0 md:text-sm',
+          'flex h-11 min-h-11 w-full min-w-0 rounded-base border-2 border-border bg-secondary-background px-3 py-2 text-base font-base text-foreground focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 focus-visible:outline-hidden disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-0 md:text-sm',
           'selection:bg-main selection:text-main-foreground placeholder:text-foreground/50',
           className,
         )}
@@ -176,10 +176,11 @@ function QuestionnaireError({
   className,
   ...props
 }: React.ComponentProps<typeof QuestionnairePrimitive.Error>) {
+  // text-red-700 bukan text-red-500: di atas --background #dcebfe, red-500 hanya 3.15:1 (gagal WCAG AA 4.5:1), red-700 = 5.31:1.
   return (
     <QuestionnairePrimitive.Error
       data-slot="questionnaire-error"
-      className={cn('mt-2 text-sm font-base text-red-500', className)}
+      className={cn('mt-2 text-sm font-base text-red-700', className)}
       {...props}
     />
   );

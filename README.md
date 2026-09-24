@@ -56,9 +56,10 @@ pnpm --filter @snapbox/db migrate     # Drizzle (Task 0.8) di atas DB yang sama
 
 Dua aliran migrasi berbagi satu database, jadi urutannya bukan preferensi:
 `supabase/migrations/*` (extension, bucket, Realtime, helper RLS) **wajib**
-berjalan lebih dulu karena tabel Drizzle bergantung pada extension dan helper
-tersebut. Menjalankan Drizzle lebih dulu hanya menghasilkan kegagalan
-`extension ... does not exist`.
+berjalan lebih dulu. Skema Drizzle sendiri hanya memakai tipe core
+(`gen_random_uuid()`, `pgEnum`) dan tanpa helper `app.*` tetap terbuat, tetapi
+policy RLS per-tabel yang ditambahkan Task 0.8 memanggil helper schema `app`
+sehingga aliran itu gagal dengan `function app.current_tenant_id() does not exist`.
 
 Kiosk desktop:
 
@@ -93,13 +94,12 @@ pnpm --filter @snapbox/desktop tauri:dev
 
 ### Batas sengaja
 
-| Ditunda                                                | Alasan                                                               | Dikerjakan di                          |
-| :----------------------------------------------------- | :------------------------------------------------------------------- | :------------------------------------- |
-| Browser-direct Storage upload (signed upload URL)      | Aplikasi mengunggah lewat server dengan `service_role`               | saat upload besar/desktop dioptimalkan |
-| RLS policy pada tabel aplikasi                         | Milik Drizzle, sumber kebenaran tabel di `packages/db/src/schema.ts` | Task 0.8                               |
-| Firebase provider dinonaktifkan penuh di Auth Supabase | Realtime butuh JWT bertanda tangan Supabase                          | Fase 6                                 |
-| pg_cron job (subscription expiry, cleanup)             | Tabel & handler belum ada                                            | Fase 3/6/8                             |
-| Remote project + env Vercel                            | Butuh keputusan akun/organisasi, di luar repo                        | Task 0.9                               |
+Daftar lengkap batas sengaja Task 0.4 (yang ditunda, alasannya, dan kapan
+dikerjakan: browser-direct Storage upload, RLS policy pada tabel aplikasi,
+pg_cron job, remote project + env Vercel, policy Realtime channel `booth:{id}`)
+ada di satu tempat saja: [docs/PHASE-0.md](./docs/PHASE-0.md) section
+"Batas sengaja". Di sana juga tercantum syarat penerimaan Task 0.8 untuk policy
+`snapbox_realtime_booth_select`.
 
 ## Aturan kerja
 
@@ -111,5 +111,5 @@ dilanggar dan paling mahal akibatnya:
 2. **Status pembayaran hanya berubah dari webhook terverifikasi.** Klien kiosk tidak pernah
    memutuskan `PAID` (ADR-002).
 
-Keputusan arsitektur tercatat di [docs/adr/](./docs/adr/). Setiap keputusan visual atau teknis
-besar wajib punya alasan tertulis satu baris di sana.
+Keputusan arsitektur tercatat di [docs/ADR-002-neobrutalism-tokens.md](./docs/ADR-002-neobrutalism-tokens.md). Setiap keputusan visual atau teknis
+besar wajib punya alasan tertulis satu baris di sana; ADR lain menyusul saat keputusan baru diambil.

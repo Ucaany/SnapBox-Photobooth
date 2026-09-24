@@ -69,7 +69,7 @@ function ContextMenuSubTrigger({
       data-slot="context-menu-sub-trigger"
       data-inset={inset}
       className={cn(
-        "flex cursor-default items-center rounded-base border-2 border-transparent px-2 py-1.5 text-sm font-base outline-hidden select-none hover:border-border hover:bg-main hover:text-main-foreground focus:border-border focus:bg-main focus:text-main-foreground data-highlighted:border-border data-highlighted:bg-main data-highlighted:text-main-foreground data-inset:pl-8 data-popup-open:border-border data-popup-open:bg-main data-popup-open:text-main-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "flex min-h-11 cursor-default items-center rounded-base border-2 border-transparent px-2 py-1.5 text-sm font-base outline-hidden select-none hover:border-border hover:bg-main hover:text-main-foreground focus:border-border focus:bg-main focus:text-main-foreground data-highlighted:border-border data-highlighted:bg-main data-highlighted:text-main-foreground data-inset:pl-8 data-popup-open:border-border data-popup-open:bg-main data-popup-open:text-main-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className,
       )}
       {...props}
@@ -154,14 +154,16 @@ function ContextMenuItem({
   inset?: boolean;
   variant?: 'default' | 'destructive';
 }) {
+  // text-red-700 bukan text-red-500: di atas --background #dcebfe, red-500 hanya 3.15:1 (gagal WCAG AA 4.5:1), red-700 = 5.31:1.
+  // bg-red-700 (#c10007) bukan bg-red-500 (#fb2c36) untuk item destruktif: putih di atas red-500 hanya 3.82:1 (gagal 4.5:1), red-700 = 6.42:1.
   return (
     <ContextMenuPrimitive.Item
       data-slot="context-menu-item"
       data-inset={inset}
       data-variant={variant}
       className={cn(
-        "relative flex cursor-default items-center gap-2 rounded-base border-2 border-transparent px-2 py-1.5 text-sm outline-none select-none hover:border-border hover:bg-main hover:text-main-foreground focus:border-border focus:bg-main focus:text-main-foreground data-disabled:pointer-events-none data-disabled:opacity-50 data-highlighted:border-border data-highlighted:bg-main data-highlighted:text-main-foreground data-inset:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-        'data-[variant=destructive]:text-red-500 data-[variant=destructive]:hover:bg-red-500 data-[variant=destructive]:hover:text-white data-[variant=destructive]:focus:bg-red-500 data-[variant=destructive]:focus:text-white data-[variant=destructive]:data-highlighted:bg-red-500 data-[variant=destructive]:data-highlighted:text-white',
+        "relative flex min-h-11 cursor-default items-center gap-2 rounded-base border-2 border-transparent px-2 py-1.5 text-sm outline-none select-none hover:border-border hover:bg-main hover:text-main-foreground focus:border-border focus:bg-main focus:text-main-foreground data-disabled:pointer-events-none data-disabled:opacity-50 data-highlighted:border-border data-highlighted:bg-main data-highlighted:text-main-foreground data-inset:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        'data-[variant=destructive]:text-red-700 data-[variant=destructive]:hover:bg-red-700 data-[variant=destructive]:hover:text-white data-[variant=destructive]:focus:bg-red-700 data-[variant=destructive]:focus:text-white data-[variant=destructive]:data-highlighted:bg-red-700 data-[variant=destructive]:data-highlighted:text-white',
         className,
       )}
       {...props}
@@ -179,7 +181,7 @@ function ContextMenuCheckboxItem({
     <ContextMenuPrimitive.CheckboxItem
       data-slot="context-menu-checkbox-item"
       className={cn(
-        'relative flex cursor-default items-center gap-2 rounded-base border-2 border-transparent py-1.5 pr-2 pl-8 text-sm font-base outline-hidden select-none hover:border-border hover:bg-main hover:text-main-foreground focus:border-border focus:bg-main focus:text-main-foreground data-disabled:pointer-events-none data-disabled:opacity-50 data-highlighted:border-border data-highlighted:bg-main data-highlighted:text-main-foreground',
+        'relative flex min-h-11 cursor-default items-center gap-2 rounded-base border-2 border-transparent py-1.5 pr-2 pl-8 text-sm font-base outline-hidden select-none hover:border-border hover:bg-main hover:text-main-foreground focus:border-border focus:bg-main focus:text-main-foreground data-disabled:pointer-events-none data-disabled:opacity-50 data-highlighted:border-border data-highlighted:bg-main data-highlighted:text-main-foreground',
         className,
       )}
       checked={checked}
@@ -204,7 +206,7 @@ function ContextMenuRadioItem({
     <ContextMenuPrimitive.RadioItem
       data-slot="context-menu-radio-item"
       className={cn(
-        'relative flex cursor-default items-center gap-2 rounded-base border-2 border-transparent py-1.5 pr-2 pl-8 text-sm font-base outline-hidden select-none hover:border-border hover:bg-main hover:text-main-foreground focus:border-border focus:bg-main focus:text-main-foreground data-disabled:pointer-events-none data-disabled:opacity-50 data-highlighted:border-border data-highlighted:bg-main data-highlighted:text-main-foreground',
+        'relative flex min-h-11 cursor-default items-center gap-2 rounded-base border-2 border-transparent py-1.5 pr-2 pl-8 text-sm font-base outline-hidden select-none hover:border-border hover:bg-main hover:text-main-foreground focus:border-border focus:bg-main focus:text-main-foreground data-disabled:pointer-events-none data-disabled:opacity-50 data-highlighted:border-border data-highlighted:bg-main data-highlighted:text-main-foreground',
         className,
       )}
       {...props}

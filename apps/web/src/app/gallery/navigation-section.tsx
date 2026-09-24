@@ -376,61 +376,63 @@ function PaginationBlock() {
           Sesi terbaru ditampilkan tiga per halaman. Halaman aktif: {halaman}.
         </p>
 
-        <Pagination className="justify-start">
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious
-                href="#navigation"
-                aria-disabled={halaman === 1 ? 'true' : undefined}
-                className={halaman === 1 ? 'pointer-events-none opacity-50' : undefined}
-                onClick={(event) => {
-                  event.preventDefault();
-                  maju(halaman - 1);
-                }}
-              />
-            </PaginationItem>
-            {[1, 2, 3].map((nomor) => (
-              <PaginationItem key={nomor}>
-                <PaginationLink
+        <div className="max-w-full min-w-0 overflow-x-auto">
+          <Pagination className="justify-start">
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
                   href="#navigation"
-                  isActive={nomor === halaman}
+                  aria-disabled={halaman === 1 ? 'true' : undefined}
+                  className={halaman === 1 ? 'pointer-events-none opacity-50' : undefined}
                   onClick={(event) => {
                     event.preventDefault();
-                    maju(nomor);
+                    maju(halaman - 1);
+                  }}
+                />
+              </PaginationItem>
+              {[1, 2, 3].map((nomor) => (
+                <PaginationItem key={nomor}>
+                  <PaginationLink
+                    href="#navigation"
+                    isActive={nomor === halaman}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      maju(nomor);
+                    }}
+                  >
+                    {nomor}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+              <PaginationItem>
+                <PaginationEllipsis />
+              </PaginationItem>
+              <PaginationItem>
+                <PaginationLink
+                  href="#navigation"
+                  isActive={halaman === total}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    maju(total);
                   }}
                 >
-                  {nomor}
+                  {total}
                 </PaginationLink>
               </PaginationItem>
-            ))}
-            <PaginationItem>
-              <PaginationEllipsis />
-            </PaginationItem>
-            <PaginationItem>
-              <PaginationLink
-                href="#navigation"
-                isActive={halaman === total}
-                onClick={(event) => {
-                  event.preventDefault();
-                  maju(total);
-                }}
-              >
-                {total}
-              </PaginationLink>
-            </PaginationItem>
-            <PaginationItem>
-              <PaginationNext
-                href="#navigation"
-                aria-disabled={halaman === total ? 'true' : undefined}
-                className={halaman === total ? 'pointer-events-none opacity-50' : undefined}
-                onClick={(event) => {
-                  event.preventDefault();
-                  maju(halaman + 1);
-                }}
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
+              <PaginationItem>
+                <PaginationNext
+                  href="#navigation"
+                  aria-disabled={halaman === total ? 'true' : undefined}
+                  className={halaman === total ? 'pointer-events-none opacity-50' : undefined}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    maju(halaman + 1);
+                  }}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
 
         <StatusLine>
           Halaman {halaman} dari {total} total, menampilkan sesi {(halaman - 1) * 3 + 1} sampai{' '}

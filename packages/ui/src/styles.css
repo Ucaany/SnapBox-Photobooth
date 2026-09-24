@@ -1,14 +1,27 @@
 /*
- * Styling canonical SnapBox UI, disalin dari neobrutalism.dev (ekmas).
+ * Salinan token SnapBox UI, berasal dari neobrutalism.dev (ekmas).
  *
- * Token kanonik (warna, radius 5px, box-shadow, font weight) ada di blok
- * `:root` di bawah dan di-mapping ke Tailwind lewat `@theme inline`.
+ * PENTING: file ini BUKAN satu-satunya sumber kanonik, dan mengedit palet di
+ * sini TIDAK mengubah situs web sama sekali. Yang benar-benar dikompilasi untuk
+ * web adalah `apps/web/src/app/globals.css`; file ini hanya salinan token yang
+ * diekspor paket (entry stylesheet `@snapbox/ui/styles.css`) untuk konsumen
+ * non-web, mis. kiosk Vite.
  *
- * Konsumen WAJIB meng-import file ini (lewat `@snapbox/ui/styles.css`) agar
- * semua token dan utilitas neobrutalism ter-generate, dan WAJIB menyediakan
- * tiga variabel font `--font-space-grotesk`, `--font-inter`, dan
- * `--font-jetbrains-mono` (mis. via `next/font`), sesuai mandat tipografi
- * PRD Bab 4, karena token font di bawah merujuk ke variabel-variabel tersebut.
+ * Saat token (warna, radius 5px, box-shadow, font weight) berubah, blok di
+ * bawah WAJIB disalin ulang secara MANUAL ke `apps/web/src/app/globals.css`.
+ * Penyalinan itu disengaja, bukan kelalaian: Tailwind v4 diam-diam membuang
+ * `@theme` bila `@import "tailwindcss"` muncul dua kali, sehingga globals.css
+ * tidak bisa meng-import file ini secara utuh. Rincian dan alasan lengkap ada
+ * di ADR-002 bagian "Instalasi token ganda".
+ *
+ * Penjaga sinkronisasi: `npm run check:token-sync` (scripts/check-token-sync.mjs)
+ * membandingkan blok `:root`, `@theme inline`, `@layer base`, `@utility`, dan
+ * `@layer components` kedua file dan gagal bila berbeda. Jalankan setelah
+ * mengubah token.
+ *
+ * Konsumen WAJIB menyediakan tiga variabel font `--font-space-grotesk`,
+ * `--font-inter`, dan `--font-jetbrains-mono` (mis. via `next/font`), sesuai
+ * mandat tipografi PRD Bab 4, karena token font di bawah merujuk variabel itu.
  */
 
 @import 'tailwindcss';

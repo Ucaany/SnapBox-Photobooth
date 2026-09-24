@@ -58,7 +58,7 @@ function DropdownMenuSubTrigger({
       data-slot="dropdown-menu-sub-trigger"
       data-inset={inset}
       className={cn(
-        'flex cursor-default items-center gap-2 rounded-base border-2 border-transparent px-2 py-1.5 text-sm font-base outline-hidden select-none hover:border-border hover:bg-main hover:text-main-foreground focus:border-border focus:bg-main focus:text-main-foreground data-highlighted:border-border data-highlighted:bg-main data-highlighted:text-main-foreground data-inset:pl-8 data-popup-open:border-border data-popup-open:bg-main data-popup-open:text-main-foreground [&_svg]:pointer-events-none [&_svg]:h-4 [&_svg]:w-4 [&_svg]:shrink-0',
+        'flex min-h-11 cursor-default items-center gap-2 rounded-base border-2 border-transparent px-2 py-1.5 text-sm font-base outline-hidden select-none hover:border-border hover:bg-main hover:text-main-foreground focus:border-border focus:bg-main focus:text-main-foreground data-highlighted:border-border data-highlighted:bg-main data-highlighted:text-main-foreground data-inset:pl-8 data-popup-open:border-border data-popup-open:bg-main data-popup-open:text-main-foreground [&_svg]:pointer-events-none [&_svg]:h-4 [&_svg]:w-4 [&_svg]:shrink-0',
         className,
       )}
       {...props}
@@ -146,7 +146,7 @@ function DropdownMenuItem({
       data-slot="dropdown-menu-item"
       data-inset={inset}
       className={cn(
-        'relative flex cursor-default items-center gap-2 rounded-base border-2 border-transparent px-2 py-1.5 text-sm font-base outline-hidden transition-colors select-none hover:border-border hover:bg-main hover:text-main-foreground focus:border-border focus:bg-main focus:text-main-foreground data-disabled:pointer-events-none data-disabled:opacity-50 data-highlighted:border-border data-highlighted:bg-main data-highlighted:text-main-foreground data-inset:pl-8 [&_svg]:pointer-events-none [&_svg]:h-4 [&_svg]:w-4 [&_svg]:shrink-0',
+        'relative flex min-h-11 cursor-default items-center gap-2 rounded-base border-2 border-transparent px-2 py-1.5 text-sm font-base outline-hidden transition-colors select-none hover:border-border hover:bg-main hover:text-main-foreground focus:border-border focus:bg-main focus:text-main-foreground data-disabled:pointer-events-none data-disabled:opacity-50 data-highlighted:border-border data-highlighted:bg-main data-highlighted:text-main-foreground data-inset:pl-8 [&_svg]:pointer-events-none [&_svg]:h-4 [&_svg]:w-4 [&_svg]:shrink-0',
         className,
       )}
       {...props}
@@ -164,7 +164,7 @@ function DropdownMenuCheckboxItem({
     <MenuPrimitive.CheckboxItem
       data-slot="dropdown-menu-checkbox-item"
       className={cn(
-        "relative flex cursor-default items-center gap-2 rounded-base border-2 border-transparent py-1.5 pr-2 pl-8 text-sm font-base outline-hidden transition-colors select-none hover:border-border hover:bg-main hover:text-main-foreground focus:border-border focus:bg-main focus:text-main-foreground data-disabled:pointer-events-none data-disabled:opacity-50 data-highlighted:border-border data-highlighted:bg-main data-highlighted:text-main-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "relative flex min-h-11 cursor-default items-center gap-2 rounded-base border-2 border-transparent py-1.5 pr-2 pl-8 text-sm font-base outline-hidden transition-colors select-none hover:border-border hover:bg-main hover:text-main-foreground focus:border-border focus:bg-main focus:text-main-foreground data-disabled:pointer-events-none data-disabled:opacity-50 data-highlighted:border-border data-highlighted:bg-main data-highlighted:text-main-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className,
       )}
       checked={checked}
@@ -189,7 +189,7 @@ function DropdownMenuRadioItem({
     <MenuPrimitive.RadioItem
       data-slot="dropdown-menu-radio-item"
       className={cn(
-        'relative flex cursor-default items-center gap-2 rounded-base border-2 border-transparent py-1.5 pr-2 pl-8 text-sm font-base outline-hidden transition-colors select-none hover:border-border hover:bg-main hover:text-main-foreground focus:border-border focus:bg-main focus:text-main-foreground data-disabled:pointer-events-none data-disabled:opacity-50 data-highlighted:border-border data-highlighted:bg-main data-highlighted:text-main-foreground',
+        'relative flex min-h-11 cursor-default items-center gap-2 rounded-base border-2 border-transparent py-1.5 pr-2 pl-8 text-sm font-base outline-hidden transition-colors select-none hover:border-border hover:bg-main hover:text-main-foreground focus:border-border focus:bg-main focus:text-main-foreground data-disabled:pointer-events-none data-disabled:opacity-50 data-highlighted:border-border data-highlighted:bg-main data-highlighted:text-main-foreground',
         className,
       )}
       {...props}

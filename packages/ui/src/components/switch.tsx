@@ -18,7 +18,10 @@ function Switch({
       data-slot="switch"
       data-size={size}
       className={cn(
-        'peer inline-flex shrink-0 cursor-pointer items-center rounded-full border-2 border-border bg-secondary-background transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none data-checked:bg-main data-disabled:cursor-not-allowed data-disabled:opacity-50 data-unchecked:bg-secondary-background',
+        // R-03: track tetap kecil secara visual, tapi tap target diperluas ke >=44px
+        // lewat pseudo-element transparan (pola "naikkan tap target tanpa mengubah
+        // tampilan"). Mandat tap target PRD 8.12 berlaku untuk seluruh kontrol form.
+        'peer relative inline-flex shrink-0 cursor-pointer items-center rounded-full border-2 border-border bg-secondary-background transition-colors after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2 after:content-[""] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none data-checked:bg-main data-disabled:cursor-not-allowed data-disabled:opacity-50 data-unchecked:bg-secondary-background',
         size === 'default' && 'h-6 w-12',
         size === 'sm' && 'h-5 w-9',
         className,

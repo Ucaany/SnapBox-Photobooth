@@ -44,16 +44,16 @@ function Calendar({
         ),
         button_previous: cn(
           buttonVariants({ variant: 'noShadow' }),
-          'size-7 bg-secondary-background p-0 text-foreground select-none aria-disabled:opacity-50',
+          'size-11 bg-secondary-background p-0 text-foreground select-none aria-disabled:opacity-50',
           defaultClassNames.button_previous,
         ),
         button_next: cn(
           buttonVariants({ variant: 'noShadow' }),
-          'size-7 bg-secondary-background p-0 text-foreground select-none aria-disabled:opacity-50',
+          'size-11 bg-secondary-background p-0 text-foreground select-none aria-disabled:opacity-50',
           defaultClassNames.button_next,
         ),
         month_caption: cn(
-          'flex h-7 w-full items-center justify-center px-8',
+          'flex min-h-11 w-full items-center justify-center px-8',
           defaultClassNames.month_caption,
         ),
         dropdowns: cn(

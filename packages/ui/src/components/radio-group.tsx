@@ -19,11 +19,12 @@ function RadioGroup({ className, ...props }: React.ComponentProps<typeof RadioGr
 }
 
 function RadioGroupItem({ className, ...props }: React.ComponentProps<typeof RadioPrimitive.Root>) {
+  // text-red-700 bukan text-red-500: di atas --background #dcebfe, red-500 hanya 3.15:1 (gagal WCAG AA 4.5:1), red-700 = 5.31:1.
   return (
     <RadioPrimitive.Root
       data-slot="radio-group-item"
       className={cn(
-        'inline-flex aspect-square size-4 items-center justify-center rounded-full border-2 border-border text-black focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none aria-invalid:border-red-500 aria-invalid:text-red-500 data-disabled:cursor-not-allowed data-disabled:opacity-50',
+        'inline-flex aspect-square size-4 items-center justify-center rounded-full border-2 border-border text-black focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none aria-invalid:border-red-700 aria-invalid:text-red-700 data-disabled:cursor-not-allowed data-disabled:opacity-50',
         className,
       )}
       {...props}

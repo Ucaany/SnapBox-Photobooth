@@ -115,7 +115,7 @@ Widget konkret (marquee, countdown) bukan primitif dan tidak ada di sini.
 Working tree jauh lebih besar dari Task 0.3. Perubahan konkuren yang ikut di
 commit ini:
 
-- Migrasi komponen neobrutalism.dev memperluas `@snapbox/ui` menjadi 65 berkas
+- Migrasi komponen neobrutalism.dev memperluas `@snapbox/ui` menjadi 64 berkas
   di `packages/ui/src/components` (termasuk `index.ts`), dengan `@base-ui/react`,
   `@tanstack/react-table`, `embla-carousel-react`, `input-otp`, `recharts`, dll.
 - `apps/web/src/app/foundations-gallery.tsx` **dihapus**, digantikan

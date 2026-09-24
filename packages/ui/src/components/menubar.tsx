@@ -37,7 +37,7 @@ function MenubarTrigger({
     <MenuPrimitive.Trigger
       data-slot="menubar-trigger"
       className={cn(
-        'flex cursor-default items-center rounded-base border-2 border-transparent px-3 py-1.5 text-sm font-heading text-foreground outline-none select-none hover:border-border hover:bg-main hover:text-main-foreground focus:border-border focus:bg-main focus:text-main-foreground data-highlighted:border-border data-highlighted:bg-main data-highlighted:text-main-foreground data-popup-open:border-border data-popup-open:bg-main data-popup-open:text-main-foreground',
+        'flex min-h-11 cursor-default items-center rounded-base border-2 border-transparent px-3 py-1.5 text-sm font-heading text-foreground outline-none select-none hover:border-border hover:bg-main hover:text-main-foreground focus:border-border focus:bg-main focus:text-main-foreground data-highlighted:border-border data-highlighted:bg-main data-highlighted:text-main-foreground data-popup-open:border-border data-popup-open:bg-main data-popup-open:text-main-foreground',
         className,
       )}
       {...props}
@@ -115,7 +115,7 @@ function MenubarItem({
       data-slot="menubar-item"
       data-inset={inset}
       className={cn(
-        "relative flex cursor-default items-center gap-2 rounded-base border-2 border-transparent px-2 py-1.5 text-sm font-base outline-hidden select-none hover:border-border hover:bg-main hover:text-main-foreground focus:border-border focus:bg-main focus:text-main-foreground data-disabled:pointer-events-none data-disabled:opacity-50 data-highlighted:border-border data-highlighted:bg-main data-highlighted:text-main-foreground data-inset:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "relative flex min-h-11 cursor-default items-center gap-2 rounded-base border-2 border-transparent px-2 py-1.5 text-sm font-base outline-hidden select-none hover:border-border hover:bg-main hover:text-main-foreground focus:border-border focus:bg-main focus:text-main-foreground data-disabled:pointer-events-none data-disabled:opacity-50 data-highlighted:border-border data-highlighted:bg-main data-highlighted:text-main-foreground data-inset:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className,
       )}
       {...props}
@@ -133,7 +133,7 @@ function MenubarCheckboxItem({
     <MenuPrimitive.CheckboxItem
       data-slot="menubar-checkbox-item"
       className={cn(
-        "relative flex cursor-default items-center rounded-base border-2 border-transparent py-1.5 pr-2 pl-8 text-sm font-base outline-hidden select-none hover:border-border hover:bg-main hover:text-main-foreground focus:border-border focus:bg-main focus:text-main-foreground data-disabled:pointer-events-none data-disabled:opacity-50 data-highlighted:border-border data-highlighted:bg-main data-highlighted:text-main-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "relative flex min-h-11 cursor-default items-center rounded-base border-2 border-transparent py-1.5 pr-2 pl-8 text-sm font-base outline-hidden select-none hover:border-border hover:bg-main hover:text-main-foreground focus:border-border focus:bg-main focus:text-main-foreground data-disabled:pointer-events-none data-disabled:opacity-50 data-highlighted:border-border data-highlighted:bg-main data-highlighted:text-main-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className,
       )}
       checked={checked}
@@ -158,7 +158,7 @@ function MenubarRadioItem({
     <MenuPrimitive.RadioItem
       data-slot="menubar-radio-item"
       className={cn(
-        "relative flex cursor-default items-center rounded-base border-2 border-transparent py-1.5 pr-2 pl-8 text-sm font-base outline-hidden select-none hover:border-border hover:bg-main hover:text-main-foreground focus:border-border focus:bg-main focus:text-main-foreground data-disabled:pointer-events-none data-disabled:opacity-50 data-highlighted:border-border data-highlighted:bg-main data-highlighted:text-main-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "relative flex min-h-11 cursor-default items-center rounded-base border-2 border-transparent py-1.5 pr-2 pl-8 text-sm font-base outline-hidden select-none hover:border-border hover:bg-main hover:text-main-foreground focus:border-border focus:bg-main focus:text-main-foreground data-disabled:pointer-events-none data-disabled:opacity-50 data-highlighted:border-border data-highlighted:bg-main data-highlighted:text-main-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className,
       )}
       {...props}
@@ -242,7 +242,7 @@ function MenubarSubTrigger({
       data-slot="menubar-sub-trigger"
       data-inset={inset}
       className={cn(
-        "flex cursor-default items-center gap-2 rounded-base border-2 border-transparent px-3 py-1.5 text-sm font-base outline-hidden select-none hover:border-border hover:bg-main hover:text-main-foreground focus:border-border focus:bg-main focus:text-main-foreground data-highlighted:border-border data-highlighted:bg-main data-highlighted:text-main-foreground data-inset:pl-8 data-popup-open:border-border data-popup-open:bg-main data-popup-open:text-main-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "flex min-h-11 cursor-default items-center gap-2 rounded-base border-2 border-transparent px-3 py-1.5 text-sm font-base outline-hidden select-none hover:border-border hover:bg-main hover:text-main-foreground focus:border-border focus:bg-main focus:text-main-foreground data-highlighted:border-border data-highlighted:bg-main data-highlighted:text-main-foreground data-inset:pl-8 data-popup-open:border-border data-popup-open:bg-main data-popup-open:text-main-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className,
       )}
       {...props}

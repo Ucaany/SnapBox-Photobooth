@@ -401,7 +401,7 @@ function DialogSection() {
   return (
     <Block
       label="Dialog: konfirmasi hapus paket"
-      note="Dialog dipakai untuk alur yang butuh keputusan tapi masih bisa dibatalkan tanpa risiko data. Di sini tombol hapus benar-benar mengosongkan kartu paket."
+      note="Dialog dipakai untuk alur yang butuh keputusan tapi masih bisa dibatalkan tanpa risiko data. Di sini tombol hapus menandai paket sebagai terhapus lalu menutup dialog, tanpa menyentuh kartu paket di atasnya."
     >
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-1 rounded-base border-2 border-border bg-secondary-background p-4">
@@ -412,13 +412,7 @@ function DialogSection() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <Dialog
-            onOpenChange={(open) => {
-              if (!open) {
-                setDeleted(false);
-              }
-            }}
-          >
+          <Dialog>
             <DialogTrigger render={<Button variant="reverse" disabled={deleted} />}>
               <TrashIcon />
               Hapus paket
@@ -1275,7 +1269,7 @@ function HoverCardSection() {
         <HoverCard>
           <HoverCardTrigger
             href="#overlays"
-            className="rounded-base border-2 border-border bg-secondary-background px-2 py-1 font-heading"
+            className="inline-flex min-h-11 items-center rounded-base border-2 border-border bg-secondary-background px-2 py-1 font-heading"
           >
             Booth B2, Kota Kasablanka
           </HoverCardTrigger>
@@ -1323,7 +1317,7 @@ function CollapsibleSection() {
         </Collapsible>
 
         <Collapsible open={rincian} onOpenChange={setRincian}>
-          <CollapsibleTrigger render={<Button variant="noShadow" size="sm" />}>
+          <CollapsibleTrigger render={<Button variant="noShadow" size="sm" className="min-h-11" />}>
             {rincian ? 'Sembunyikan rincian teknis' : 'Tampilkan rincian teknis'}
           </CollapsibleTrigger>
           <CollapsibleContent className="mt-3 rounded-base border-2 border-border bg-secondary-background p-4">

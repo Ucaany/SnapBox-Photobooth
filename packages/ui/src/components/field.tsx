@@ -53,7 +53,8 @@ function FieldGroup({ className, ...props }: React.ComponentProps<'div'>) {
 }
 
 const fieldVariants = cva(
-  'group/field flex w-full gap-2 font-base data-[invalid=true]:text-red-500',
+  // text-red-700 bukan text-red-500: di atas --background #dcebfe, red-500 hanya 3.15:1 (gagal WCAG AA 4.5:1), red-700 = 5.31:1.
+  'group/field flex w-full gap-2 font-base data-[invalid=true]:text-red-700',
   {
     variants: {
       orientation: {
@@ -209,10 +210,11 @@ function FieldError({
   }
 
   return (
+    // text-red-700 bukan text-red-500: di atas --background #dcebfe, red-500 hanya 3.15:1 (gagal WCAG AA 4.5:1), red-700 = 5.31:1.
     <div
       role="alert"
       data-slot="field-error"
-      className={cn('text-sm font-base text-red-500', className)}
+      className={cn('text-sm font-base text-red-700', className)}
       {...props}
     >
       {content}

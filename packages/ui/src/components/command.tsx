@@ -9,6 +9,60 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 
 import { cn } from '../lib/cn';
 
+/**
+ * cmdk memanggil `scrollIntoView({ block: 'nearest' })` pada item terpilih dan
+ * judul group saat mount. Karena `<html>` memakai `scroll-behavior: smooth`,
+ * Chromium menaikkan panggilan itu ke dokumen sehingga halaman melompat jauh
+ * tanpa interaksi pengguna (dip/cmdk issues #317 dan #405).
+ *
+ * `CommandList` mendaftar ke guard ini selama ia terpasang. Panggilan
+ * `scrollIntoView` dari keturunan list dialihkan ke dalam list dan memakai
+ * semantik `block: 'nearest'` yang sama, jadi scroll keyboard dan pointer tidak
+ * berubah; hanya scroll halaman yang tidak lagi ikut bergerak.
+ */
+const scopedLists = new Set<HTMLElement>();
+let originalScrollIntoView: typeof Element.prototype.scrollIntoView | null = null;
+
+function scrollWithin(list: HTMLElement, element: Element) {
+  const listRect = list.getBoundingClientRect();
+  const elementRect = element.getBoundingClientRect();
+
+  if (elementRect.top < listRect.top) {
+    list.scrollTop -= listRect.top - elementRect.top;
+  } else if (elementRect.bottom > listRect.bottom) {
+    list.scrollTop += elementRect.bottom - listRect.bottom;
+  }
+}
+
+function uninstallScrollGuard() {
+  if (originalScrollIntoView === null) {
+    return;
+  }
+
+  Element.prototype.scrollIntoView = originalScrollIntoView;
+  originalScrollIntoView = null;
+  scopedLists.clear();
+}
+
+function installScrollGuard(list: HTMLElement) {
+  scopedLists.add(list);
+
+  if (originalScrollIntoView !== null) {
+    return;
+  }
+
+  originalScrollIntoView = Element.prototype.scrollIntoView;
+  Element.prototype.scrollIntoView = function (this: Element, ...args) {
+    for (const scoped of scopedLists) {
+      if (scoped.contains(this)) {
+        scrollWithin(scoped, this);
+        return;
+      }
+    }
+    originalScrollIntoView!.apply(this, args);
+  };
+}
+
 function Command({ className, ...props }: React.ComponentProps<typeof CommandPrimitive>) {
   return (
     <CommandPrimitive
@@ -54,13 +108,13 @@ function CommandInput({
   return (
     <div
       data-slot="command-input-wrapper"
-      className="flex h-9 items-center gap-2 border-b-2 border-border px-3"
+      className="flex h-11 items-center gap-2 border-b-2 border-border px-3"
     >
       <Search className="size-4 shrink-0" />
       <CommandPrimitive.Input
         data-slot="command-input"
         className={cn(
-          'flex h-10 w-full rounded-base bg-transparent py-3 text-sm outline-hidden placeholder:text-foreground placeholder:opacity-50 disabled:cursor-not-allowed disabled:opacity-50',
+          'flex h-11 w-full rounded-base bg-transparent py-3 text-sm outline-hidden placeholder:text-foreground placeholder:opacity-50 disabled:cursor-not-allowed disabled:opacity-50',
           className,
         )}
         {...props}
@@ -69,9 +123,32 @@ function CommandInput({
   );
 }
 
+/**
+ * `max-h-*` dan `overflow-y-auto` wajib ada: itulah kontainer scroll internal
+ * yang menerima pembelokan `scrollIntoView` dari guard di atas. Tanpanya
+ * pembelokan jadi no-op dan halaman kembali melompat saat mount.
+ */
 function CommandList({ className, ...props }: React.ComponentProps<typeof CommandPrimitive.List>) {
+  const listRef = React.useRef<HTMLDivElement>(null);
+
+  React.useLayoutEffect(() => {
+    const list = listRef.current;
+    if (!list) {
+      return;
+    }
+
+    installScrollGuard(list);
+    return () => {
+      scopedLists.delete(list);
+      if (scopedLists.size === 0) {
+        uninstallScrollGuard();
+      }
+    };
+  }, []);
+
   return (
     <CommandPrimitive.List
+      ref={listRef}
       data-slot="command-list"
       className={cn('max-h-[300px] scroll-py-1 overflow-x-hidden overflow-y-auto', className)}
       {...props}
@@ -126,7 +203,7 @@ function CommandItem({ className, ...props }: React.ComponentProps<typeof Comman
     <CommandPrimitive.Item
       data-slot="command-item"
       className={cn(
-        "relative flex cursor-default items-center gap-2 rounded-base border-2 border-transparent px-2 py-1.5 text-sm text-foreground select-none aria-selected:border-border aria-selected:bg-main aria-selected:text-main-foreground data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "relative flex min-h-11 cursor-default items-center gap-2 rounded-base border-2 border-transparent px-2 py-1.5 text-sm text-foreground select-none aria-selected:border-border aria-selected:bg-main aria-selected:text-main-foreground data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className,
       )}
       {...props}
