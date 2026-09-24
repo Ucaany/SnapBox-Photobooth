@@ -1,0 +1,14 @@
+<!--
+  Ikon aplikasi sementara untuk galeri web SnapBox.
+
+  Bukan logo resmi dan bukan wordmark: identitas visual belum diputuskan
+  (lihat docs/PHASE-0.md, R-23). Placeholder neobrutalism ini hanya dipasang
+  supaya browser tidak lagi mencatat GET /favicon.ico 404. Ganti dengan ikon
+  sungguhan setelah logo disepakati.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <rect x="2" y="2" width="28" height="28" fill="#5294ff" stroke="#000000" stroke-width="3" />
+  <rect x="9" y="11" width="14" height="11" fill="#ffffff" stroke="#000000" stroke-width="2" />
+  <rect x="13" y="8" width="6" height="3" fill="#ffffff" stroke="#000000" stroke-width="2" />
+  <circle cx="16" cy="16.5" r="3" fill="#5294ff" stroke="#000000" stroke-width="2" />
+</svg>
