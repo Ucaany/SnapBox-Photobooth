@@ -80,11 +80,21 @@ export const permissionSchema = z.enum(PERMISSIONS);
 export type Permission = z.infer<typeof permissionSchema>;
 
 /**
- * Custom claim yang ditanam Firebase Admin SDK ke token.
+ * Custom claim versi aplikasi (camelCase).
+ *
+ * PENTING: ini BUKAN bentuk klaim di dalam token. Kontrak wire/storage ada di
+ * `packages/auth/src/claims.ts` (`firebaseClaimsSchema`, snake_case), lihat
+ * ADR-003. Di token, `role` berisi peran Postgres Supabase (`authenticated`)
+ * karena Supabase selalu menimpanya, dan peran aplikasi ada di `app_role`.
+ * Objek ini memakai `appRole` untuk peran aplikasi supaya `Session.role`,
+ * `hasPermission`, dan `canAccessTenant` tetap membaca nama peran aplikasi
+ * dan tidak perlu berubah. Konversi token ke bentuk ini lewat `toCustomClaims`.
+ *
  * `tenantId` hanya terisi untuk OWNER/STAFF; CEO tidak terikat tenant.
  */
 export const customClaimsSchema = z.object({
   role: userRoleSchema,
+  appRole: userRoleSchema,
   tenantId: z.string().uuid().nullable().optional(),
   parentTenantId: z.string().uuid().nullable().optional(),
 });

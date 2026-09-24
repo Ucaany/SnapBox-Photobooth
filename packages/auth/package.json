@@ -1,0 +1,28 @@
+{
+  "name": "@snapbox/auth",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Provider identitas Firebase SnapBox (client + admin) beserta kontrak custom claims.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./admin": "./src/admin.ts",
+    "./client": "./src/client.ts",
+    "./claims": "./src/claims.ts"
+  },
+  "scripts": {
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.client.json",
+    "clean": "rm -rf .turbo"
+  },
+  "dependencies": {
+    "@snapbox/shared": "workspace:*",
+    "firebase": "12.19.0",
+    "firebase-admin": "13.10.0",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.6",
+    "typescript": "5.9.3"
+  }
+}

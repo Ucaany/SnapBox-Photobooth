@@ -18,3 +18,8 @@ pnpm-lock.yaml
 # Dokumen PRD adalah acuan yang sudah ditandatangani; jangan diformat ulang
 # otomatis karena akan menghasilkan diff besar tanpa nilai.
 PRD_*.md
+
+# `packages/shared/src/auth.ts` sengaja belum diformat (deferral Task 0.2) dan
+# ada aturan guhl yang melarang memformat ulang berkas ini, jadi Prettier harus
+# melewatinya walau lint-staged memanggil `prettier --write`.
+packages/shared/src/auth.ts
