@@ -189,11 +189,16 @@ export function TenantProvisioningWizard({
         <div className="ceo-inline-actions">
           <Button
             variant="default"
+            nativeButton={false}
             render={<Link href={`/ceo-dashboard/tenants/${result.tenantId}`} />}
           >
             Buka detail tenant
           </Button>
-          <Button variant="neutral" render={<Link href="/ceo-dashboard/tenants" />}>
+          <Button
+            variant="neutral"
+            nativeButton={false}
+            render={<Link href="/ceo-dashboard/tenants" />}
+          >
             Kembali ke daftar
           </Button>
         </div>
@@ -381,7 +386,11 @@ export function TenantProvisioningWizard({
             {pending ? 'Menyimpan...' : 'Buat tenant'}
           </Button>
         )}
-        <Button variant="neutral" render={<Link href="/ceo-dashboard/tenants" />}>
+        <Button
+          variant="neutral"
+          nativeButton={false}
+          render={<Link href="/ceo-dashboard/tenants" />}
+        >
           Batal
         </Button>
       </div>

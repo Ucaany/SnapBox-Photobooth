@@ -76,10 +76,13 @@ export async function evaluateSubscription(
     return { gate: 'UNKNOWN', status: null };
   }
 
-  // `UNKNOWN` dipertahankan sebagai kasus tersendiri: status langganan sah
-  // tetapi durasinya belum ditetapkan (`validUntil` null) belum bisa
-  // diverifikasi, berbeda dari `BLOCKED` yang berarti penolakan eksplisit.
-  // `isSubscriptionUsable` tetap menjadi satu-satunya penentu status/tanggal.
+  // Durasi yang belum ditetapkan (tanpa `validUntil` maupun `gracePeriodUntil`)
+  // adalah kasus TERSENDIRI, bukan penolakan. `isSubscriptionUsable` pasti
+  // mengembalikan false untuk deadline `null` (entitlement-contract.ts:105-115),
+  // jadi tanpa cabang ini status sah seperti ACTIVE/EXPIRING/GRACE_PERIOD
+  // berubah menjadi `BLOCKED`, dan authorizeResolvedUser menolak login tenant
+  // yang sebenarnya hanya belum punya tanggal. Pemisahan UNKNOWN/BLOCKED ini
+  // disengaja dan dipakai sebagai sinyal UI, bukan sekadar detail.
   if (!latest.validUntil && !latest.gracePeriodUntil) {
     return { gate: 'UNKNOWN', status: latest.status };
   }

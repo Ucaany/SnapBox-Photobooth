@@ -1575,12 +1575,12 @@ function FeedbackSection() {
         note="Tombol di sini benar-benar berfungsi: dua tombol melompat ke section galeri yang sesuai, dan tombol status menampilkan toast keadaan perangkat."
       >
         <div className="flex flex-wrap items-center gap-3">
-          <Button variant="neutral" render={<a href="#gallery-data" />}>
+          <Button variant="neutral" nativeButton={false} render={<a href="#gallery-data" />}>
             <MonitorIcon />
             Konsol perangkat
             <ArrowRightIcon />
           </Button>
-          <Button variant="neutral" render={<a href="#gallery-navigation" />}>
+          <Button variant="neutral" nativeButton={false} render={<a href="#gallery-navigation" />}>
             <SmartphoneIcon />
             Kiosk seluler
           </Button>

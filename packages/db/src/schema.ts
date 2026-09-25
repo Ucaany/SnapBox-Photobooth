@@ -909,7 +909,10 @@ export const securityEvents = pgTable(
   (t) => [
     index('security_events_type_created_idx').on(t.eventType, t.createdAt),
     index('security_events_severity_idx').on(t.severity),
-    uniqueIndex('security_events_provider_event_idx').on(t.source, t.providerEventId),
+    // Match Supabase's partial unique index: internal events may omit provider IDs.
+    uniqueIndex('security_events_provider_event_idx')
+      .on(t.source, t.providerEventId)
+      .where(sql`${t.providerEventId} is not null`),
   ],
 );
 

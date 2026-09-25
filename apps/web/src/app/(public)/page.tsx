@@ -100,6 +100,7 @@ function Hero() {
               variant="neutral"
               size="lg"
               className="border-[#141414] bg-[#FFFEF5] text-[#141414] shadow-[4px_4px_0_0_#141414]"
+              nativeButton={false}
               render={<Link href={HERO.secondaryCtaHref} />}
             >
               {HERO.secondaryCtaLabel}
@@ -176,6 +177,7 @@ function FeatureBoard() {
               variant="reverse"
               size="lg"
               className="border-[#141414] bg-[#FFDD00] text-[#141414]"
+              nativeButton={false}
               render={<Link href="/fitur" />}
             >
               Lihat semua fitur

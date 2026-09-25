@@ -67,6 +67,7 @@ const columns: readonly ExampleColumn<ExampleTenant>[] = [
       <Button
         variant="neutral"
         size="default"
+        nativeButton={false}
         render={<Link href={`/ceo-dashboard/tenants/${row.id}`} />}
       >
         Buka
@@ -97,7 +98,11 @@ export function TenantsView() {
         title="Manajemen tenant"
         description="Daftar tenant beserta plan, status, dan kontak Owner."
       >
-        <Button variant="default" render={<Link href="/ceo-dashboard/tenants/new" />}>
+        <Button
+          variant="default"
+          nativeButton={false}
+          render={<Link href="/ceo-dashboard/tenants/new" />}
+        >
           Tenant baru
         </Button>
       </PageIntro>
@@ -120,6 +125,7 @@ export function TenantsView() {
               <Button
                 variant="reverse"
                 size="default"
+                nativeButton={false}
                 render={<Link href={`/ceo-dashboard/tenants/${ids}`} />}
               >
                 Buka detail

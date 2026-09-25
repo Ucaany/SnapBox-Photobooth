@@ -47,3 +47,20 @@ test('tauri.conf.json memakai perintah build yang dipanggil CI', () => {
   const conf = readJson('apps/desktop/src-tauri/tauri.conf.json');
   assert.equal(conf.build?.beforeBuildCommand?.trim(), 'pnpm --filter @snapbox/desktop build');
 });
+
+test('seed Task 1.12 menetapkan satu tenant sample per tier plan', () => {
+  const content = readFileSync(join(rootDir, 'packages/db/src/seed.ts'), 'utf8');
+  const block = content.match(/const TENANT_SEEDS[^=]*=\s*\[([\s\S]*?)\n\];/)?.[1];
+  assert.ok(block, 'TENANT_SEEDS harus terdeklarasi sebagai array literal');
+
+  const tiers = [...block.matchAll(/planTier:\s*'([A-Z]+)'/g)].map((m) => m[1]);
+  assert.deepEqual(
+    [...tiers].sort(),
+    ['ENTERPRISE', 'GROWTH', 'STARTER'],
+    'satu tenant sample untuk tiap tier Starter/Growth/Enterprise',
+  );
+
+  const emails = [...block.matchAll(/ownerEmail:\s*'([^']+)'/g)].map((m) => m[1]);
+  assert.equal(emails.length, 3, 'tiap tenant sample punya satu ownerEmail');
+  assert.equal(new Set(emails).size, 3, 'ownerEmail tenant sample harus unik (kunci idempotensi)');
+});

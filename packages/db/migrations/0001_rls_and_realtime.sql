@@ -16,7 +16,7 @@ begin
     'sessions', 'customers', 'download_tokens'
   ]
   loop
-    perform app.enforce_rls(('public.' || table_name)::regclass);
+    perform app.enforce_rls('public.' || table_name);
   end loop;
 end
 $$;

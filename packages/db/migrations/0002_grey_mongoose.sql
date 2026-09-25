@@ -15,7 +15,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.platform_settings TO authen
 -- Task 1.9: pengaturan global platform bersifat platform-only, sama seperti tabel
 -- `plans` dan `broadcasts` (Task 0.8). RLS diaktifkan lewat helper `app.enforce_rls`
 -- supaya konsisten dengan `packages/db/migrations/0001_rls_and_realtime.sql`.
-SELECT app.enforce_rls('public.platform_settings'::regclass);
+SELECT app.enforce_rls('public.platform_settings');
 
 DROP POLICY IF EXISTS snapbox_platform_settings_ceo ON public.platform_settings;
 CREATE POLICY snapbox_platform_settings_ceo ON public.platform_settings

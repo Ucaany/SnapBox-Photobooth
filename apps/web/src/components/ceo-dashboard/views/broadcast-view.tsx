@@ -1,51 +1,115 @@
 'use client';
 
-import {
-  Button,
-  Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Textarea,
-} from '@snapbox/ui';
+import { Button, Input, Label, Textarea } from '@snapbox/ui';
 import * as React from 'react';
 
-import { CONTOH_TENANTS } from '../example-data';
+import {
+  broadcastInputSchema,
+  collectBroadcastIssues,
+  type BroadcastHistoryRow,
+  type BroadcastTenantOption,
+} from '@/lib/ceo-dashboard/broadcast-contract';
+
+import { createBroadcast } from '@/app/(ceo-dashboard)/ceo-dashboard/broadcast/actions';
+
 import { PageIntro, Panel, StatusBadge } from '../panel';
 
+type Audience = 'all' | 'selected';
+
+interface BroadcastProps {
+  readonly tenants?: readonly BroadcastTenantOption[];
+  readonly history?: readonly BroadcastHistoryRow[];
+}
+
 /**
- * Broadcast (PRD Task 1.3).
+ * Broadcast (PRD Task 1.9).
  *
- * Form benar-benar tervalidasi: pesan wajib, minimal 12 karakter. Submit tidak
- * mengirim apa pun, hanya memberi umpan balik bahwa pengiriman realtime belum
- * aktif, sehingga tidak ada tombol yang diam-diam tidak melakukan apa pun.
+ * Form mengirim ke server action `createBroadcast`: penerima divalidasi ulang
+ * di server (target `all` hanya tenant aktif; tenant terpilih yang suspend/ban
+ * ditolak). Validasi browser memakai skema kontrak yang SAMA, sehingga pesan
+ * error klien dan server tidak bisa menyimpang.
  */
-export function BroadcastView() {
-  const [audience, setAudience] = React.useState('Semua tenant aktif');
+export function BroadcastView({ tenants = [], history = [] }: BroadcastProps) {
+  const [title, setTitle] = React.useState('');
+  const [audience, setAudience] = React.useState<Audience>('all');
+  const [selected, setSelected] = React.useState<readonly string[]>([]);
   const [message, setMessage] = React.useState('');
-  const [error, setError] = React.useState<string | null>(null);
-  const [sent, setSent] = React.useState<string | null>(null);
+  const [errors, setErrors] = React.useState<Record<string, string>>({});
+  const [feedback, setFeedback] = React.useState<{ tone: 'ok' | 'error'; message: string } | null>(
+    null,
+  );
+  const [pending, setPending] = React.useState(false);
 
   const errorRef = React.useRef<HTMLParagraphElement>(null);
 
-  function onSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (message.trim().length < 12) {
-      setSent(null);
-      setError('Pesan minimal 12 karakter sebelum bisa ditinjau.');
-      return;
-    }
-    setError(null);
-    setSent(
-      `Pratinjau siap untuk ${audience}. Tidak ada notifikasi yang dikirim pada skeleton ini.`,
-    );
+  React.useEffect(() => {
+    if (feedback?.tone === 'error') errorRef.current?.focus();
+  }, [feedback]);
+
+  /** Perkiraan penerima untuk pilihan saat ini, dihitung dari data server. */
+  const estimatedRecipients = React.useMemo(() => {
+    if (audience === 'all')
+      return tenants.reduce((total, tenant) => total + tenant.recipientCount, 0);
+    return tenants
+      .filter((tenant) => selected.includes(tenant.id))
+      .reduce((total, tenant) => total + tenant.recipientCount, 0);
+  }, [audience, selected, tenants]);
+
+  const selectedNames = React.useMemo(
+    () =>
+      tenants.filter((tenant) => selected.includes(tenant.id)).map((tenant) => tenant.companyName),
+    [selected, tenants],
+  );
+
+  function toggleTenant(id: string, checked: boolean) {
+    setSelected((ids) => (checked ? [...ids, id] : ids.filter((item) => item !== id)));
   }
 
-  React.useEffect(() => {
-    if (error) errorRef.current?.focus();
-  }, [error]);
+  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (pending) return;
+
+    const payload =
+      audience === 'all'
+        ? { title, message, targetAll: true as const }
+        : { title, message, targetAll: false as const, tenantIds: [...selected] };
+
+    const parsed = broadcastInputSchema.safeParse(payload);
+    if (!parsed.success) {
+      setErrors(collectBroadcastIssues(parsed.error.issues));
+      setFeedback({ tone: 'error', message: 'Periksa kembali data broadcast.' });
+      return;
+    }
+
+    setPending(true);
+    setErrors({});
+    setFeedback(null);
+
+    try {
+      const result = await createBroadcast(parsed.data);
+      if (!result.ok) {
+        setErrors(result.fieldErrors ?? {});
+        setFeedback({ tone: 'error', message: result.message });
+        return;
+      }
+      setFeedback({
+        tone: 'ok',
+        message: `${result.message} ${result.recipientCount} penerima di ${result.targetTenantCount ?? 0} tenant.`,
+      });
+      setTitle('');
+      setMessage('');
+      setSelected([]);
+    } catch {
+      setFeedback({
+        tone: 'error',
+        message: 'Pengiriman gagal karena gangguan koneksi. Coba lagi.',
+      });
+    } finally {
+      setPending(false);
+    }
+  }
+
+  const hasTenants = tenants.length > 0;
 
   return (
     <>
@@ -53,28 +117,78 @@ export function BroadcastView() {
         title="Broadcast"
         description="Susun pengumuman untuk semua tenant atau tenant terpilih."
       >
-        <StatusBadge tone="netral">Belum tersambung</StatusBadge>
+        <StatusBadge tone="baik">Terhubung</StatusBadge>
       </PageIntro>
 
       <div className="ceo-grid-2">
-        <Panel title="Susun pengumuman" description="Isi penerima dan isi pesan." example={false}>
+        <Panel
+          title="Susun pengumuman"
+          description="Isi penerima, judul, dan isi pesan."
+          example={false}
+        >
           <form className="ceo-form" onSubmit={onSubmit} noValidate>
             <div className="ceo-field">
-              <Label htmlFor="broadcast-audience">Penerima</Label>
-              <Select value={audience} onValueChange={(value) => setAudience(value ?? '')}>
-                <SelectTrigger id="broadcast-audience">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Semua tenant aktif">Semua tenant aktif</SelectItem>
-                  <SelectItem value="Tenant plan Growth">Tenant plan Growth</SelectItem>
-                  <SelectItem value="Tenant plan Enterprise">Tenant plan Enterprise</SelectItem>
-                  <SelectItem value="Tenant langganan tertunda">
-                    Tenant langganan tertunda
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="broadcast-title">Judul</Label>
+              <Input
+                id="broadcast-title"
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                maxLength={200}
+                aria-invalid={Boolean(errors.title)}
+                aria-describedby={errors.title ? 'broadcast-title-error' : undefined}
+                required
+              />
+              {errors.title ? (
+                <p id="broadcast-title-error" className="ceo-error" role="alert">
+                  {errors.title}
+                </p>
+              ) : null}
             </div>
+
+            <div className="ceo-field">
+              <Label htmlFor="broadcast-audience">Penerima</Label>
+              <select
+                id="broadcast-audience"
+                value={audience}
+                onChange={(event) => setAudience(event.target.value as Audience)}
+                className="h-11 border-2 border-border bg-background px-3"
+              >
+                <option value="all">Semua tenant aktif</option>
+                <option value="selected">Tenant terpilih</option>
+              </select>
+            </div>
+
+            {audience === 'selected' ? (
+              <div className="ceo-field">
+                <span className="ceo-feature-label">Tenant penerima</span>
+                {hasTenants ? (
+                  <div className="ceo-checkbox-group" role="group" aria-label="Tenant penerima">
+                    {tenants.map((tenant) => (
+                      <label
+                        key={tenant.id}
+                        className="ceo-checkbox"
+                        htmlFor={`broadcast-${tenant.id}`}
+                      >
+                        <input
+                          id={`broadcast-${tenant.id}`}
+                          type="checkbox"
+                          checked={selected.includes(tenant.id)}
+                          onChange={(event) => toggleTenant(tenant.id, event.target.checked)}
+                        />
+                        {tenant.companyName} ({tenant.recipientCount})
+                      </label>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="ceo-hint">Belum ada tenant aktif.</p>
+                )}
+                {errors.target || errors.tenantIds ? (
+                  <p className="ceo-error" role="alert">
+                    {errors.target ?? errors.tenantIds}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
 
             <div className="ceo-field">
               <Label htmlFor="broadcast-message">Isi pesan</Label>
@@ -84,19 +198,13 @@ export function BroadcastView() {
                 onChange={(event) => setMessage(event.target.value)}
                 rows={5}
                 maxLength={280}
-                aria-invalid={Boolean(error)}
-                aria-describedby={error ? 'broadcast-error' : 'broadcast-hint'}
+                aria-invalid={Boolean(errors.message)}
+                aria-describedby={errors.message ? 'broadcast-message-error' : 'broadcast-hint'}
                 placeholder="Tulis pengumuman singkat untuk tenant."
               />
-              {error ? (
-                <p
-                  id="broadcast-error"
-                  ref={errorRef}
-                  role="alert"
-                  tabIndex={-1}
-                  className="ceo-error"
-                >
-                  {error}
+              {errors.message ? (
+                <p id="broadcast-message-error" className="ceo-error" role="alert">
+                  {errors.message}
                 </p>
               ) : (
                 <p id="broadcast-hint" className="ceo-hint">
@@ -105,34 +213,60 @@ export function BroadcastView() {
               )}
             </div>
 
-            <Button type="submit">Pratinjau broadcast</Button>
-          </form>
-
-          {sent ? (
-            <p className="ceo-feedback" role="status">
-              {sent}
+            <p className="ceo-hint" aria-live="polite">
+              Perkiraan penerima: {estimatedRecipients}
+              {audience === 'selected' && selectedNames.length > 0
+                ? ` (${selectedNames.slice(0, 3).join(', ')}${selectedNames.length > 3 ? ', …' : ''})`
+                : ''}
             </p>
-          ) : null}
+
+            {feedback ? (
+              <p
+                ref={errorRef}
+                tabIndex={feedback.tone === 'error' ? -1 : undefined}
+                className={
+                  feedback.tone === 'ok' ? 'ceo-feedback' : 'ceo-feedback ceo-feedback-error'
+                }
+                role={feedback.tone === 'ok' ? 'status' : 'alert'}
+              >
+                {feedback.message}
+              </p>
+            ) : null}
+
+            <Button
+              type="submit"
+              disabled={
+                pending || !hasTenants || (audience === 'selected' && selected.length === 0)
+              }
+            >
+              {pending ? 'Mengirim...' : 'Kirim broadcast'}
+            </Button>
+          </form>
         </Panel>
 
         <Panel
-          title="Jangkauan contoh"
-          description="Perkiraan penerima berdasarkan pilihan saat ini."
-          action={undefined}
+          title="Riwayat broadcast"
+          description="Sumber data tersimpan dari pengiriman sebelumnya."
+          example={false}
         >
-          <ul className="ceo-audience">
-            {CONTOH_TENANTS.slice(0, 4).map((tenant) => (
-              <li key={tenant.id}>
-                <span className="ceo-cell-strong">{tenant.company}</span>
-                <StatusBadge tone={tenant.status === 'Aktif' ? 'baik' : 'netral'}>
-                  {tenant.plan}
-                </StatusBadge>
-              </li>
-            ))}
-          </ul>
+          {history.length === 0 ? (
+            <p className="ceo-hint">Belum ada broadcast terkirim.</p>
+          ) : (
+            <ul className="ceo-audience">
+              {history.slice(0, 8).map((row) => (
+                <li key={row.id}>
+                  <span className="ceo-cell-strong">{row.title}</span>
+                  <StatusBadge tone="netral">
+                    {row.targetAll ? 'Semua tenant' : `${row.targetCount} tenant`} ·{' '}
+                    {row.recipientCount} penerima
+                  </StatusBadge>
+                </li>
+              ))}
+            </ul>
+          )}
           <p className="ceo-hint">
-            Daftar ini statis dan tidak menyesuaikan pilihan penerima. Pengiriman realtime
-            dikerjakan pada fase notifikasi.
+            Tenant aktif tanpa Owner/Staff aktif tidak menerima notifikasi. Riwayat menampilkan
+            waktu dalam UTC.
           </p>
         </Panel>
       </div>

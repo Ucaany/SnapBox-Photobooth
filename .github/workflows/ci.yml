@@ -63,11 +63,20 @@ jobs:
       - name: Claims sync guard
         run: pnpm check:claims-sync
 
+      - name: Firebase project guard
+        run: pnpm check:firebase-project-id
+
       - name: Infra drafts guard
         run: pnpm check:infra-drafts
 
       - name: Env example guard
         run: pnpm check:env-example
+
+      - name: Entitlement usage guard
+        run: pnpm check:entitlement-usage
+
+      - name: CEO provisioning guard
+        run: pnpm check:ceo-provisioning
 
       - name: Typecheck
         run: pnpm typecheck

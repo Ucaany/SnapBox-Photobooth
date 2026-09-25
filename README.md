@@ -43,24 +43,39 @@ Web berjalan di <http://localhost:3000>. Cek konektivitas dependensi lewat `/api
 
 ### Supabase (lokal)
 
-Urutan ini penting: migrasi infra harus jalan **sebelum** migrasi tabel.
+Urutan ini wajib dan interleaved karena dua migration stream berbagi database: Supabase `000000`-`00400`, Drizzle `0000`-`0004`, lalu Supabase `00500`-`00700`.
 `DATABASE_URL` memakai Supabase Session Pooler untuk runtime. `DIRECT_URL` memakai
 koneksi database langsung untuk Drizzle migration, push, studio, dan seed.
 Jika `DIRECT_URL` kosong, tooling fallback ke `DATABASE_URL`, yang hanya aman bila
 URL tersebut bukan transaction-mode pooler.
 
 1. Pasang CLI sekali, lalu nyalakan stack lokal (Postgres 15, Storage, Realtime).
-2. Terapkan migrasi infra Supabase ke database lokal.
-3. Baru jalankan migrasi Drizzle dari `packages/db` di atas database yang sama.
+2. Jalankan satu orkestrator yang menerapkan dua aliran migrasi dalam urutan benar.
 
 ```bash
-supabase start                        # nyalakan stack lokal (Postgres 15, Storage, Realtime)
-pnpm supabase:db:reset                # terapkan supabase/migrations ke DB lokal
-pnpm --filter @snapbox/db migrate     # Drizzle (Task 0.8) di atas DB yang sama
+supabase start                            # nyalakan stack lokal (Postgres, Storage, Realtime)
+pnpm migrate:ordered --local              # Supabase 000000-00400, Drizzle 0000-0004, Supabase 00500-00700
 ```
 
-Dua aliran migrasi berbagi satu database, jadi urutannya bukan preferensi:
-`supabase/migrations/*` (extension, bucket, Realtime, helper RLS) **wajib**
+`pnpm supabase:db:reset` **tidak** dipakai untuk setup dari nol: CLI menerapkan
+seluruh `supabase/migrations/*` berurutan menurut nama file, sehingga `00500`
+(mereferensikan `public.users`) dan `00600` (mereferensikan `public.broadcasts`)
+berjalan sebelum tabel Drizzle ada dan gagal. Gunakan `migrate:ordered`.
+Remote produksi yang disetujui adalah project `ehoemilzosbzdygqyvzd`
+(`https://ehoemilzosbzdygqyvzd.supabase.co`). Orkestrator menolak project ref
+lain; koneksi harus berupa URL project tersebut, bukan URL pooler generik.
+Gunakan URL transaction pooler dengan user `postgres.ehoemilzosbzdygqyvzd`:
+
+```bash
+pnpm migrate:ordered --db-url "$DIRECT_URL"
+```
+
+`DIRECT_URL` dan `DATABASE_URL` harus menunjuk target tersebut. Jangan gunakan
+`--linked`: link CLI bisa menunjuk project yang salah, sehingga runner hanya
+menerima `--local` atau `--db-url` yang tervalidasi.
+
+Urutan migrasi wajib:
+`supabase/migrations/20260101000000` sampai `00400` (extension, bucket, Realtime, helper RLS) **wajib**
 berjalan lebih dulu. Skema Drizzle sendiri hanya memakai tipe core
 (`gen_random_uuid()`, `pgEnum`) dan tanpa helper `app.*` tetap terbuat, tetapi
 policy RLS per-tabel yang ditambahkan Task 0.8 memanggil helper schema `app`
@@ -91,8 +106,7 @@ pnpm --filter @snapbox/desktop tauri:dev
 | `pnpm supabase:start`                | Nyalakan stack Supabase lokal.                                                                                             |
 | `pnpm supabase:stop`                 | Hentikan stack Supabase lokal.                                                                                             |
 | `pnpm supabase:status`               | Tampilkan URL lokal + kunci anon/service_role.                                                                             |
-| `pnpm supabase:db:push`              | Kirim `supabase/migrations` ke project remote (butuh `supabase link`).                                                     |
-| `pnpm supabase:db:reset`             | Reset DB lokal lalu terapkan ulang `supabase/migrations`.                                                                  |
+| `pnpm migrate:ordered`               | Terapkan dua aliran migrasi berurutan; remote URL dikunci ke ref `ehoemilzosbzdygqyvzd`.                                   |
 
 ### Supabase: yang dikonfigurasi Task 0.4
 

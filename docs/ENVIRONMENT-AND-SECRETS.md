@@ -43,6 +43,7 @@ ini pagar arsitektural, bukan preferensi gaya.
 | SESSION               | `SESSION_COOKIE_SECRET`                                                                              | Runtime server Next.js **dan** edge middleware | `apps/web/src/lib/auth/session.ts`, `apps/web/src/middleware.ts` |
 | ENCRYPTION            | `ENCRYPTION_MASTER_KEY`, `PAIRING_TOKEN_SECRET`, `LAN_JWT_SECRET`, `DEVICE_JWT_SECRET`               | Runtime server, secret store Edge Function     | Fitur pairing/LAN/JWT perangkat, enkripsi kolom                  |
 | THIRD_PARTY           | `PAKASIR_*`, `RESEND_*`, `SENTRY_*`, `CLOUDFLARE_*`, `TURNSTILE_SECRET_KEY`, `WHATSAPP_SALES_NUMBER` | Runtime server, job Build Sentry               | Webhook Pakasir, Resend, upload sourcemap                        |
+| TELEMETRY             | `TELEMETRY_HASH_SALT`, `WAF_INGEST_SECRET`, `HEARTBEAT_SECRET`                                       | Runtime server only                            | Hashing and authenticating internal telemetry endpoints          |
 | DESKTOP (Vite)        | `VITE_*`                                                                                             | Bundle kiosk Vite                              | `apps/desktop/src/main.tsx`, `vite.config.ts`                    |
 
 **`NEXT_PUBLIC_*` dan `VITE_*` ter-inline ke bundle browser.** Next.js hanya
@@ -77,39 +78,42 @@ Satu proyek Vercel untuk `apps/web`. **`rootDirectory` diset ke `apps/web`**
 (setting proyek, bukan kunci `vercel.json`; lihat `apps/web/VERCEL.md`). Tanpa ini
 Vercel mem-build dari root repo dan gagal menemukan `@snapbox/web`.
 
-| Variabel                           | Environment                      | Scope                     | Sumber nilai                        |
-| :--------------------------------- | :------------------------------- | :------------------------ | :---------------------------------- |
-| `NEXT_PUBLIC_APP_URL`              | Development, Preview, Production | Build + Runtime           | URL per environment                 |
-| `NEXT_PUBLIC_SUPABASE_URL`         | Preview, Production              | Build + Runtime           | Dasbor Supabase                     |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY`    | Preview, Production              | Build + Runtime           | Dasbor Supabase → API               |
-| `NEXT_PUBLIC_FIREBASE_API_KEY`     | Preview, Production              | Build + Runtime           | Konsol Firebase (config web)        |
-| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Preview, Production              | Build + Runtime           | Konsol Firebase                     |
-| `NEXT_PUBLIC_FIREBASE_PROJECT_ID`  | Preview, Production              | Build + Runtime           | Konsol Firebase                     |
-| `NEXT_PUBLIC_FIREBASE_APP_ID`      | Preview, Production              | Build + Runtime           | Konsol Firebase                     |
-| `NEXT_PUBLIC_MIDTRANS_CLIENT_KEY`  | Preview, Production              | Build + Runtime           | Dasbor Midtrans (sandbox/prod)      |
-| `NEXT_PUBLIC_SENTRY_DSN`           | Preview, Production              | Build + Runtime           | Sentry → Client Keys                |
-| `NEXT_PUBLIC_TURNSTILE_SITE_KEY`   | Preview, Production              | Build + Runtime           | Cloudflare Turnstile                |
-| `SUPABASE_SERVICE_ROLE_KEY`        | Preview, Production              | Runtime                   | Dasbor Supabase → API               |
-| `DATABASE_URL`                     | Preview, Production              | Runtime                   | Supabase Session Pooler (port 5432) |
-| `DIRECT_URL`                       | Preview, Production              | Build (Drizzle) + Runtime | Supabase direct connection          |
-| `FIREBASE_ADMIN_PROJECT_ID`        | Preview, Production              | Runtime                   | Service account Firebase            |
-| `FIREBASE_ADMIN_CLIENT_EMAIL`      | Preview, Production              | Runtime                   | Service account Firebase            |
-| `FIREBASE_ADMIN_PRIVATE_KEY`       | Preview, Production              | Runtime                   | Service account Firebase            |
-| `ENCRYPTION_MASTER_KEY`            | Preview, Production              | Runtime                   | `openssl rand -base64 32`           |
-| `PAIRING_TOKEN_SECRET`             | Preview, Production              | Runtime                   | `openssl rand -base64 32`           |
-| `LAN_JWT_SECRET`                   | Preview, Production              | Runtime                   | `openssl rand -base64 32`           |
-| `DEVICE_JWT_SECRET`                | Preview, Production              | Runtime                   | `openssl rand -base64 32`           |
-| `PAKASIR_B2B_API_KEY`              | Preview, Production              | Runtime                   | Dasbor Pakasir                      |
-| `PAKASIR_B2B_WEBHOOK_SECRET`       | Preview, Production              | Runtime                   | Dasbor Pakasir                      |
-| `RESEND_API_KEY`                   | Preview, Production              | Runtime                   | Dasbor Resend                       |
-| `RESEND_FROM_EMAIL`                | Preview, Production              | Runtime                   | Alamat terverifikasi Resend         |
-| `SENTRY_AUTH_TOKEN`                | Production (opsional Preview)    | **Build-only**            | Sentry → Auth Tokens                |
-| `SENTRY_ORG`                       | Production (opsional Preview)    | Build-only                | Sentry                              |
-| `SENTRY_PROJECT`                   | Production (opsional Preview)    | Build-only                | Sentry                              |
-| `CLOUDFLARE_API_TOKEN`             | Preview, Production              | Runtime                   | Cloudflare API Tokens               |
-| `CLOUDFLARE_ZONE_ID`               | Preview, Production              | Runtime                   | Cloudflare dashboard                |
-| `TURNSTILE_SECRET_KEY`             | Preview, Production              | Runtime                   | Cloudflare Turnstile                |
-| `WHATSAPP_SALES_NUMBER`            | Preview, Production              | Build + Runtime           | Nomor penjualan                     |
+| Variabel                           | Environment                      | Scope                     | Sumber nilai                              |
+| :--------------------------------- | :------------------------------- | :------------------------ | :---------------------------------------- |
+| `NEXT_PUBLIC_APP_URL`              | Development, Preview, Production | Build + Runtime           | URL per environment                       |
+| `NEXT_PUBLIC_SUPABASE_URL`         | Preview, Production              | Build + Runtime           | Dasbor Supabase                           |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY`    | Preview, Production              | Build + Runtime           | Dasbor Supabase → API                     |
+| `NEXT_PUBLIC_FIREBASE_API_KEY`     | Preview, Production              | Build + Runtime           | Konsol Firebase (config web)              |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Preview, Production              | Build + Runtime           | Konsol Firebase                           |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID`  | Preview, Production              | Build + Runtime           | Konsol Firebase                           |
+| `NEXT_PUBLIC_FIREBASE_APP_ID`      | Preview, Production              | Build + Runtime           | Konsol Firebase                           |
+| `NEXT_PUBLIC_MIDTRANS_CLIENT_KEY`  | Preview, Production              | Build + Runtime           | Dasbor Midtrans (sandbox/prod)            |
+| `NEXT_PUBLIC_SENTRY_DSN`           | Preview, Production              | Build + Runtime           | Sentry → Client Keys                      |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY`   | Preview, Production              | Build + Runtime           | Cloudflare Turnstile                      |
+| `SUPABASE_SERVICE_ROLE_KEY`        | Preview, Production              | Runtime                   | Dasbor Supabase → API                     |
+| `DATABASE_URL`                     | Preview, Production              | Runtime                   | Supabase Session Pooler (port 5432)       |
+| `DIRECT_URL`                       | Preview, Production              | Build (Drizzle) + Runtime | Supabase direct connection                |
+| `FIREBASE_ADMIN_PROJECT_ID`        | Preview, Production              | Runtime                   | Service account Firebase                  |
+| `FIREBASE_ADMIN_CLIENT_EMAIL`      | Preview, Production              | Runtime                   | Service account Firebase                  |
+| `FIREBASE_ADMIN_PRIVATE_KEY`       | Preview, Production              | Runtime                   | Service account Firebase                  |
+| `ENCRYPTION_MASTER_KEY`            | Preview, Production              | Runtime                   | `openssl rand -base64 32`                 |
+| `PAIRING_TOKEN_SECRET`             | Preview, Production              | Runtime                   | `openssl rand -base64 32`                 |
+| `LAN_JWT_SECRET`                   | Preview, Production              | Runtime                   | `openssl rand -base64 32`                 |
+| `DEVICE_JWT_SECRET`                | Preview, Production              | Runtime                   | `openssl rand -base64 32`                 |
+| `PAKASIR_B2B_API_KEY`              | Preview, Production              | Runtime                   | Dasbor Pakasir                            |
+| `PAKASIR_B2B_WEBHOOK_SECRET`       | Preview, Production              | Runtime                   | Dasbor Pakasir                            |
+| `RESEND_API_KEY`                   | Preview, Production              | Runtime                   | Dasbor Resend                             |
+| `RESEND_FROM_EMAIL`                | Preview, Production              | Runtime                   | Alamat terverifikasi Resend               |
+| `SENTRY_AUTH_TOKEN`                | Production (opsional Preview)    | **Build-only**            | Sentry → Auth Tokens                      |
+| `SENTRY_ORG`                       | Production (opsional Preview)    | Build-only                | Sentry                                    |
+| `SENTRY_PROJECT`                   | Production (opsional Preview)    | Build-only                | Sentry                                    |
+| `CLOUDFLARE_API_TOKEN`             | Preview, Production              | Runtime                   | Cloudflare API Tokens                     |
+| `CLOUDFLARE_ZONE_ID`               | Preview, Production              | Runtime                   | Cloudflare dashboard                      |
+| `TURNSTILE_SECRET_KEY`             | Preview, Production              | Runtime                   | Cloudflare Turnstile                      |
+| `WHATSAPP_SALES_NUMBER`            | Preview, Production              | Build + Runtime           | Nomor penjualan                           |
+| `TELEMETRY_HASH_SALT`              | Production (wajib telemetry)     | Runtime                   | Secret manager; `openssl rand -base64 32` |
+| `WAF_INGEST_SECRET`                | Production (wajib WAF ingest)    | Runtime                   | Secret manager; `openssl rand -base64 32` |
+| `HEARTBEAT_SECRET`                 | Production (wajib heartbeat)     | Runtime                   | Secret manager; `openssl rand -base64 32` |
 
 Catatan:
 
@@ -124,6 +128,10 @@ Catatan:
   env aplikasi (bagian 4).
 - `DIRECT_URL` dipakai Drizzle CLI (`generate`/`migrate`/`push`/`studio`) dan
   seed; runtime memakai `DATABASE_URL` (pooler).
+- Telemetry production requires all three `TELEMETRY_*` secrets above. WAF and
+  heartbeat routes return `503` when their shared secret is absent; database
+  telemetry failures are best-effort and must not grant access or fail valid
+  authentication. Never place these values in `NEXT_PUBLIC_*` or `VITE_*`.
 
 ## 4. GitHub Actions secrets minimum
 
@@ -165,6 +173,17 @@ supabase link --project-ref <project-ref>
 
 Project ref adalah identitas proyek Supabase (terlihat di URL dasbor). `link`
 menyimpan asosiasi lokal ke state CLI, bukan ke repo.
+
+### Target migrasi SnapBox
+
+Migrasi remote production untuk repo ini dikunci ke project ref
+`ehoemilzosbzdygqyvzd` (`https://ehoemilzosbzdygqyvzd.supabase.co`, region
+`ap-southeast-2`). Jangan gunakan `supabase db push` langsung atau target hasil
+`supabase link` untuk migrasi aplikasi. Jalankan `pnpm migrate:ordered --db-url
+"$DIRECT_URL"`; runner menolak hostname/user pooler yang tidak cocok dengan
+project tersebut dan mengeksekusi Supabase `000000-00400`, Drizzle `0000-0004`,
+lalu Supabase `00500-00700`. Kredensial hanya disimpan di `.env` yang diabaikan
+Git, tidak di dokumen atau command yang di-commit.
 
 ### Secret Edge Functions
 
