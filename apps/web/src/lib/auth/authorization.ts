@@ -6,6 +6,10 @@
  * membaca snapshot sesi. `tenant_id` selalu berasal dari DB baris `users`,
  * bukan dari claim atau body permintaan (PRD Bab 5.5).
  *
+ * Aturan "status langganan mana yang memberi akses" tinggal di
+ * `entitlement-contract` supaya gate login dan `EntitlementService` tidak bisa
+ * menyimpang; modul ini hanya mengeksekusi query.
+ *
  * HANYA untuk runtime Node (`runtime = 'nodejs'`): modul ini menarik
  * `@snapbox/auth/admin` (firebase-admin) dan `@snapbox/db` (postgres).
  */
@@ -16,23 +20,12 @@ import { verifyIdToken } from '@snapbox/auth/admin';
 import { getDatabase, b2bSubscriptions, booths, tenants, users } from '@snapbox/db';
 import type { SubscriptionStatus, UserRole } from '@snapbox/shared/domain';
 
+import {
+  BLOCKED_TENANT_STATUSES,
+  isSubscriptionUsable,
+} from '@/lib/entitlement/entitlement-contract';
+
 import type { SessionInput, SubscriptionGate } from './session';
-
-/**
- * Status langganan yang dianggap memberi akses.
- *
- * `EXPIRING` dan `GRACE_PERIOD` sengaja lolos: keduanya masih masa berlaku sah
- * menurut state machine PRD Bab 6.J. `PENDING` tidak lolos karena pembayaran
- * belum terkonfirmasi webhook.
- */
-const USABLE_SUBSCRIPTION_STATUSES: readonly SubscriptionStatus[] = [
-  'ACTIVE',
-  'EXPIRING',
-  'GRACE_PERIOD',
-];
-
-/** Status tenant yang memblokir login. */
-const BLOCKED_TENANT_STATUSES: readonly string[] = ['SUSPENDED', 'BANNED', 'DELETED'];
 
 /** Error otorisasi dengan pesan yang aman ditampilkan (tanpa detail sensitif). */
 export class AuthorizationError extends Error {
@@ -68,8 +61,6 @@ export async function evaluateSubscription(
   nowMs: number = Date.now(),
 ): Promise<SubscriptionEvaluation> {
   const db = getDatabase();
-  const now = new Date(nowMs);
-
   const [latest] = await db
     .select({
       status: b2bSubscriptions.status,
@@ -85,23 +76,15 @@ export async function evaluateSubscription(
     return { gate: 'UNKNOWN', status: null };
   }
 
-  if (!USABLE_SUBSCRIPTION_STATUSES.includes(latest.status)) {
-    return { gate: 'BLOCKED', status: latest.status };
-  }
-
-  // `validUntil` null pada langganan ACTIVE yang belum punya tanggal berarti
-  // durasi belum ditetapkan; perlakukan sebagai belum bisa diverifikasi.
-  if (!latest.validUntil) {
+  // `UNKNOWN` dipertahankan sebagai kasus tersendiri: status langganan sah
+  // tetapi durasinya belum ditetapkan (`validUntil` null) belum bisa
+  // diverifikasi, berbeda dari `BLOCKED` yang berarti penolakan eksplisit.
+  // `isSubscriptionUsable` tetap menjadi satu-satunya penentu status/tanggal.
+  if (!latest.validUntil && !latest.gracePeriodUntil) {
     return { gate: 'UNKNOWN', status: latest.status };
   }
 
-  // GRACE_PERIOD dinilai dari batas grace, status lain dari validUntil.
-  const deadline =
-    latest.status === 'GRACE_PERIOD' && latest.gracePeriodUntil
-      ? latest.gracePeriodUntil
-      : latest.validUntil;
-
-  if (deadline.getTime() <= now.getTime()) {
+  if (!isSubscriptionUsable(latest, nowMs)) {
     return { gate: 'BLOCKED', status: latest.status };
   }
 

@@ -13,6 +13,8 @@ import {
   listTenantSubscriptions,
   TenantServerError,
 } from '@/lib/ceo-dashboard/tenant-server';
+import { checkEntitlements } from '@/lib/entitlement/entitlement-service';
+import type { EntitlementResult } from '@/lib/entitlement/entitlement-contract';
 
 import { TenantDetailActions } from './tenant-detail-actions';
 
@@ -41,16 +43,32 @@ export default async function TenantDetailPage({ params }: { params: Promise<{ i
   const { id } = await params;
 
   try {
-    const [tenant, owner, subscriptions, booths, activity, planOptions] = await Promise.all([
-      getTenantByIdOr404(id),
-      findTenantOwner(id),
-      listTenantSubscriptions(id),
-      listTenantBooths(id),
-      listTenantActivity(id),
-      listPlanOptions(),
-    ]);
+    // Kuota dihitung dari EntitlementService (plans.features + add-on),
+    // BUKAN dari kolom snapshot `tenants.*_quota` yang bisa basi setelah editor
+    // plan menyimpan perubahan (PRD Task 1.5/1.7). Permintaannya ikut
+    // `Promise.all` supaya tidak menambah jalur kritis render halaman.
+    const quotaFeatures = [
+      'deviceQuota',
+      'maxFrameUpload',
+      'storageMb',
+      'staffLimit',
+      'retentionDays',
+    ] as const;
+
+    const [tenant, owner, subscriptions, booths, activity, planOptions, quotaResults] =
+      await Promise.all([
+        getTenantByIdOr404(id),
+        findTenantOwner(id),
+        listTenantSubscriptions(id),
+        listTenantBooths(id),
+        listTenantActivity(id),
+        listPlanOptions(),
+        checkEntitlements(id, quotaFeatures),
+      ]);
 
     const latestSubscription = subscriptions[0] ?? null;
+
+    const [deviceQuota, frameQuota, storageQuota, staffQuota, retentionQuota] = quotaResults;
 
     return (
       <div className="ceo-tenant-detail">
@@ -103,11 +121,11 @@ export default async function TenantDetailPage({ params }: { params: Promise<{ i
         <section className="ceo-panel">
           <h2>Kuota plan</h2>
           <dl className="ceo-quota-grid">
-            <Quota label="Perangkat" value={tenant.deviceQuota} addon={tenant.addOnDevices} />
-            <Quota label="Slot frame" value={tenant.frameQuota} />
-            <Quota label="Penyimpanan (MB)" value={tenant.storageQuotaMb} />
-            <Quota label="Akun staff" value={tenant.staffQuota} />
-            <Quota label="Retensi (hari)" value={tenant.retentionDays} />
+            <EntitlementQuota label="Perangkat" result={deviceQuota} addon={tenant.addOnDevices} />
+            <EntitlementQuota label="Slot frame" result={frameQuota} />
+            <EntitlementQuota label="Penyimpanan (MB)" result={storageQuota} />
+            <EntitlementQuota label="Akun staff" result={staffQuota} />
+            <EntitlementQuota label="Retensi (hari)" result={retentionQuota} />
           </dl>
         </section>
 
@@ -217,12 +235,30 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-function Quota({ label, value, addon = 0 }: { label: string; value: number; addon?: number }) {
+/**
+ * Nilai kuota dari `EntitlementService`.
+ *
+ * `result` bisa berupa penolakan (fail-closed): tenant tanpa langganan usable
+ * akan tampil "Tidak tersedia", bukan angka dari kolom snapshot yang mungkin
+ * sudah tidak berlaku.
+ */
+function EntitlementQuota({
+  label,
+  result,
+  addon = 0,
+}: {
+  label: string;
+  result: EntitlementResult | undefined;
+  addon?: number;
+}) {
+  const value = result?.allowed ? result.value : null;
+  const numeric = typeof value === 'number' ? value : null;
+
   return (
     <div>
       <dt>{label}</dt>
       <dd className="ceo-mono">
-        {value < 0 ? 'Tanpa batas' : value}
+        {numeric === null ? 'Tidak tersedia' : numeric < 0 ? 'Tanpa batas' : numeric}
         {addon > 0 ? ` + ${addon} add-on` : ''}
       </dd>
     </div>

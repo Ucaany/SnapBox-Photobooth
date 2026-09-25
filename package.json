@@ -28,7 +28,8 @@
     "check:firebase-project-id": "node scripts/check-firebase-project-id.mjs",
     "check:claims-sync": "node scripts/check-claims-sync.mjs",
     "check:infra-drafts": "node scripts/check-infra-drafts.mjs",
-    "check:env-example": "node scripts/check-env-example.mjs"
+    "check:env-example": "node scripts/check-env-example.mjs",
+    "check:entitlement-usage": "node scripts/check-entitlement-usage.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "19.8.1",
