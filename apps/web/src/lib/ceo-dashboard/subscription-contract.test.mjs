@@ -51,6 +51,14 @@ function verifyPakasirSignature(rawBody, signature, secret) {
   return normalized === expected;
 }
 
+/** Cermin `webhookAmountMatches` (normalisasi 2 desimal, perbandingan eksak). */
+function webhookAmountMatches(providerAmount, invoiceAmount) {
+  const provider = Number(providerAmount);
+  const invoice = Number(invoiceAmount);
+  if (!Number.isFinite(provider) || !Number.isFinite(invoice)) return false;
+  return provider.toFixed(2) === invoice.toFixed(2);
+}
+
 test('status presentasi: lunas hanya dari ACTIVE/paidAt', () => {
   assert.equal(
     invoiceDisplayStatus({ status: 'PENDING', pakasirInvoiceId: 'inv-1', paidAt: null }),
@@ -137,4 +145,20 @@ test('signature: kosong, bukan-hex, dan panjang beda ditolak tanpa melempar', ()
   assert.equal(verifyPakasirSignature('', 'abc', 's'), false);
   assert.equal(verifyPakasirSignature(body, 'zzzz', 's'), false);
   assert.equal(verifyPakasirSignature(body, 'abcd', 's'), false);
+});
+
+test('nominal webhook harus cocok persis dengan nominal invoice', () => {
+  // Bentuk penulisan berbeda dari provider tetap dianggap sama.
+  assert.equal(webhookAmountMatches('180000', '180000.00'), true);
+  assert.equal(webhookAmountMatches('180000.0', '180000.00'), true);
+  assert.equal(webhookAmountMatches(180000, '180000.00'), true);
+  assert.equal(webhookAmountMatches('180000.00', '180000.00'), true);
+});
+
+test('nominal kurang atau lebih ditolak, bukan diterima sebagian', () => {
+  assert.equal(webhookAmountMatches('100000.00', '180000.00'), false);
+  assert.equal(webhookAmountMatches('180001.00', '180000.00'), false);
+  assert.equal(webhookAmountMatches('180000.01', '180000.00'), false);
+  assert.equal(webhookAmountMatches('abc', '180000.00'), false);
+  assert.equal(webhookAmountMatches('Infinity', '180000.00'), false);
 });

@@ -41,10 +41,6 @@ const VIEWS: Record<string, React.ComponentType> = {
   security: SecurityView,
 };
 
-export function hasCeoView(slug: string): boolean {
-  return slug in VIEWS;
-}
-
 /** Merender view untuk satu slug. `fallback` dipakai bila slug tidak dikenal. */
 export function CeoView({ slug, fallback = null }: { slug: string; fallback?: React.ReactNode }) {
   const View = VIEWS[slug];

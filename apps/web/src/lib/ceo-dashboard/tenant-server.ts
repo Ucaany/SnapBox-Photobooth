@@ -219,8 +219,13 @@ export async function listTenantActivity(tenantId: string, limit = 15) {
 }
 
 export interface AuditInput {
-  readonly actorUserId: string;
+  readonly actorUserId: string | null;
   readonly actorEmail: string;
+  /**
+   * Role aktor. `null` untuk aktor sistem (mis. webhook gateway) yang bukan
+   * user dan tidak boleh diklaim sebagai CEO.
+   */
+  readonly actorRole?: 'CEO' | 'OWNER' | 'STAFF' | null;
   readonly tenantId: string | null;
   readonly action: string;
   readonly resourceType?: string;
@@ -243,7 +248,9 @@ export async function writeAuditLog(input: AuditInput): Promise<void> {
     await db.insert(activityLogs).values({
       actorUserId: input.actorUserId,
       actorEmail: input.actorEmail,
-      actorRole: 'CEO',
+      // Default CEO mempertahankan perilaku dashboard; aktor sistem mengirim
+      // `null` agar tidak diklaim sebagai user.
+      actorRole: input.actorRole === undefined ? 'CEO' : input.actorRole,
       tenantId: input.tenantId,
       action: input.action,
       resourceType: input.resourceType ?? 'tenant',

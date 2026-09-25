@@ -143,15 +143,6 @@ export function findNavItem(slug: string): CeoNavItem | undefined {
   return CEO_NAV_ITEMS.find((item) => item.slug === slug);
 }
 
-/**
- * Apakah slug segmen punya halaman. Dipakai server page untuk memutuskan
- * `notFound()` sebelum merender komponen klien, sehingga modul ini harus tetap
- * bebas `next/*` dan bebas komponen klien.
- */
-export function isCeoSlug(slug: string): boolean {
-  return CEO_NAV_ITEMS.some((item) => item.slug === slug);
-}
-
 /** Item nav per group, mempertahankan urutan registry. */
 export function navItemsByGroup(group: CeoNavGroupId): readonly CeoNavItem[] {
   return CEO_NAV_ITEMS.filter((item) => item.group === group);

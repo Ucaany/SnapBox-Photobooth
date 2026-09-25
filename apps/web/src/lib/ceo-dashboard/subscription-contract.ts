@@ -57,6 +57,27 @@ export function isPakasirPaidStatus(status: PakasirEventStatus): boolean {
   return status === 'PAID' || status === 'SUCCESS' || status === 'SETTLED';
 }
 
+/**
+ * Membandingkan nominal provider dengan nominal invoice canonical.
+ *
+ * Kedua nilai dinormalisasi ke dua desimal dalam Number agar `"100000"`,
+ * `"100000.0"`, dan `100000` dianggap sama. Perbandingan eksak (bukan `>=`)
+ * supaya pembayaran kurang TIDAK memperpanjang entitlement dan pembayaran lebih
+ * tidak diam-diam diterima; selisih harus diselesaikan manual.
+ *
+ * @param providerAmount Nominal dari payload webhook tervalidasi.
+ * @param invoiceAmount Nominal dari `b2b_subscriptions.amount` (string desimal).
+ */
+export function webhookAmountMatches(
+  providerAmount: string | number,
+  invoiceAmount: string | number,
+): boolean {
+  const provider = Number(providerAmount);
+  const invoice = Number(invoiceAmount);
+  if (!Number.isFinite(provider) || !Number.isFinite(invoice)) return false;
+  return provider.toFixed(2) === invoice.toFixed(2);
+}
+
 /** Timestamp ISO yang diterima; `null` bila provider tidak mengirimkannya. */
 const isoDateSchema = z
   .string()

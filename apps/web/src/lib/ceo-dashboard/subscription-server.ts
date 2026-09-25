@@ -139,7 +139,24 @@ export async function getSubscriptionForInvoiceOr404(
   return row;
 }
 
-/** Mencari subscription dari id invoice/transaksi Pakasir (dipakai webhook). */
+/**
+ * Mencari subscription dari referensi Pakasir (dipakai webhook).
+ *
+ * Bila payload membawa DUA identifier, keduanya wajib menunjuk row yang sama.
+ * Tanpa aturan ini, payload berisi `invoiceId` milik subscription A dan
+ * `transactionId` milik subscription B dapat mengaktifkan A sambil menulis
+ * transaction id B, sehingga lifecycle berpindah ke baris yang salah.
+ *
+ * @returns Row subscription, atau `null` bila tidak ada yang cocok.
+ * @throws {SubscriptionRefConflictError} bila dua referensi menunjuk row berbeda.
+ */
+export class SubscriptionRefConflictError extends Error {
+  constructor() {
+    super('Referensi invoice dan transaksi Pakasir menunjuk langganan berbeda.');
+    this.name = 'SubscriptionRefConflictError';
+  }
+}
+
 export async function findSubscriptionByPakasirRef(
   invoiceId: string,
   transactionId?: string,
@@ -151,16 +168,18 @@ export async function findSubscriptionByPakasirRef(
     .from(b2bSubscriptions)
     .where(eq(b2bSubscriptions.pakasirInvoiceId, invoiceId))
     .limit(1);
-  if (byInvoice) return byInvoice;
 
-  if (transactionId) {
-    const [byTransaction] = await db
-      .select()
-      .from(b2bSubscriptions)
-      .where(eq(b2bSubscriptions.pakasirTransactionId, transactionId))
-      .limit(1);
-    if (byTransaction) return byTransaction;
+  if (!transactionId) return byInvoice ?? null;
+
+  const [byTransaction] = await db
+    .select()
+    .from(b2bSubscriptions)
+    .where(eq(b2bSubscriptions.pakasirTransactionId, transactionId))
+    .limit(1);
+
+  if (byInvoice && byTransaction && byInvoice.id !== byTransaction.id) {
+    throw new SubscriptionRefConflictError();
   }
 
-  return null;
+  return byInvoice ?? byTransaction ?? null;
 }

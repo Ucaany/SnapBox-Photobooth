@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 
 import { findNavItem } from '@/components/ceo-dashboard/content';
 import { listSubscriptionInvoices } from '@/lib/ceo-dashboard/subscription-server';
+import { requireCeo } from '@/lib/ceo-dashboard/tenant-server';
 
 import { SubscriptionsClient } from './subscriptions-client';
 
@@ -10,6 +11,10 @@ import { SubscriptionsClient } from './subscriptions-client';
  *
  * Server component memuat invoice NYATA dari `b2b_subscriptions` (join tenant +
  * plan). Route eksplisit ini menang atas catch-all `[...segments]`.
+ *
+ * Otorisasi diulang ke DB (`requireCeo`) sebelum query: middleware hanya
+ * memverifikasi snapshot cookie, sehingga role/status yang sudah dicabut tetap
+ * lolos sampai cookie kedaluwarsa (ADR-004). Pola sama dipakai server action.
  *
  * Kegagalan DB TIDAK jatuh ke data contoh: error dibiarkan melempar sehingga
  * halaman menampilkan error, bukan tabel dummy yang menyamar sebagai data asli.
@@ -26,6 +31,8 @@ export const metadata: Metadata = {
 };
 
 export default async function SubscriptionsPage() {
+  await requireCeo();
+
   const rows = await listSubscriptionInvoices();
 
   return <SubscriptionsClient rows={rows} />;

@@ -11,6 +11,10 @@
  * Endpoint ini publik tapi tidak pernah mempercayai body sebelum signature
  * valid. Signature, secret, dan payload mentah TIDAK pernah dicatat ke log,
  * audit, atau respons.
+ *
+ * Idempotensi dibuat RETRY-SAFE: marker event dibuang bila pemrosesan gagal
+ * (termasuk invoice belum ada / nominal tidak cocok), supaya provider yang
+ * mengirim ulang tidak ditolak sebagai duplikat dan pembayaran sah tidak hilang.
  */
 import { NextResponse } from 'next/server';
 import { and, eq } from 'drizzle-orm';
@@ -21,9 +25,13 @@ import { verifyPakasirSignature } from '@/lib/ceo-dashboard/pakasir-b2b';
 import {
   isPakasirPaidStatus,
   pakasirWebhookPayloadSchema,
+  webhookAmountMatches,
   type PakasirWebhookPayload,
 } from '@/lib/ceo-dashboard/subscription-contract';
-import { findSubscriptionByPakasirRef } from '@/lib/ceo-dashboard/subscription-server';
+import {
+  findSubscriptionByPakasirRef,
+  SubscriptionRefConflictError,
+} from '@/lib/ceo-dashboard/subscription-server';
 import { writeAuditLog } from '@/lib/ceo-dashboard/tenant-server';
 
 export const runtime = 'nodejs';
@@ -33,10 +41,39 @@ const PROVIDER = 'pakasir-b2b';
 /** Batas ukuran body webhook; payload normal jauh di bawah ini. */
 const MAX_BODY_BYTES = 64 * 1024;
 
+/**
+ * Toleransi `validUntil` lampau (jam). Sedikit toleransi clock skew masih
+ * diterima, tetapi tanggal yang benar-benar lewat ditolak agar tidak ada state
+ * kontradiktif `ACTIVE` + sudah kedaluwarsa.
+ */
+const VALID_UNTIL_PAST_TOLERANCE_MS = 60 * 60 * 1000;
+/** Batas atas perpanjangan; mencegah entitlement bertahun-tahun dari satu event. */
+const MAX_VALIDITY_WINDOW_MS = 400 * 24 * 60 * 60 * 1000;
+
 const NO_STORE = { 'cache-control': 'no-store' } as const;
 
 function json(body: Record<string, unknown>, status: number) {
   return NextResponse.json(body, { status, headers: NO_STORE });
+}
+
+/**
+ * Apakah error Postgres adalah pelanggaran unique constraint.
+ *
+ * Drizzle membungkus error driver, jadi kode dicek pada error itu sendiri dan
+ * pada rantai `cause`. Hanya kode `23505` yang berarti duplikat; selain itu
+ * dianggap kegagalan nyata supaya provider tetap mencoba ulang.
+ */
+function isUniqueViolation(error: unknown): boolean {
+  let current: unknown = error;
+  for (let depth = 0; depth < 4 && current; depth += 1) {
+    if (typeof current === 'object' && current !== null) {
+      if ((current as { code?: unknown }).code === '23505') return true;
+      current = (current as { cause?: unknown }).cause;
+    } else {
+      break;
+    }
+  }
+  return false;
 }
 
 /** Catat kegagalan ke dead-letter TANPA membocorkan isi sensitif ke respons. */
@@ -55,101 +92,139 @@ async function recordFailure(payload: unknown, errorMessage: string): Promise<vo
 }
 
 /**
- * Apakah error Postgres adalah pelanggaran unique constraint.
+ * Menentukan `validUntil` yang dipakai setelah pembayaran lunas.
  *
- * Drizzle membungkus error driver, jadi kode dicek pada error itu sendiri dan
- * pada `cause`/`cause.cause` berantai. Hanya kode `23505` yang berarti duplikat;
- * selain itu dianggap kegagalan nyata supaya provider tetap mencoba ulang.
+ * Tanggal berakhir TIDAK pernah diambil dari provider sebagai sumber tunggal:
+ * provider bisa mengirim tanggal lampau (state `ACTIVE` + expired) atau terlalu
+ * jauh di masa depan. Nilai dipakai hanya bila wajar; selain itu pertahankan
+ * nilai DB. Guard monotonic di pemanggil memastikan periode tidak pernah
+ * memendek karena event lama/out-of-order.
  */
-function isUniqueViolation(error: unknown): boolean {
-  let current: unknown = error;
-  for (let depth = 0; depth < 4 && current; depth += 1) {
-    if (typeof current === 'object' && current !== null) {
-      if ((current as { code?: unknown }).code === '23505') return true;
-      current = (current as { cause?: unknown }).cause;
-    } else {
-      break;
-    }
-  }
-  return false;
+function resolveValidUntil(
+  fromPayload: Date | undefined,
+  current: Date | null,
+  now: Date,
+): Date | null {
+  if (!fromPayload) return current;
+
+  if (fromPayload.getTime() < now.getTime() - VALID_UNTIL_PAST_TOLERANCE_MS) return null;
+  if (fromPayload.getTime() - now.getTime() > MAX_VALIDITY_WINDOW_MS) return null;
+
+  return current && current > fromPayload ? current : fromPayload;
 }
 
-/** Eksekusi update setelah event idempotent tercatat. */
-async function applyEvent(
-  eventId: string,
-  payload: PakasirWebhookPayload,
-  rawPayload: unknown,
-): Promise<Response> {
-  const subscription = await findSubscriptionByPakasirRef(payload.invoiceId, payload.transactionId);
+/**
+ * Menjalankan efek satu event TERVERIFIKASI.
+ *
+ * @returns `null` bila event berhasil diterapkan (pemanggil membalas 2xx), atau
+ *   Response non-2xx bila provider harus mencoba ulang. Pemanggil WAJIB membuang
+ *   marker idempotensi saat hasilnya non-2xx.
+ */
+async function applyEvent(payload: PakasirWebhookPayload): Promise<Response | null> {
+  let subscription;
+  try {
+    subscription = await findSubscriptionByPakasirRef(payload.invoiceId, payload.transactionId);
+  } catch (error) {
+    if (error instanceof SubscriptionRefConflictError) {
+      await recordFailure(payload, error.message);
+      return json({ ok: false, error: 'reference_conflict' }, 409);
+    }
+    throw error;
+  }
+
   if (!subscription) {
-    await recordFailure(rawPayload, 'Invoice tidak ditemukan di DB.');
+    // Invoice mungkin belum terpersist (race deploy). Biarkan provider retry.
+    await recordFailure(payload, 'Invoice tidak ditemukan di DB.');
     return json({ ok: false, error: 'invoice_not_found' }, 404);
   }
 
+  const now = new Date();
+
   if (isPakasirPaidStatus(payload.status)) {
-    // Nominal provider TIDAK dipercaya untuk memperpanjang hak akses: bandingkan
-    // dengan nilai invoice di DB. Pembayaran kurang dari nilai invoice ditolak,
-    // bukan diterima sebagian, supaya tidak ada perpanjangan entitlement murah.
-    if (Number(payload.amount) < Number(subscription.amount)) {
-      await recordFailure(rawPayload, 'Nominal pembayaran kurang dari nilai invoice.');
+    // Nominal provider TIDAK dipercaya begitu saja: harus cocok dengan nilai
+    // invoice di DB. Pembayaran kurang maupun lebih tidak boleh mengaktifkan.
+    if (!webhookAmountMatches(payload.amount, String(subscription.amount))) {
+      await recordFailure(payload, 'Nominal webhook tidak cocok dengan nominal invoice.');
       return json({ ok: false, error: 'amount_mismatch' }, 409);
     }
 
-    // ACTIVE hanya dari webhook terverifikasi. Timestamp provider dipakai bila
-    // ada; selain itu pakai waktu terima. `amount` historis tidak ditulis ulang.
-    //
-    // `validUntil` dari provider hanya informatif: tanggal berakhir dihitung
-    // server dari periode langganan sendiri (`validUntil` DB), karena tanggal
-    // yang dikendalikan provider bisa memperpanjang entitlement tanpa batas.
-    const paidAt = payload.paidAt ?? new Date();
-    const validUntil = subscription.validUntil ?? payload.validUntil ?? paidAt;
+    const validUntil = resolveValidUntil(payload.validUntil, subscription.validUntil, now);
+    if (!validUntil) {
+      await recordFailure(payload, 'validUntil webhook tidak wajar (lampau atau di luar rentang).');
+      return json({ ok: false, error: 'invalid_valid_until' }, 409);
+    }
+
+    // Idempotensi kedua di level row: transaksi yang sama tidak diterapkan dua kali.
+    if (payload.transactionId && subscription.pakasirTransactionId === payload.transactionId) {
+      return null;
+    }
+
+    // Guard monotonic: event lama (retry/out-of-order) tidak boleh memundurkan
+    // paidAt/validUntil yang sudah lebih baru.
+    const paidAt = payload.paidAt ?? now;
+    const nextPaidAt =
+      subscription.paidAt && subscription.paidAt > paidAt ? subscription.paidAt : paidAt;
+    const nextValidUntil =
+      subscription.validUntil && subscription.validUntil > validUntil
+        ? subscription.validUntil
+        : validUntil;
 
     await getDatabase()
       .update(b2bSubscriptions)
       .set({
         status: 'ACTIVE',
-        paidAt: subscription.paidAt ?? paidAt,
+        paidAt: nextPaidAt,
         validFrom: subscription.validFrom ?? paidAt,
-        validUntil,
+        validUntil: nextValidUntil,
         pakasirTransactionId: payload.transactionId ?? subscription.pakasirTransactionId,
-        updatedAt: new Date(),
+        updatedAt: now,
       })
       .where(eq(b2bSubscriptions.id, subscription.id));
 
     await writeAuditLog({
-      actorUserId: subscription.tenantId,
+      // Webhook tidak punya user actor: actorUserId TIDAK boleh diisi tenantId,
+      // dan role tidak boleh diklaim sebagai CEO.
+      actorUserId: null,
       actorEmail: 'pakasir-webhook',
+      actorRole: null,
       tenantId: subscription.tenantId,
       action: 'subscription.webhook_paid',
       resourceType: 'b2b_subscription',
       resourceId: subscription.id,
-      metadata: { eventId, status: payload.status },
+      metadata: { eventId: payload.eventId, status: payload.status, amount: payload.amount },
     });
   } else if (payload.status === 'EXPIRED') {
     await getDatabase()
       .update(b2bSubscriptions)
-      .set({ status: 'EXPIRED', updatedAt: new Date() })
+      .set({ status: 'EXPIRED', updatedAt: now })
       .where(eq(b2bSubscriptions.id, subscription.id));
   } else if (payload.status === 'CANCELLED') {
     await getDatabase()
       .update(b2bSubscriptions)
-      .set({ status: 'CANCELLED', updatedAt: new Date() })
+      .set({ status: 'CANCELLED', updatedAt: now })
       .where(eq(b2bSubscriptions.id, subscription.id));
   } else {
     // FAILED tidak mengubah status subscription; CEO dapat retry invoice.
-    await recordFailure(rawPayload, `Status provider ${payload.status} tidak mengubah langganan.`);
+    await recordFailure(payload, `Status provider ${payload.status} tidak mengubah langganan.`);
   }
 
-  try {
-    await getDatabase()
-      .update(webhookEvents)
-      .set({ processedAt: new Date() })
-      .where(eq(webhookEvents.providerEventId, eventId));
-  } catch {
-    // Marker proses bersifat opsional untuk replika; abaikan.
-  }
+  return null;
+}
 
-  return json({ ok: true }, 200);
+/** Menandai event selesai diproses; filter WAJIB menyertakan provider. */
+async function markProcessed(eventId: string): Promise<void> {
+  await getDatabase()
+    .update(webhookEvents)
+    .set({ processedAt: new Date() })
+    .where(and(eq(webhookEvents.provider, PROVIDER), eq(webhookEvents.providerEventId, eventId)));
+}
+
+/** Membuang marker idempotensi agar retry provider tidak ditolak duplikat. */
+async function releaseMarker(eventId: string): Promise<void> {
+  await getDatabase()
+    .delete(webhookEvents)
+    .where(and(eq(webhookEvents.provider, PROVIDER), eq(webhookEvents.providerEventId, eventId)))
+    .catch(() => undefined);
 }
 
 export async function POST(request: Request) {
@@ -195,30 +270,58 @@ export async function POST(request: Request) {
     // transaksi batal) TIDAK boleh dibalas 200, karena provider akan berhenti
     // mencoba dan event hilang tanpa jejak di dead-letter.
     if (isUniqueViolation(error)) {
-      // Duplikat = sudah pernah diproses. 200 tanpa update (PRD Bab 6.V).
-      return json({ ok: true, duplicate: true }, 200);
-    }
+      // Event sudah pernah diterima. Balas 200 HANYA bila pemrosesan sebelumnya
+      // benar-benar selesai; marker yang belum selesai dilepas agar retry ini
+      // diproses alih-alih dianggap duplikat final.
+      const [existing] = await getDatabase()
+        .select({ processedAt: webhookEvents.processedAt })
+        .from(webhookEvents)
+        .where(
+          and(
+            eq(webhookEvents.provider, PROVIDER),
+            eq(webhookEvents.providerEventId, payload.eventId),
+          ),
+        )
+        .limit(1);
 
-    await recordFailure(rawPayload, 'Gagal menyimpan marker idempotensi webhook.');
-    return json({ ok: false, error: 'processing_failed' }, 500);
+      if (existing?.processedAt) {
+        return json({ ok: true, duplicate: true }, 200);
+      }
+
+      await releaseMarker(payload.eventId);
+      try {
+        await getDatabase().insert(webhookEvents).values({
+          provider: PROVIDER,
+          providerEventId: payload.eventId,
+          eventType: payload.status,
+          payload,
+          signatureValid: true,
+        });
+      } catch {
+        await recordFailure(payload, 'Gagal mengklaim ulang marker idempotensi webhook.');
+        return json({ ok: false, error: 'processing_failed' }, 500);
+      }
+    } else {
+      await recordFailure(rawPayload, 'Gagal menyimpan marker idempotensi webhook.');
+      return json({ ok: false, error: 'processing_failed' }, 500);
+    }
   }
 
   try {
-    return await applyEvent(payload.eventId, payload, payload);
+    const result = await applyEvent(payload);
+    if (result) {
+      // Pemrosesan tidak diterapkan: lepas marker supaya provider bisa retry.
+      await releaseMarker(payload.eventId);
+      return result;
+    }
+    await markProcessed(payload.eventId);
+    return json({ ok: true }, 200);
   } catch {
     // Marker idempotensi HARUS dibuang bila pemrosesan gagal. Tanpa ini, event
     // yang tersimpan dengan `processed_at = null` akan ditolak sebagai duplikat
     // pada retry provider berikutnya, sehingga update langganan hilang permanen
     // dan pembayaran sah tidak pernah menjadi ACTIVE.
-    await getDatabase()
-      .delete(webhookEvents)
-      .where(
-        and(
-          eq(webhookEvents.provider, PROVIDER),
-          eq(webhookEvents.providerEventId, payload.eventId),
-        ),
-      )
-      .catch(() => undefined);
+    await releaseMarker(payload.eventId);
     await recordFailure(payload, 'Pemrosesan webhook gagal.');
     return json({ ok: false, error: 'processing_failed' }, 500);
   }
