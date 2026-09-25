@@ -31,7 +31,11 @@ import {
   TenantServerError,
   toEditablePlan,
 } from '@/lib/ceo-dashboard/plan-server';
-import { writeAuditLog } from '@/lib/ceo-dashboard/tenant-server';
+import {
+  getAuditRequestContext,
+  PLAN_AUDIT_ACTIONS,
+  writeAuditLogTx,
+} from '@/lib/ceo-dashboard/tenant-server';
 
 function failure(
   code: Extract<PlanActionResult, { ok: false }>['code'],
@@ -96,30 +100,41 @@ export async function updatePlan(input: unknown): Promise<PlanActionResult> {
     };
   }
 
+  const auditContext = await getAuditRequestContext();
+
   try {
-    await getDatabase()
-      .update(plans)
-      .set({
-        name: data.name,
-        priceMonthly: data.priceMonthly,
-        priceYearly: data.priceYearly,
-        features: data.features,
-        updatedAt: new Date(),
-      })
-      .where(eq(plans.id, before.id));
+    await getDatabase().transaction(async (tx) => {
+      await tx
+        .update(plans)
+        .set({
+          name: data.name,
+          priceMonthly: data.priceMonthly,
+          priceYearly: data.priceYearly,
+          features: data.features,
+          updatedAt: new Date(),
+        })
+        .where(eq(plans.id, before.id));
+
+      // Perubahan harga/fitur plan adalah high-risk: audit ikut transaksi supaya
+      // tidak ada perubahan harga tanpa jejak (PRD Task 1.8).
+      await writeAuditLogTx(
+        tx,
+        {
+          actorUserId: session.userId,
+          actorEmail: session.email,
+          actorRole: 'CEO',
+          tenantId: null,
+          action: PLAN_AUDIT_ACTIONS.update,
+          resourceType: 'plan',
+          resourceId: before.id,
+          metadata: { tier: before.tier, changed },
+        },
+        auditContext,
+      );
+    });
   } catch {
     return failure('SERVER_ERROR', 'Perubahan plan gagal disimpan. Coba lagi.');
   }
-
-  await writeAuditLog({
-    actorUserId: session.userId,
-    actorEmail: session.email,
-    tenantId: null,
-    action: 'plan.update',
-    resourceType: 'plan',
-    resourceId: before.id,
-    metadata: { tier: before.tier, changed },
-  });
 
   revalidatePath('/ceo-dashboard/plans');
   revalidatePath('/ceo-dashboard/tenants/new');

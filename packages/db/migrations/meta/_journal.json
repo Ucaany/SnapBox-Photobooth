@@ -15,6 +15,20 @@
       "when": 1790264212579,
       "tag": "0001_rls_and_realtime",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790331885654,
+      "tag": "0002_grey_mongoose",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790331324117,
+      "tag": "0003_activity_logs_immutable",
+      "breakpoints": true
     }
   ]
 }

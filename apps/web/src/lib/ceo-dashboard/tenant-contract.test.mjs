@@ -36,7 +36,7 @@ function validClientDetails(input) {
 
 function validAction({ tenantId, action, reason, planTier }) {
   if (!isUuid(tenantId)) return { ok: false, code: 'INVALID_INPUT' };
-  if (!['suspend', 'ban', 'restore', 'reset', 'downgrade'].includes(action)) {
+  if (!['suspend', 'ban', 'restore', 'reset', 'downgrade', 'delete'].includes(action)) {
     return { ok: false, code: 'INVALID_INPUT' };
   }
   if (typeof reason !== 'string' || reason.trim().length < MIN_REASON) {
@@ -64,6 +64,8 @@ function unavailableReason(status, kind, planTier, allTiers) {
     if (planTier === allTiers[0] && allTiers.length === 1) return 'sama';
     return null;
   }
+  if (kind === 'reset') return null;
+  if (kind === 'delete') return status === 'DELETED' ? 'sudah dihapus' : null;
   return statusTransitionError(status, kind);
 }
 
@@ -152,6 +154,14 @@ test('reset tidak terikat status tenant (undangan bisa dikirim ulang)', () => {
   // `reset` bukan transisi status; gate akses sebenarnya ada di
   // `authorizeResolvedUser` (BLOCKED_TENANT_STATUSES), bukan di sini.
   assert.equal('reset' in STATUS_ACTION_SOURCES, false);
+});
+
+test('delete memerlukan alasan dan tidak berlaku untuk tenant DELETED', () => {
+  const base = { tenantId: '4f1c2a4e-0000-4000-8000-000000000000', action: 'delete' };
+  assert.equal(validAction({ ...base, reason: 'abc' }).ok, false);
+  assert.equal(validAction({ ...base, reason: 'spam & abuse' }).ok, true);
+  assert.equal(unavailableReason('ACTIVE', 'delete', 'GROWTH', []), null);
+  assert.notEqual(unavailableReason('DELETED', 'delete', 'GROWTH', []), null);
 });
 
 test('status DELETED tidak disediakan sebagai opsi UI', () => {

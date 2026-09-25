@@ -95,7 +95,14 @@ export type CreateTenantInput = z.infer<typeof createTenantInputSchema>;
  * `reset` mengirim ulang tautan undangan, `downgrade` menurunkan plan tanpa
  * mengubah status tenant. Alasan WAJIB untuk semua aksi destruktif.
  */
-export const TENANT_ACTIONS = ['suspend', 'ban', 'restore', 'reset', 'downgrade'] as const;
+export const TENANT_ACTIONS = [
+  'suspend',
+  'ban',
+  'restore',
+  'reset',
+  'downgrade',
+  'delete',
+] as const;
 export const tenantActionSchema = z.enum(TENANT_ACTIONS);
 export type TenantAction = z.infer<typeof tenantActionSchema>;
 
@@ -112,6 +119,7 @@ export const tenantActionInputSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('suspend'), tenantId: tenantIdSchema, reason: reasonSchema }),
   z.object({ action: z.literal('ban'), tenantId: tenantIdSchema, reason: reasonSchema }),
   z.object({ action: z.literal('restore'), tenantId: tenantIdSchema, reason: reasonSchema }),
+  z.object({ action: z.literal('delete'), tenantId: tenantIdSchema, reason: reasonSchema }),
   z.object({ action: z.literal('reset'), tenantId: tenantIdSchema, reason: reasonSchema }),
   z.object({
     action: z.literal('downgrade'),
@@ -119,6 +127,7 @@ export const tenantActionInputSchema = z.discriminatedUnion('action', [
     reason: reasonSchema,
     planTier: planTierSchema,
   }),
+  z.object({ action: z.literal('delete'), tenantId: tenantIdSchema, reason: reasonSchema }),
 ]);
 export type TenantActionInput = z.infer<typeof tenantActionInputSchema>;
 

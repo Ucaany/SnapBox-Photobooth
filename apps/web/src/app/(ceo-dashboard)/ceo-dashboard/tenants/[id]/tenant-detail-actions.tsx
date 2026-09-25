@@ -11,11 +11,11 @@ import {
   type TenantPlanOption,
 } from '@/lib/ceo-dashboard/tenant-contract';
 
-import { changeTenantStatus, downgradeTenant, resetTenantInvite } from '../actions';
+import { changeTenantStatus, deleteTenant, downgradeTenant, resetTenantInvite } from '../actions';
 
 /**
- * Aksi mutasi tenant (PRD Task 1.4): suspend, ban, restore, reset undangan,
- * dan downgrade.
+ * Aksi mutasi tenant (PRD Task 1.4 + 1.8): suspend, ban, restore, reset
+ * undangan, downgrade, dan soft delete.
  *
  * Tiga aturan yang membentuk komponen ini:
  * 1. Setiap aksi destruktif butuh confirmation eksplisit + alasan tertulis;
@@ -25,7 +25,10 @@ import { changeTenantStatus, downgradeTenant, resetTenantInvite } from '../actio
  * 3. Tidak ada optimisme palsu: setelah sukses, `router.refresh()` memuat ulang
  *    data server sehingga badge status/plan berasal dari DB, bukan state lokal.
  */
-type ActionKind = Extract<TenantAction, 'suspend' | 'ban' | 'restore' | 'reset' | 'downgrade'>;
+type ActionKind = Extract<
+  TenantAction,
+  'suspend' | 'ban' | 'restore' | 'reset' | 'downgrade' | 'delete'
+>;
 
 interface ActionSpec {
   readonly kind: ActionKind;
@@ -69,6 +72,14 @@ const ACTIONS: readonly ActionSpec[] = [
     label: 'Downgrade plan',
     description: 'Menurunkan plan tenant dan mencatat langganan baru berstatus PENDING.',
     confirmLabel: 'Turunkan plan',
+    destructive: true,
+  },
+  {
+    kind: 'delete',
+    label: 'Hapus tenant',
+    description:
+      'Soft delete: status DELETED, Owner dinonaktifkan, data dipertahankan untuk retensi 30 hari.',
+    confirmLabel: 'Hapus tenant',
     destructive: true,
   },
 ];
@@ -138,6 +149,11 @@ export function TenantDetailActions({
     // `reset` bukan transisi status: gate akses ada di server (BLOCKED tenant).
     if (spec.kind === 'reset') return null;
 
+    // `delete` bersifat terminal dan boleh dari status apa pun kecuali DELETED.
+    if (spec.kind === 'delete') {
+      return status === 'DELETED' ? 'Tenant sudah dihapus.' : null;
+    }
+
     return statusTransitionError(status, spec.kind);
   }
 
@@ -165,7 +181,9 @@ export function TenantDetailActions({
           ? await downgradeTenant(parsed.data)
           : spec.kind === 'reset'
             ? await resetTenantInvite(parsed.data)
-            : await changeTenantStatus(parsed.data);
+            : spec.kind === 'delete'
+              ? await deleteTenant(parsed.data)
+              : await changeTenantStatus(parsed.data);
 
       if (!response.ok) {
         setError(response.message);
@@ -175,6 +193,15 @@ export function TenantDetailActions({
       setFeedback(response.message);
       setOpen(null);
       setReason('');
+
+      // Setelah soft delete halaman ini akan 404 (`deletedAt` difilter), jadi
+      // pindah ke daftar alih-alih refresh detail yang sudah tidak ada.
+      if (spec.kind === 'delete') {
+        router.push('/ceo-dashboard/tenants');
+        router.refresh();
+        return;
+      }
+
       router.refresh();
     } catch {
       setError('Aksi gagal karena gangguan koneksi. Coba lagi.');

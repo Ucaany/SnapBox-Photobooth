@@ -44,7 +44,8 @@ import {
   requireCeo,
   TenantServerError,
   TENANT_AUDIT_ACTIONS,
-  writeAuditLog,
+  getAuditRequestContext,
+  writeAuditLogTx,
 } from '@/lib/ceo-dashboard/tenant-server';
 // Batas periode dihitung modul bersama supaya bisa diuji `node --test` tanpa
 // menyentuh DB/Firebase. `setMonth` polos pernah membuat 31 Jan + 1 bulan
@@ -143,6 +144,8 @@ export async function createTenant(input: unknown): Promise<TenantActionResult> 
     return failure('SERVER_ERROR', 'Akun Firebase owner gagal dibuat. Coba lagi.');
   }
 
+  const auditContext = await getAuditRequestContext();
+
   let tenantId: string;
   try {
     tenantId = await db.transaction(async (tx) => {
@@ -195,6 +198,28 @@ export async function createTenant(input: unknown): Promise<TenantActionResult> 
         status: 'UNPAIRED',
       });
 
+      // Audit ikut transaksi: bila insert gagal, tenant/owner/langganan/booth
+      // ikut rollback, sehingga tidak pernah ada tenant tanpa jejak pembuatan.
+      await writeAuditLogTx(
+        tx,
+        {
+          actorUserId: session.userId,
+          actorEmail: session.email,
+          actorRole: 'CEO',
+          tenantId: tenantRowId,
+          action: TENANT_AUDIT_ACTIONS.create,
+          resourceId: tenantRowId,
+          reason: data.notes ?? null,
+          // Tanpa invite URL dan tanpa Firebase UID (PRD Bab 8.8).
+          metadata: {
+            planTier: plan.tier,
+            billingPeriod: data.billingPeriod,
+            inviteRequested: data.sendInvite,
+          },
+        },
+        auditContext,
+      );
+
       return tenantRowId;
     });
   } catch {
@@ -204,20 +229,6 @@ export async function createTenant(input: unknown): Promise<TenantActionResult> 
     }
     return failure('SERVER_ERROR', 'Tenant gagal dibuat. Tidak ada data yang tersimpan.');
   }
-
-  await writeAuditLog({
-    actorUserId: session.userId,
-    actorEmail: session.email,
-    tenantId,
-    action: TENANT_AUDIT_ACTIONS.create,
-    resourceId: tenantId,
-    reason: data.notes ?? null,
-    metadata: {
-      planTier: plan.tier,
-      billingPeriod: data.billingPeriod,
-      inviteRequested: data.sendInvite,
-    },
-  });
 
   revalidatePath('/ceo-dashboard/tenants');
 
@@ -288,9 +299,16 @@ export async function changeTenantStatus(input: unknown): Promise<TenantActionRe
   }
 
   const nextStatus = statusAfterAction(action);
+  const auditAction =
+    action === 'suspend'
+      ? TENANT_AUDIT_ACTIONS.suspend
+      : action === 'ban'
+        ? TENANT_AUDIT_ACTIONS.ban
+        : TENANT_AUDIT_ACTIONS.restore;
 
   const db = getDatabase();
   const now = new Date();
+  const auditContext = await getAuditRequestContext();
 
   try {
     await db.transaction(async (tx) => {
@@ -306,6 +324,22 @@ export async function changeTenantStatus(input: unknown): Promise<TenantActionRe
         .update(users)
         .set({ disabled: action !== 'restore', updatedAt: now })
         .where(and(eq(users.tenantId, tenantId), eq(users.role, 'OWNER')));
+
+      // Audit ikut transaksi: status dan jejaknya tidak bisa menyimpang.
+      await writeAuditLogTx(
+        tx,
+        {
+          actorUserId: session.userId,
+          actorEmail: session.email,
+          actorRole: 'CEO',
+          tenantId,
+          action: auditAction,
+          resourceId: tenantId,
+          reason,
+          metadata: { from: tenant.status, to: nextStatus },
+        },
+        auditContext,
+      );
     });
   } catch {
     return failure('SERVER_ERROR', 'Perubahan status gagal disimpan.');
@@ -313,23 +347,15 @@ export async function changeTenantStatus(input: unknown): Promise<TenantActionRe
 
   const owner = await findTenantOwner(tenantId);
   if (owner?.firebaseUid) {
-    await setUserDisabled(owner.firebaseUid, action !== 'restore').catch(() => undefined);
+    try {
+      await setUserDisabled(owner.firebaseUid, action !== 'restore');
+    } catch {
+      return failure(
+        'SERVER_ERROR',
+        `Status database tersimpan sebagai ${nextStatus}, tetapi sinkronisasi akun Owner gagal. Coba lagi atau nonaktifkan Owner di Firebase secara manual.`,
+      );
+    }
   }
-
-  await writeAuditLog({
-    actorUserId: session.userId,
-    actorEmail: session.email,
-    tenantId,
-    action:
-      action === 'suspend'
-        ? TENANT_AUDIT_ACTIONS.suspend
-        : action === 'ban'
-          ? TENANT_AUDIT_ACTIONS.ban
-          : TENANT_AUDIT_ACTIONS.restore,
-    resourceId: tenantId,
-    reason,
-    metadata: { from: tenant.status, to: nextStatus },
-  });
 
   revalidatePath(`/ceo-dashboard/tenants/${tenantId}`);
   revalidatePath('/ceo-dashboard/tenants');
@@ -382,15 +408,30 @@ export async function resetTenantInvite(input: unknown): Promise<TenantActionRes
     inviteUrl,
   });
 
-  await writeAuditLog({
-    actorUserId: session.userId,
-    actorEmail: session.email,
-    tenantId,
-    action: TENANT_AUDIT_ACTIONS.resetInvite,
-    resourceId: tenantId,
-    reason,
-    metadata: { delivered: delivery.ok },
-  });
+  const auditContext = await getAuditRequestContext();
+
+  // Reset undangan BUKAN aksi high-risk: email sudah terkirim, jadi kegagalan
+  // audit tidak boleh menggagalkan respons. Bandingkan dengan create/status/
+  // delete/downgrade yang menaruh audit di dalam transaksi mutasinya.
+  try {
+    await writeAuditLogTx(
+      getDatabase(),
+      {
+        actorUserId: session.userId,
+        actorEmail: session.email,
+        actorRole: 'CEO',
+        tenantId,
+        action: TENANT_AUDIT_ACTIONS.resetInvite,
+        resourceId: tenantId,
+        reason,
+        metadata: { delivered: delivery.ok },
+      },
+      auditContext,
+    );
+  } catch {
+    // Kegagalan audit reset-undangan dicatat ke console; status pengiriman email
+    // tetap menjadi sumber kebenaran untuk respons ke CEO.
+  }
 
   revalidatePath(`/ceo-dashboard/tenants/${tenantId}`);
 
@@ -438,6 +479,7 @@ export async function downgradeTenant(input: unknown): Promise<TenantActionResul
   const db = getDatabase();
   const nowMs = Date.now();
   const { start, end } = periodBounds('monthly', nowMs);
+  const auditContext = await getAuditRequestContext();
 
   try {
     await db.transaction(async (tx) => {
@@ -463,23 +505,121 @@ export async function downgradeTenant(input: unknown): Promise<TenantActionResul
         validFrom: start,
         validUntil: end,
       });
+
+      await writeAuditLogTx(
+        tx,
+        {
+          actorUserId: session.userId,
+          actorEmail: session.email,
+          actorRole: 'CEO',
+          tenantId,
+          action: TENANT_AUDIT_ACTIONS.downgrade,
+          resourceId: tenantId,
+          reason,
+          metadata: { from: tenant.planTier, to: plan.tier },
+        },
+        auditContext,
+      );
     });
   } catch {
     return failure('SERVER_ERROR', 'Downgrade gagal disimpan.');
   }
 
-  await writeAuditLog({
-    actorUserId: session.userId,
-    actorEmail: session.email,
-    tenantId,
-    action: TENANT_AUDIT_ACTIONS.downgrade,
-    resourceId: tenantId,
-    reason,
-    metadata: { from: tenant.planTier, to: plan.tier },
-  });
-
   revalidatePath(`/ceo-dashboard/tenants/${tenantId}`);
   revalidatePath('/ceo-dashboard/tenants');
 
   return { ok: true, tenantId, message: `Plan tenant diturunkan ke ${plan.name}.` };
+}
+
+/**
+ * Soft delete tenant (PRD Task 1.8, Bab 6.A).
+ *
+ * Soft delete, BUKAN hard delete: status menjadi `DELETED`, `deletedAt` diisi,
+ * dan akun Owner dinonaktifkan di DB. Baris tenant dan seluruh data anak tetap
+ * ada untuk retensi 30 hari (purge di luar scope). Setelah `DELETED`, detail
+ * lookup `getTenantByIdOr404` menutup tenant sebagai 404 karena memfilter
+ * `deletedAt`, sehingga tenant terhapus tidak bisa diakses lagi lewat UI.
+ */
+export async function deleteTenant(input: unknown): Promise<TenantActionResult> {
+  const parsed = tenantActionInputSchema.safeParse(input);
+  if (!parsed.success) return failure('INVALID_INPUT', 'Aksi tidak valid.');
+  if (parsed.data.action !== 'delete') {
+    return failure('INVALID_INPUT', `Aksi ${parsed.data.action} bukan delete.`);
+  }
+
+  const { tenantId, reason } = parsed.data;
+
+  let session;
+  try {
+    session = await requireCeo();
+  } catch (error) {
+    if (error instanceof TenantServerError) return failure(error.code, error.message);
+    return failure('SERVER_ERROR', 'Aksi tidak dapat diproses.');
+  }
+
+  let tenant;
+  try {
+    tenant = await getTenantByIdOr404(tenantId);
+  } catch (error) {
+    if (error instanceof TenantServerError) return failure(error.code, error.message);
+    return failure('SERVER_ERROR', 'Aksi tidak dapat diproses.');
+  }
+
+  // `DELETED` bersifat terminal; hapus ulang bukan aksi yang bermakna.
+  if (tenant.status === 'DELETED') {
+    return failure('CONFLICT', 'Tenant sudah dihapus.');
+  }
+
+  const db = getDatabase();
+  const now = new Date();
+  const auditContext = await getAuditRequestContext();
+
+  try {
+    await db.transaction(async (tx) => {
+      await tx
+        .update(tenants)
+        .set({ status: 'DELETED', deletedAt: now, updatedAt: now })
+        .where(eq(tenants.id, tenantId));
+
+      // Owner DB dinonaktifkan dalam transaksi yang sama; Firebase menyusul
+      // setelah commit karena tidak bisa ikut transaksi PostgreSQL.
+      await tx
+        .update(users)
+        .set({ disabled: true, updatedAt: now })
+        .where(and(eq(users.tenantId, tenantId), eq(users.role, 'OWNER')));
+
+      await writeAuditLogTx(
+        tx,
+        {
+          actorUserId: session.userId,
+          actorEmail: session.email,
+          actorRole: 'CEO',
+          tenantId,
+          action: TENANT_AUDIT_ACTIONS.delete,
+          resourceId: tenantId,
+          reason,
+          metadata: { from: tenant.status, to: 'DELETED', softDelete: true },
+        },
+        auditContext,
+      );
+    });
+  } catch {
+    return failure('SERVER_ERROR', 'Tenant gagal dihapus. Tidak ada data yang berubah.');
+  }
+
+  const owner = await findTenantOwner(tenantId);
+  if (owner?.firebaseUid) {
+    try {
+      await setUserDisabled(owner.firebaseUid, true);
+    } catch {
+      return failure(
+        'SERVER_ERROR',
+        'Tenant sudah ditandai DELETED di database, tetapi akun Owner gagal dinonaktifkan di Firebase. Tindak lanjuti secara manual.',
+      );
+    }
+  }
+
+  revalidatePath('/ceo-dashboard/tenants');
+
+  return { ok: true, tenantId, message: 'Tenant dihapus (soft delete, retensi 30 hari).' };
 }

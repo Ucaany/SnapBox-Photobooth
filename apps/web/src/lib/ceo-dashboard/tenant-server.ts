@@ -1,18 +1,21 @@
 /**
- * Utilitas server provisioning tenant (PRD Task 1.4).
+ * Utilitas server provisioning tenant (PRD Task 1.4 + 1.8).
  *
- * Semua keputusan otorisasi dan akses DB untuk modul tenant ada di sini agar
- * server action tetap tipis. Modul ini HANYA untuk server: ia menarik
- * `@snapbox/db`, `@snapbox/auth/admin`, dan `next/headers`.
+ * Semua keputusan otorisasi, akses DB, dan penulisan audit untuk modul tenant
+ * ada di sini agar server action tetap tipis. Modul ini HANYA untuk server: ia
+ * menarik `@snapbox/db`, `@snapbox/auth/admin`, dan `next/headers`.
  *
  * Aturan yang mengikat:
  * - Otorisasi diulang ke DB setiap aksi (ADR-004); snapshot cookie bisa basi.
  * - Hanya role `CEO` yang boleh provisioning/mutasi tenant.
  * - Resource yang tidak ada ATAU di luar jangkauan ditutup sebagai 404, bukan
  *   403, supaya keberadaan tenant tidak bocor (PRD Bab 5.5).
+ * - Audit aksi high-risk bersifat fail-closed: `writeAuditLogTx` dijalankan di
+ *   dalam transaksi mutasi dan MENERUSKAN error, sehingga aksi kritis tidak
+ *   pernah sukses tanpa jejak (PRD Bab 8.8).
  */
 import { and, desc, eq, isNull } from 'drizzle-orm';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 
 import {
   getDatabase,
@@ -22,10 +25,18 @@ import {
   plans,
   tenants,
   users,
+  type Database,
 } from '@snapbox/db';
 import type { PlanFeatures } from '@snapbox/db';
 import { SESSION_COOKIE_NAME, verifySession, type SessionPayload } from '@/lib/auth/session';
 
+import {
+  AUDIT_FIELD_LIMITS,
+  normalizeRequestContext,
+  sanitizeAuditMetadata,
+  truncate,
+  type AuditRequestContext,
+} from './audit-contract';
 import type { TenantPlanOption } from './tenant-contract';
 
 /** Error yang menandai respons HTTP aman untuk client. */
@@ -222,8 +233,9 @@ export interface AuditInput {
   readonly actorUserId: string | null;
   readonly actorEmail: string;
   /**
-   * Role aktor. `null` untuk aktor sistem (mis. webhook gateway) yang bukan
-   * user dan tidak boleh diklaim sebagai CEO.
+   * Role aktor. Wajib eksplisit supaya aktor sistem (webhook gateway) tidak
+   * pernah tercatat sebagai CEO. Aksi high-risk CEO mengirim `'CEO'` dari sesi
+   * terverifikasi, bukan dari body.
    */
   readonly actorRole?: 'CEO' | 'OWNER' | 'STAFF' | null;
   readonly tenantId: string | null;
@@ -231,36 +243,86 @@ export interface AuditInput {
   readonly resourceType?: string;
   readonly resourceId?: string;
   readonly reason?: string | null;
-  /** Metadata TIDAK boleh memuat tautan undangan, Firebase UID, atau secret. */
+  /** Metadata disaring `sanitizeAuditMetadata`; nilai sensitif diganti. */
   readonly metadata?: Record<string, unknown>;
+  /** Worker/queue dapat memakai requestId eksplisit alih-alih header HTTP. */
+  readonly requestId?: string | null;
+  readonly ipAddress?: string | null;
+  readonly userAgent?: string | null;
+}
+
+/** Client Drizzle atau transaction, sehingga insert bisa ikut transaksi mutasi. */
+export type AuditWriter = Pick<Database, 'insert'>;
+
+/**
+ * Menulis satu baris audit pada client/transaction yang diberikan.
+ *
+ * BERBEDA dari helper best-effort lama: fungsi ini MENERUSKAN error ke caller.
+ * Itu disengaja. Audit aksi high-risk bersifat fail-closed (PRD Bab 8.8): bila
+ * insert gagal, mutasi yang berada di transaksi sama akan ikut rollback,
+ * sehingga tidak pernah ada aksi kritis tanpa jejak.
+ *
+ * @throws Error apa pun dari database; caller di dalam transaksi tidak perlu
+ *   menangkapnya.
+ */
+export async function writeAuditLogTx(
+  client: AuditWriter,
+  input: AuditInput,
+  context?: AuditRequestContext,
+): Promise<void> {
+  await client.insert(activityLogs).values({
+    actorUserId: input.actorUserId,
+    actorEmail: truncate(input.actorEmail, AUDIT_FIELD_LIMITS.actorEmail),
+    // `undefined` dipertahankan sebagai default lama ('CEO') supaya pemanggil
+    // non-high-risk yang belum memperbarui tidak berubah perilakunya; aktor
+    // sistem tetap mengirim `null` eksplisit.
+    actorRole: input.actorRole === undefined ? 'CEO' : input.actorRole,
+    tenantId: input.tenantId,
+    action: truncate(input.action, AUDIT_FIELD_LIMITS.action) ?? input.action,
+    resourceType: truncate(input.resourceType ?? 'tenant', AUDIT_FIELD_LIMITS.resourceType),
+    resourceId: truncate(input.resourceId ?? null, AUDIT_FIELD_LIMITS.resourceId),
+    reason: truncate(input.reason ?? null, AUDIT_FIELD_LIMITS.reason),
+    metadata: sanitizeAuditMetadata(input.metadata ?? null),
+    ipAddress: truncate(
+      input.ipAddress ?? context?.ipAddress ?? null,
+      AUDIT_FIELD_LIMITS.ipAddress,
+    ),
+    userAgent: truncate(input.userAgent ?? context?.userAgent ?? null, 1000),
+    requestId: truncate(
+      input.requestId ?? context?.requestId ?? null,
+      AUDIT_FIELD_LIMITS.requestId,
+    ),
+  });
 }
 
 /**
- * Menulis satu baris audit.
+ * Helper best-effort untuk event NON-KRITIS (mis. printer error, device log).
  *
- * Kegagalan audit TIDAK boleh membatalkan mutasi yang sudah sah: ini telemetri
- * kepatuhan, bukan otorisasi. Karena itu error ditelan, sama seperti
- * `touchLastLogin`.
+ * Kegagalan ditelan dan hanya ditulis ke console: telemetri ini tidak boleh
+ * menggagalkan alur pengguna. Aksi high-risk CEO DILARANG memakai fungsi ini;
+ * pakai `writeAuditLogTx` di dalam transaksi mutasinya.
  */
 export async function writeAuditLog(input: AuditInput): Promise<void> {
   try {
-    const db = getDatabase();
-    await db.insert(activityLogs).values({
-      actorUserId: input.actorUserId,
-      actorEmail: input.actorEmail,
-      // Default CEO mempertahankan perilaku dashboard; aktor sistem mengirim
-      // `null` agar tidak diklaim sebagai user.
-      actorRole: input.actorRole === undefined ? 'CEO' : input.actorRole,
-      tenantId: input.tenantId,
-      action: input.action,
-      resourceType: input.resourceType ?? 'tenant',
-      resourceId: input.resourceId ?? null,
-      reason: input.reason ?? null,
-      metadata: input.metadata ?? null,
-    });
+    await writeAuditLogTx(getDatabase(), input);
   } catch {
     // Sengaja ditelan; lihat dokumentasi di atas.
   }
+}
+
+/**
+ * Metadata request untuk audit, dibaca dari header server.
+ *
+ * Dipisah agar server action tipis: action memanggil ini sekali, lalu
+ * menyerahkan hasilnya ke `writeAuditLogTx` di dalam transaksi.
+ */
+export async function getAuditRequestContext(): Promise<AuditRequestContext> {
+  const store = await headers();
+  return normalizeRequestContext({
+    forwardedFor: store.get('x-forwarded-for'),
+    userAgent: store.get('user-agent'),
+    requestId: store.get('x-request-id'),
+  });
 }
 
 /** Tag audit untuk aksi provisioning tenant. */
@@ -271,4 +333,10 @@ export const TENANT_AUDIT_ACTIONS = {
   restore: 'tenant.restore',
   resetInvite: 'tenant.reset_invite',
   downgrade: 'tenant.downgrade',
+  delete: 'tenant.delete',
+} as const;
+
+/** Tag audit untuk editor plan (perubahan harga/fitur = high-risk). */
+export const PLAN_AUDIT_ACTIONS = {
+  update: 'plan.update',
 } as const;
