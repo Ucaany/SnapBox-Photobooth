@@ -130,3 +130,56 @@ export async function createUserWithoutPassword(email: string): Promise<UserReco
 export async function setUserDisabled(uid: string, disabled: boolean): Promise<void> {
   await adminAuth().updateUser(uid, { disabled });
 }
+
+/**
+ * Mencari akun Firebase berdasarkan email.
+ *
+ * Dipakai provisioning tenant untuk membedakan akun yang sudah ada dari akun
+ * baru, sehingga email yang sudah terdaftar tidak menghasilkan error mentah
+ * Firebase di UI.
+ *
+ * @param email Alamat email yang dicari.
+ * @returns Rekaman pengguna, atau `null` bila tidak ada.
+ */
+export async function findUserByEmail(email: string): Promise<UserRecord | null> {
+  try {
+    return await adminAuth().getUserByEmail(email);
+  } catch (error) {
+    if ((error as { code?: string }).code === 'auth/user-not-found') return null;
+    throw error;
+  }
+}
+
+/**
+ * Menghapus akun Firebase.
+ *
+ * Hanya dipakai sebagai kompensasi ketika insert database gagal setelah akun
+ * Firebase dibuat; akun yang sudah dipakai user tidak boleh dihapus sembarangan.
+ *
+ * @param uid Id pengguna Firebase.
+ * @returns Promise selesai saat akun terhapus.
+ */
+export async function deleteUser(uid: string): Promise<void> {
+  await adminAuth().deleteUser(uid);
+}
+
+/**
+ * Membuat tautan reset kata sandi Firebase.
+ *
+ * Tautan ini dipakai sebagai undangan owner: owner menetapkan kata sandinya
+ * sendiri, sehingga SnapBox tidak pernah menyimpan atau mengirim kata sandi.
+ *
+ * @param email Email pengguna; harus sudah terdaftar.
+ * @param continueUrl Tujuan opsional setelah kata sandi ditetapkan.
+ * @returns URL reset yang siap dikirim lewat email.
+ * @throws Error bila email tidak terdaftar atau konfigurasi tidak valid.
+ */
+export async function generatePasswordResetLink(
+  email: string,
+  continueUrl?: string,
+): Promise<string> {
+  return adminAuth().generatePasswordResetLink(
+    email,
+    continueUrl ? { url: continueUrl } : undefined,
+  );
+}

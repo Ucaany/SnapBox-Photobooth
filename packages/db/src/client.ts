@@ -36,6 +36,9 @@ export function createDatabase(connectionString?: string, options: { max?: numbe
     );
   }
 
+  // Pool di-cache di SEMUA lingkungan. Menyimpannya hanya saat non-production
+  // membuat setiap `getDatabase()` di production membuka pool baru, dan satu
+  // request halaman bisa memanggilnya belasan kali.
   const sql =
     globalForDb.__snapboxSql ??
     postgres(url, {
@@ -47,9 +50,7 @@ export function createDatabase(connectionString?: string, options: { max?: numbe
       prepare: false,
     });
 
-  if (process.env.NODE_ENV !== 'production') {
-    globalForDb.__snapboxSql = sql;
-  }
+  globalForDb.__snapboxSql = sql;
 
   return drizzle(sql, { schema, casing: 'snake_case' });
 }
