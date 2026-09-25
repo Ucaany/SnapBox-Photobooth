@@ -29,6 +29,9 @@ const REQUIRED_NAMES = [
   'NEXT_PUBLIC_MIDTRANS_CLIENT_KEY',
   'NEXT_PUBLIC_SENTRY_DSN',
   'NEXT_PUBLIC_TURNSTILE_SITE_KEY',
+  // Nomor WhatsApp sales yang di-inline ke bundle klien untuk CTA landing publik
+  // (direferensikan literal oleh components/public/whatsapp-cta.tsx).
+  'NEXT_PUBLIC_SALES_WHATSAPP',
   // SERVER_ONLY (jangan pernah masuk bundle browser).
   'SUPABASE_SERVICE_ROLE_KEY',
   'DATABASE_URL',
@@ -73,42 +76,49 @@ const BANNED_PATTERNS = [
   { label: 'bentuk secret key Stripe', re: /(SK-[A-Za-z0-9]{10,}|sk_live_|sk_test_)/ },
 ];
 
-// PEM asli multi-baris ditandai baris yang isinya persis header PEM tanpa
-// kutip/escape. Bentuk aman (placeholder) memakai kutip ganda dan `\n` literal.
+// Hanya menjaga PEM multi-baris hipotetis yang TIDAK terkutip: baris yang
+// isinya persis header PEM tanpa kutip/escape. Tidak pernah menyala pada berkas
+// terlacak saat ini, yang memakai bentuk placeholder terkutip dengan `\n`
+// literal. Bentuk aman memakai kutip ganda + `\n` literal.
 const PEM_HEADER_LINE = /^-----BEGIN (RSA |EC )?PRIVATE KEY-----$/;
 
 /** Kumpulkan semua baris assignment `^NAME=` dari berkas contoh. */
-export function assignmentsByName(text) {
+function assignmentsByName(text) {
   const map = new Map();
   const lines = text.split('\n');
-  for (let i = 0; i < lines.length; i++) {
-    const match = lines[i].match(/^([A-Za-z_][A-Za-z0-9_]*)=/);
+  for (const line of lines) {
+    const match = line.match(/^([A-Za-z_][A-Za-z0-9_]*)=/);
     if (!match) continue;
     const name = match[1];
-    const entry = map.get(name) ?? { count: 0, lines: [] };
+    const entry = map.get(name) ?? { count: 0 };
     entry.count += 1;
-    entry.lines.push(i + 1);
     map.set(name, entry);
   }
   return map;
 }
 
-/** Periksa inventaris nama wajib: hilang atau duplikat. */
-export function inventoryFailures(assignments) {
+/** Periksa inventaris nama: hilang, duplikat (semua nama), dan tak dikenal. */
+function inventoryFailures(assignments) {
   const failures = [];
   const missing = REQUIRED_NAMES.filter((name) => !assignments.has(name));
   if (missing.length > 0) {
     failures.push(`nama wajib hilang dari .env.example: ${missing.join(', ')}`);
   }
-  const duplicates = REQUIRED_NAMES.filter((name) => (assignments.get(name)?.count ?? 0) > 1);
+  const duplicates = [...assignments].filter(([, entry]) => entry.count > 1).map(([name]) => name);
   if (duplicates.length > 0) {
-    failures.push(`nama wajib duplikat (lebih dari satu assignment): ${duplicates.join(', ')}`);
+    failures.push(`nama duplikat (lebih dari satu assignment): ${duplicates.join(', ')}`);
+  }
+  const unknown = [...assignments.keys()].filter((name) => !REQUIRED_NAMES.includes(name));
+  if (unknown.length > 0) {
+    failures.push(
+      `nama tak dikenal di .env.example (tidak ada di inventaris wajib): ${unknown.join(', ')}`,
+    );
   }
   return failures;
 }
 
 /** Periksa pola yang menyerupai kredensial asli; laporan tanpa nilai. */
-export function bannedPatternFailures(lines) {
+function bannedPatternFailures(lines) {
   const failures = [];
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -132,6 +142,8 @@ export function bannedPatternFailures(lines) {
   }
   for (const { line, no } of keyLines) {
     const value = line.slice('FIREBASE_ADMIN_PRIVATE_KEY='.length);
+    // Nilai yang memuat newline literal sudah ditangani PEM_HEADER_LINE di atas
+    // bila tidak terkutip; lewati agar tidak dilaporkan dua kali.
     if (/\n/.test(value)) continue;
     if (!value.startsWith('"') || !line.includes('\\n')) {
       failures.push(
@@ -159,7 +171,7 @@ function main() {
   }
 
   console.log(
-    `OK: inventory .env.example lengkap (${REQUIRED_NAMES.length} nama, tanpa duplikat, tanpa placeholder menyerupai kredensial).`,
+    `OK: inventory .env.example lengkap (${REQUIRED_NAMES.length} nama, tanpa duplikat, tanpa nama tak dikenal, tanpa placeholder menyerupai kredensial).`,
   );
 }
 

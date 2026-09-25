@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono, Space_Grotesk } from 'next/font/google';
 import { ToastProvider } from '@snapbox/ui';
 
 import { ThemeProvider, themeInitScript } from '@/components/theme-provider';
+import { getSiteUrl } from '@/lib/public-metadata';
 
 import './globals.css';
 
@@ -47,8 +48,20 @@ export const metadata: Metadata = {
   },
   description:
     'Platform SaaS manajemen photobooth multi-tenant: atur harga, frame, tema kiosk, dan pantau seluruh booth dari satu dasbor.',
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'),
-  robots: { index: false, follow: false },
+  // Basis URL bersama dengan sitemap/robots; `metadataBase` wajib `URL`,
+  // jadi hasil string `getSiteUrl()` dibungkus.
+  metadataBase: new URL(getSiteUrl()),
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+      'max-video-preview': -1,
+    },
+  },
 };
 
 export const viewport: Viewport = {

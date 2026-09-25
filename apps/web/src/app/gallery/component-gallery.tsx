@@ -4,10 +4,10 @@ import { useEffect, useState } from 'react';
 
 import { Toaster } from '@snapbox/ui';
 
-import { PrimitivesSection } from './gallery/primitives-section';
+import { PrimitivesSection } from './primitives-section';
 
-import { NavigationSection } from './gallery/navigation-section';
-import { OverlaysSection } from './gallery/overlays-section';
+import { NavigationSection } from './navigation-section';
+import { OverlaysSection } from './overlays-section';
 
 import type { ReactNode } from 'react';
 

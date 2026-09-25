@@ -360,3 +360,176 @@ body::-webkit-scrollbar-thumb,
     }
   }
 }
+
+/*
+ * ============================================================================
+ * SCOPE MARKETING PUBLIK (`public-*`) — DITAMBAHKAN, BUKAN BAGIAN TOKEN ADR-002
+ * ============================================================================
+ * Semua aturan di bawah BUKAN bagian dari blok token bersama dan TIDAK BOLEH
+ * ditambahkan ke `packages/ui/src/styles.css`. Penempatannya sengaja tanpa
+ * `@layer` bernama (`:root`, `@theme inline`, `@layer base`, `@utility`,
+ * `@layer components`): `scripts/check-token-sync.mjs` membandingkan file
+ * berdasarkan opener blok tersebut, sehingga selektor `public-*` di luar blok
+ * itu tidak ikut dibandingkan dan guard tetap hijau.
+ *
+ * Semua kelas wajib berawalan `public-`. Gradient hero dari identitas PRD
+ * (kuning -> violet -> pink) sengaja hanya dipakai di sini.
+ */
+.public-shell {
+  overflow-x: clip;
+  background-color: #fffef5;
+  color: #141414;
+  width: 100%;
+}
+
+.public-container {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 1300px;
+  padding-inline: 1rem;
+}
+
+@media (min-width: 768px) {
+  .public-container {
+    padding-inline: 1.5rem;
+  }
+}
+
+.public-section {
+  padding-block: 4rem;
+}
+
+@media (min-width: 768px) {
+  .public-section {
+    padding-block: 6rem;
+  }
+}
+
+.public-hero {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background: linear-gradient(135deg, #ffdd00 0%, #8b5cf6 52%, #ff1f8f 100%);
+  border-bottom: 4px solid #141414;
+}
+
+@media (min-width: 768px) {
+  .public-hero {
+    background: linear-gradient(120deg, #ffdd00 0%, #8b5cf6 55%, #ff1f8f 100%);
+  }
+}
+
+.public-gradient-text {
+  background-image: linear-gradient(92deg, #141414 0%, #8b5cf6 48%, #ff1f8f 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+.public-hard-shadow {
+  box-shadow: 6px 6px 0 0 #141414;
+  transition:
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+
+.public-hard-shadow:hover {
+  box-shadow: 6px 6px 0 0 #141414;
+}
+
+.public-hard-shadow:active {
+  box-shadow: 2px 2px 0 0 #141414;
+  transform: translate(2px, 2px);
+}
+
+.public-hard-shadow-sm {
+  box-shadow: 4px 4px 0 0 #141414;
+}
+
+.public-card {
+  border: 2px solid #141414;
+  background-color: #fffef5;
+}
+
+.public-pending {
+  border: 2px dashed #141414;
+  background-color: #f5f0dc;
+  color: #141414;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.public-footer {
+  border-top: 4px solid #141414;
+  background-color: #fffef5;
+  color: #141414;
+}
+
+.public-shell :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 3px solid #141414;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.public-marquee {
+  display: flex;
+  overflow: hidden;
+  user-select: none;
+}
+
+.public-marquee-track {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 2rem;
+  padding-inline: 1rem;
+  min-width: 100%;
+  animation: marquee 30s linear infinite;
+}
+
+.public-press {
+  transition:
+    box-shadow 120ms ease,
+    transform 120ms ease;
+}
+
+.public-press:active {
+  box-shadow: 2px 2px 0 0 #141414;
+  transform: translate(2px, 2px);
+}
+
+@media (max-width: 767px) {
+  .public-hero {
+    border-bottom-width: 3px;
+  }
+
+  .public-hard-shadow {
+    box-shadow: 4px 4px 0 0 #141414;
+  }
+
+  .public-section {
+    padding-block: 3rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .public-marquee-track,
+  .public-hero,
+  .public-hard-shadow,
+  .public-press {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .public-marquee {
+    overflow-x: auto;
+  }
+
+  .public-hard-shadow:active,
+  .public-press:active {
+    transform: none;
+  }
+}
