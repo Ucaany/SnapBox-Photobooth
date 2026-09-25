@@ -7,15 +7,14 @@ import { CeoView } from '@/components/ceo-dashboard/view-switch';
 /**
  * Rute `[...segments]` di bawah `/ceo-dashboard` (PRD Task 1.3).
  *
- * Satu file menangani seluruh 11 subroute lewat registry, sehingga tidak ada
- * 10 salinan boilerplate yang bisa drift. Slug yang tidak ada di registry
- * memanggil `notFound()` sehingga menghasilkan 404, BUKAN halaman kosong.
+ * Satu file menangani subroute registry, sehingga tidak ada salinan boilerplate
+ * yang bisa drift. Slug yang tidak ada di registry memanggil `notFound()`
+ * sehingga menghasilkan 404, BUKAN halaman kosong.
  *
- * Batas dengan Task 1.4/1.5/1.6: rute multi-segmen milik halaman nyata
- * (`tenants/new`, `tenants/[id]`, `plans`, `subscriptions`) TIDAK boleh
- * dirender skeleton di sini. Next memilih rute paling spesifik lebih dulu;
- * penjaga di bawah memastikan catch-all tidak diam-diam menampilkan daftar
- * dummy bila pola itu berubah.
+ * Batas dengan rute nyata (Task 1.4 tenant, 1.5 plan, 1.6 invoice, 1.10 promo):
+ * rute multi-segmen milik halaman nyata TIDAK boleh dirender skeleton di sini.
+ * Next memilih rute paling spesifik lebih dulu; penjaga di bawah memastikan
+ * catch-all tidak diam-diam menampilkan daftar dummy bila pola itu berubah.
  *
  * Halaman tetap server component (metadata + `notFound()`); hanya view-nya yang
  * klien, karena setiap view memegang state filter/form.
@@ -24,8 +23,20 @@ interface PageProps {
   params: Promise<{ segments?: string[] }>;
 }
 
-/** Prefix yang punya halaman nyata sendiri (Task 1.4 tenant, Task 1.5 plan, Task 1.6 invoice). */
-const REAL_SUBROUTE_PREFIXES = ['tenants', 'plans', 'subscriptions'] as const;
+/**
+ * Prefix yang punya halaman nyata sendiri: Task 1.4 tenant, Task 1.5 plan,
+ * Task 1.6 invoice, Task 1.10 promo, Task 1.11 system-health + security. Next
+ * memilih rute paling spesifik lebih dulu, jadi cabang ini hanya jaring pengaman
+ * bila pola rute berubah.
+ */
+const REAL_SUBROUTE_PREFIXES = [
+  'tenants',
+  'plans',
+  'subscriptions',
+  'promos',
+  'system-health',
+  'security',
+] as const;
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { segments } = await params;

@@ -11,7 +11,7 @@
  * 3. Migrasi dihasilkan dari file ini (`pnpm --filter @snapbox/db generate`) dan
  *    tinggal di `packages/db/migrations`, terpisah dari kode aplikasi.
  */
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 import {
   boolean,
   customType,
@@ -128,10 +128,7 @@ export const tenants = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
     deletedAt: timestamp('deleted_at', { withTimezone: true }),
   },
-  (t) => [
-    index('tenants_status_idx').on(t.status),
-    index('tenants_plan_idx').on(t.planTier),
-  ],
+  (t) => [index('tenants_status_idx').on(t.status), index('tenants_plan_idx').on(t.planTier)],
 );
 
 // ============ PLANS ============
@@ -325,10 +322,7 @@ export const pairingTokens = pgTable(
     createdByUserId: uuid('created_by_user_id'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [
-    uniqueIndex('pair_code_idx').on(t.codeHash),
-    index('pair_booth_idx').on(t.boothId),
-  ],
+  (t) => [uniqueIndex('pair_code_idx').on(t.codeHash), index('pair_booth_idx').on(t.boothId)],
 );
 
 // ============ DEVICE CALIBRATIONS ============
@@ -510,7 +504,10 @@ export const promos = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
-    uniqueIndex('promos_code_idx').on(t.code),
+    // Kode voucher case-insensitive (PRD Bab 6.F): expression index `lower(code)`
+    // adalah jaminan sebenarnya. `uniqueIndex(...).on(t.code)` biasa akan
+    // mengizinkan `PROMO2026` dan `promo2026` hidup berdampingan.
+    uniqueIndex('promos_code_lower_idx').on(sql`lower(${t.code})`),
     index('promos_tenant_idx').on(t.tenantId),
   ],
 );
@@ -805,7 +802,9 @@ export const sessions = pgTable(
   'sessions',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    transactionId: uuid('transaction_id').references(() => transactions.id, { onDelete: 'cascade' }),
+    transactionId: uuid('transaction_id').references(() => transactions.id, {
+      onDelete: 'cascade',
+    }),
     boothId: uuid('booth_id').notNull(),
     tenantId: uuid('tenant_id').notNull(),
     deviceId: uuid('device_id'),

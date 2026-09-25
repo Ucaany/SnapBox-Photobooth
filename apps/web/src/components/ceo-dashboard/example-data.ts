@@ -402,55 +402,6 @@ export const CONTOH_DEVICES: readonly ExampleDevice[] = [
   },
 ];
 
-export interface ExamplePromo {
-  readonly id: string;
-  readonly code: string;
-  readonly scope: 'Semua tenant' | 'Tenant terpilih';
-  readonly discount: string;
-  readonly quota: string;
-  readonly status: 'Aktif' | 'Terjadwal' | 'Berakhir' | 'Nonaktif';
-  readonly window: string;
-}
-
-export const CONTOH_PROMOS: readonly ExamplePromo[] = [
-  {
-    id: 'prm-01',
-    code: 'MULAI-GROWTH',
-    scope: 'Semua tenant',
-    discount: '1 bulan add-on gratis',
-    quota: '40 / 100 terpakai',
-    status: 'Aktif',
-    window: '1 sampai 30 Sep 2026',
-  },
-  {
-    id: 'prm-02',
-    code: 'UPGRADE-ENT',
-    scope: 'Tenant terpilih',
-    discount: 'Potongan Rp 50.000',
-    quota: '7 / 25 terpakai',
-    status: 'Aktif',
-    window: '5 sampai 25 Sep 2026',
-  },
-  {
-    id: 'prm-03',
-    code: 'PAMERAN-OKT',
-    scope: 'Semua tenant',
-    discount: '2 minggu perpanjangan',
-    quota: '0 / 60 terpakai',
-    status: 'Terjadwal',
-    window: '1 sampai 31 Okt 2026',
-  },
-  {
-    id: 'prm-04',
-    code: 'PILOT-KOTA',
-    scope: 'Tenant terpilih',
-    discount: 'Add-on gratis 1 bulan',
-    quota: '18 / 18 terpakai',
-    status: 'Berakhir',
-    window: '1 sampai 31 Jul 2026',
-  },
-];
-
 export interface ExampleActivity {
   readonly id: string;
   readonly actor: string;

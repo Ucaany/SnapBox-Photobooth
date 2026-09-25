@@ -2180,3 +2180,48 @@ body::-webkit-scrollbar-thumb,
     animation: none !important;
   }
 }
+
+/* -------------------------------------------------------- promos (1.10) */
+
+/*
+ * SCOPE PROMO GLOBAL (`ceo-promo-*`) — Task 1.10.
+ *
+ * Hanya memakai token yang sudah ada; satu-satunya warna literal adalah aksen
+ * kuning `var(--main)` yang memang identitas SnapBox. Form dan tabel adalah dua
+ * blok fokus halaman, jadi seluruh dekorasi di sini melayani keterbacaan form,
+ * bukan menambah ornamen.
+ */
+
+.ceo-promo-create {
+  border-width: 3px;
+}
+
+.ceo-promo-card-head {
+  border-bottom: 3px solid var(--border);
+}
+
+.ceo-promo-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.125rem;
+}
+
+.ceo-promo-grid {
+  display: grid;
+  gap: 0.875rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 720px) {
+  .ceo-promo-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Field form promo tidak dibatasi lebar 640px agar sejajar di dalam grid. */
+.ceo-promo-field {
+  max-width: none;
+  min-width: 0;
+}
