@@ -49,6 +49,9 @@ const REQUIRED_NAMES = [
   // THIRD_PARTY (server only, SECRET).
   'PAKASIR_B2B_API_KEY',
   'PAKASIR_B2B_WEBHOOK_SECRET',
+  // Opsional (draft Task 1.6): base URL API Pakasir B2B. Bukan secret, tapi
+  // tetap server-only karena adapter gagal tertutup tanpa nilai ini.
+  'PAKASIR_B2B_API_URL',
   'RESEND_API_KEY',
   'RESEND_FROM_EMAIL',
   'SENTRY_AUTH_TOKEN',

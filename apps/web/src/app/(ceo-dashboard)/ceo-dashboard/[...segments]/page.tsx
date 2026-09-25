@@ -11,10 +11,11 @@ import { CeoView } from '@/components/ceo-dashboard/view-switch';
  * 10 salinan boilerplate yang bisa drift. Slug yang tidak ada di registry
  * memanggil `notFound()` sehingga menghasilkan 404, BUKAN halaman kosong.
  *
- * Batas dengan Task 1.4: rute multi-segmen milik halaman nyata
- * (`tenants/new`, `tenants/[id]`) TIDAK boleh dirender skeleton di sini. Next
- * memilih rute paling spesifik lebih dulu; penjaga di bawah memastikan catch-all
- * tidak diam-diam menampilkan daftar tenant dummy bila pola itu berubah.
+ * Batas dengan Task 1.4/1.5/1.6: rute multi-segmen milik halaman nyata
+ * (`tenants/new`, `tenants/[id]`, `plans`, `subscriptions`) TIDAK boleh
+ * dirender skeleton di sini. Next memilih rute paling spesifik lebih dulu;
+ * penjaga di bawah memastikan catch-all tidak diam-diam menampilkan daftar
+ * dummy bila pola itu berubah.
  *
  * Halaman tetap server component (metadata + `notFound()`); hanya view-nya yang
  * klien, karena setiap view memegang state filter/form.
@@ -23,8 +24,8 @@ interface PageProps {
   params: Promise<{ segments?: string[] }>;
 }
 
-/** Prefix yang punya halaman nyata sendiri di Task 1.4. */
-const REAL_SUBROUTE_PREFIXES = ['tenants'] as const;
+/** Prefix yang punya halaman nyata sendiri (Task 1.4 tenant, Task 1.5 plan, Task 1.6 invoice). */
+const REAL_SUBROUTE_PREFIXES = ['tenants', 'plans', 'subscriptions'] as const;
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { segments } = await params;

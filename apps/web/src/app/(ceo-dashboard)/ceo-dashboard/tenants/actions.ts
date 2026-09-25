@@ -46,18 +46,10 @@ import {
   TENANT_AUDIT_ACTIONS,
   writeAuditLog,
 } from '@/lib/ceo-dashboard/tenant-server';
-
-/** Panjang periode langganan awal; dihitung dari DB `plans`, bukan body. */
-function periodBounds(period: 'monthly' | 'yearly', nowMs: number) {
-  const start = new Date(nowMs);
-  const end = new Date(nowMs);
-  if (period === 'monthly') {
-    end.setMonth(end.getMonth() + 1);
-  } else {
-    end.setFullYear(end.getFullYear() + 1);
-  }
-  return { start, end };
-}
+// Batas periode dihitung modul bersama supaya bisa diuji `node --test` tanpa
+// menyentuh DB/Firebase. `setMonth` polos pernah membuat 31 Jan + 1 bulan
+// menjadi 3 Mar, yaitu sekitar satu bulan entitlement ekstra.
+import { periodBounds } from '@/lib/ceo-dashboard/subscription-period';
 
 function failure(
   code: TenantActionErrorCode,
@@ -117,6 +109,15 @@ export async function createTenant(input: unknown): Promise<TenantActionResult> 
         ownerEmail: 'Email sudah terdaftar.',
       },
     );
+  }
+
+  // Plan tanpa harga tahunan tidak boleh diberi periode tahunan: kalau dibiarkan,
+  // tenant menerima 12 bulan dengan harga 1 bulan. Ditolak sebelum side effect
+  // Firebase apa pun dibuat.
+  if (data.billingPeriod === 'yearly' && plan.priceYearly === null) {
+    return failure('INVALID_INPUT', 'Plan ini tidak menyediakan harga tahunan.', {
+      billingPeriod: 'Pilih periode bulanan.',
+    });
   }
 
   const nowMs = Date.now();
