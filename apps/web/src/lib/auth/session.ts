@@ -53,6 +53,8 @@ export type SubscriptionGate = z.infer<typeof subscriptionGateSchema>;
  * bila perlu. ID token sendiri TIDAK PERNAH masuk cookie.
  */
 export const sessionPayloadSchema = z.object({
+  /** Stable server-side session identity used for revocation. */
+  sessionId: z.string().uuid(),
   /** ID baris `users.id` (UUID). */
   userId: z.string().uuid(),
   /** UID Firebase; dipakai untuk verifikasi ulang ke Admin SDK. */
@@ -73,7 +75,9 @@ export const sessionPayloadSchema = z.object({
 export type SessionPayload = z.infer<typeof sessionPayloadSchema>;
 
 /** Bagian payload yang diisi pemanggil; `iat`/`exp` dihitung `createSession`. */
-export type SessionInput = Omit<SessionPayload, 'iat' | 'exp'>;
+export type SessionInput = Omit<SessionPayload, 'iat' | 'exp' | 'sessionId'> & {
+  sessionId?: string;
+};
 
 /**
  * Secret HMAC. Dibaca malas (lazy) supaya modul ini bisa diimpor di runtime
@@ -248,6 +252,7 @@ export async function createSession(
   const issuedAt = Math.floor(nowMs / 1000);
   const payload: SessionPayload = sessionPayloadSchema.parse({
     ...input,
+    sessionId: input.sessionId ?? crypto.randomUUID(),
     iat: issuedAt,
     exp: issuedAt + SESSION_MAX_AGE_SECONDS,
   });

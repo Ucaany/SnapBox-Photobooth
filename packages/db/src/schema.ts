@@ -862,6 +862,93 @@ export const downloadTokens = pgTable('download_tokens', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
+// ============ PLATFORM SETTINGS ============
+
+/**
+ * Pengaturan global platform (PRD Task 1.9).
+ *
+ * Key/value bertipe: `key` adalah allowlist kode kanonik yang didefinisikan di
+ * `apps/web/src/lib/ceo-dashboard/settings-contract.ts`. `value` menyimpan
+ * bentuk JSON sesuai jenis key (string nomor WhatsApp, email, objek template,
+ * boolean flag). Unique pada `key` memastikan satu baris kanonik per setting.
+ *
+ * DILARANG menyimpan SMTP, API key, service-role, atau secret apa pun di sini
+ * (PRD Bab 8.2). Secret tetap di env/secret manager; tabel ini hanya nilai
+ * operasional yang memang boleh dibaca UI.
+ */
+export const platformSettings = pgTable(
+  'platform_settings',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    key: varchar('key', { length: 120 }).notNull().unique(),
+    value: jsonb('value').$type<unknown>().notNull(),
+    updatedByUserId: uuid('updated_by_user_id').references(() => users.id),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('platform_settings_key_idx').on(t.key)],
+);
+
+// ============ PLATFORM TELEMETRY (PRD Task 1.11) ============
+
+export const securityEvents = pgTable(
+  'security_events',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    eventType: varchar('event_type', { length: 40 }).notNull(),
+    severity: varchar('severity', { length: 20 }).notNull().default('INFO'),
+    source: varchar('source', { length: 80 }).notNull(),
+    route: varchar('route', { length: 160 }),
+    subjectFingerprint: varchar('subject_fingerprint', { length: 128 }),
+    sourceFingerprint: varchar('source_fingerprint', { length: 128 }),
+    detail: jsonb('detail').$type<Record<string, unknown>>(),
+    requestId: varchar('request_id', { length: 80 }),
+    providerEventId: varchar('provider_event_id', { length: 200 }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('security_events_type_created_idx').on(t.eventType, t.createdAt),
+    index('security_events_severity_idx').on(t.severity),
+    uniqueIndex('security_events_provider_event_idx').on(t.source, t.providerEventId),
+  ],
+);
+
+export const authSessions = pgTable(
+  'auth_sessions',
+  {
+    id: uuid('id').primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    role: userRoleEnum('role').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    lastSeenAt: timestamp('last_seen_at', { withTimezone: true }).notNull().defaultNow(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+    ipHash: varchar('ip_hash', { length: 128 }),
+    userAgent: varchar('user_agent', { length: 200 }),
+  },
+  (t) => [index('auth_sessions_active_idx').on(t.userId, t.revokedAt, t.expiresAt)],
+);
+
+export const systemHealthChecks = pgTable(
+  'system_health_checks',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    checkKey: varchar('check_key', { length: 60 }).notNull().unique(),
+    component: varchar('component', { length: 80 }).notNull(),
+    status: varchar('status', { length: 20 }).notNull(),
+    latencyMs: integer('latency_ms'),
+    observedAt: timestamp('observed_at', { withTimezone: true }).notNull().defaultNow(),
+    lastSuccessAt: timestamp('last_success_at', { withTimezone: true }),
+    detail: jsonb('detail').$type<Record<string, unknown>>(),
+  },
+  (t) => [
+    index('health_observed_idx').on(t.observedAt),
+    index('health_component_idx').on(t.component),
+  ],
+);
+
 // ============ RELATIONS ============
 
 export const tenantsRelations = relations(tenants, ({ many }) => ({

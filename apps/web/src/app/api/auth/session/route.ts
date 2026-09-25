@@ -16,9 +16,20 @@ import {
   buildSessionFromIdToken,
   touchLastLogin,
 } from '@/lib/auth/authorization';
-import { createSession, sessionCookieOptions, SESSION_COOKIE_NAME } from '@/lib/auth/session';
+import {
+  createSession,
+  sessionCookieOptions,
+  SESSION_COOKIE_NAME,
+  verifySession,
+} from '@/lib/auth/session';
 import { safeHomeForRole } from '@/lib/auth/route-policy';
-import { checkAuthRateLimit, authRateLimitKey } from '@/lib/auth/rate-limit';
+import { checkAuthRateLimit, authRateLimitKey, clientIp } from '@/lib/auth/rate-limit';
+import {
+  recordAuthSession,
+  recordLoginFailed,
+  recordRateLimitHit,
+  revokeAuthSession,
+} from '@/lib/ceo-dashboard/health-security-server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -76,6 +87,29 @@ function jsonError(status: number, message: string, code?: string) {
 }
 
 /**
+ * Email ter-hash untuk telemetry login gagal, bila bisa dibaca.
+ *
+ * ID token adalah JWT; payload hanya di-`JSON.parse` untuk mengambil klaim
+ * `email`. Klaim TIDAK dipercaya untuk otorisasi (itu tugas `verifyIdToken`),
+ * hanya dipakai sebagai atribusi telemetry. Nilai mentahnya tidak pernah
+ * disimpan: `recordLoginFailed` meng-hash sebelum insert. Token rusak -> `null`.
+ */
+function sessionFailureEmail(idToken: string): string | null {
+  const payload = idToken.split('.')[1];
+  if (!payload) return null;
+
+  try {
+    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const decoded = JSON.parse(Buffer.from(normalized, 'base64').toString('utf8')) as {
+      email?: unknown;
+    };
+    return typeof decoded.email === 'string' ? decoded.email : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Menerima ID token dan menerbitkan cookie sesi.
  *
  * Respons selalu `no-store`: baik sukses (memuat tujuan redirect) maupun gagal
@@ -86,9 +120,14 @@ export async function POST(request: Request) {
     return jsonError(403, GENERIC_AUTH_FAILURE, 'CROSS_ORIGIN');
   }
 
-  // Rate limit sesuai PRD Bab 8.2 untuk `/api/auth/*`.
   const limit = checkAuthRateLimit(authRateLimitKey(request, 'session'));
   if (!limit.allowed) {
+    await recordRateLimitHit({
+      route: '/api/auth/session',
+      scope: 'ip',
+      clientIp: clientIp(request),
+      requestId: request.headers.get('x-request-id'),
+    });
     return jsonError(
       429,
       'Terlalu banyak percobaan. Coba lagi beberapa saat lagi.',
@@ -112,6 +151,13 @@ export async function POST(request: Request) {
   try {
     session = await buildSessionFromIdToken(parsed.data.idToken);
   } catch (error) {
+    await recordLoginFailed({
+      route: '/api/auth/session',
+      email: sessionFailureEmail(parsed.data.idToken),
+      clientIp: clientIp(request),
+      reason: error instanceof AuthorizationError ? error.code : 'TOKEN_INVALID',
+      requestId: request.headers.get('x-request-id'),
+    });
     if (error instanceof AuthorizationError) {
       // Penolakan otorisasi ≠ kredensial salah, tetapi pesan untuk klien tetap
       // satu bentuk agar tidak bisa dipakai untuk enumerasi akun/tenant.
@@ -141,11 +187,36 @@ export async function POST(request: Request) {
 
   response.cookies.set(cookie.name, cookie.value, sessionCookieOptions(cookie.maxAge));
 
+  // Verifikasi ulang nullable-safe: bila secret bermasalah, sesi yang sah TETAP
+  // berhasil dan hanya telemetry sesi yang dilewati, bukan 500.
+  const verified = await verifySession(cookie.value);
+  if (verified) {
+    await recordAuthSession({
+      id: verified.sessionId,
+      userId: session.userId,
+      role: session.role,
+      clientIp: clientIp(request),
+      userAgent: request.headers.get('user-agent'),
+      expiresAt: new Date(Date.now() + cookie.maxAge * 1000),
+    });
+  }
+
   return response;
 }
 
 /** Menghapus cookie sesi (logout sisi server). */
-export async function DELETE() {
+export async function DELETE(request: Request) {
+  // Nama cookie diambil dari konstanta, bukan literal, supaya pergantian nama
+  // cookie tidak diam-diam mematikan revoke sesi.
+  const raw = request.headers
+    .get('cookie')
+    ?.match(new RegExp(`(?:^|;\\s*)${SESSION_COOKIE_NAME}=([^;]+)`))?.[1];
+
+  if (raw) {
+    const session = await verifySession(raw);
+    if (session) await revokeAuthSession(session.sessionId);
+  }
+
   const response = NextResponse.json(
     { ok: true },
     { status: 200, headers: { 'cache-control': 'no-store' } },

@@ -31,9 +31,15 @@ import {
   checkAuthRateLimit,
   authEmailRateLimitKey,
   authRateLimitKey,
+  clientIp,
 } from '@/lib/auth/rate-limit';
 import { safeHomeForRole } from '@/lib/auth/route-policy';
-import { createSession, sessionCookieOptions } from '@/lib/auth/session';
+import { createSession, sessionCookieOptions, verifySession } from '@/lib/auth/session';
+import {
+  recordAuthSession,
+  recordLoginFailed,
+  recordRateLimitHit,
+} from '@/lib/ceo-dashboard/health-security-server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -56,6 +62,12 @@ const GENERIC_PIN_FAILURE = 'Email atau PIN tidak sesuai.';
 export async function POST(request: Request) {
   const ipLimit = checkAuthRateLimit(authRateLimitKey(request, 'staff-pin'));
   if (!ipLimit.allowed) {
+    await recordRateLimitHit({
+      route: '/api/auth/staff-pin',
+      scope: 'ip',
+      clientIp: clientIp(request),
+      requestId: request.headers.get('x-request-id'),
+    });
     return NextResponse.json(
       {
         ok: false,
@@ -89,6 +101,12 @@ export async function POST(request: Request) {
   // Batas kedua per email, setelah bentuk input terbukti sah.
   const emailLimit = checkAuthEmailRateLimit(authEmailRateLimitKey('staff-pin', email));
   if (!emailLimit.allowed) {
+    await recordRateLimitHit({
+      route: '/api/auth/staff-pin',
+      scope: 'email',
+      clientIp: clientIp(request),
+      requestId: request.headers.get('x-request-id'),
+    });
     return NextResponse.json(
       {
         ok: false,
@@ -102,7 +120,7 @@ export async function POST(request: Request) {
   try {
     const user = await findActiveStaffByEmail(email);
     if (!user) {
-      return failure();
+      return failure(request, email, 'USER_NOT_FOUND');
     }
 
     // Otorisasi tenant + langganan SEBELUM verifikasi PIN: PIN yang benar pun
@@ -115,12 +133,12 @@ export async function POST(request: Request) {
     // `tenantId` dijamin terisi.
     const tenantId = user.tenantId;
     if (!tenantId) {
-      return failure();
+      return failure(request, email, 'TENANT_MISSING');
     }
 
     const pinMatches = await tenantHasMatchingOperatorPin(tenantId, pin, verifyPin);
     if (!pinMatches) {
-      return failure();
+      return failure(request, email, 'PIN_REJECTED');
     }
 
     const cookie = await createSession({
@@ -142,10 +160,22 @@ export async function POST(request: Request) {
     );
     response.cookies.set(cookie.name, cookie.value, sessionCookieOptions(cookie.maxAge));
 
+    const createdSession = await verifySession(cookie.value);
+    if (createdSession) {
+      await recordAuthSession({
+        id: createdSession.sessionId,
+        userId: user.userId,
+        role: user.role,
+        clientIp: clientIp(request),
+        userAgent: request.headers.get('user-agent'),
+        expiresAt: new Date(Date.now() + cookie.maxAge * 1000),
+      });
+    }
+
     return response;
   } catch (error) {
     if (error instanceof AuthorizationError) {
-      return failure();
+      return failure(request, email, 'AUTHORIZATION_REJECTED');
     }
 
     // Kegagalan infrastruktur (DB/KDF). Jangan bocorkan detail.
@@ -156,7 +186,21 @@ export async function POST(request: Request) {
   }
 }
 
-function failure() {
+/**
+ * Respons gagal tunggal + telemetry login gagal.
+ *
+ * Email di-hash oleh `recordLoginFailed`; nilai mentah tidak pernah disimpan.
+ * Telemetry best-effort: kegagalan DB tidak mengubah respons 401.
+ */
+function failure(request: Request, email: string, reason: string) {
+  void recordLoginFailed({
+    route: '/api/auth/staff-pin',
+    email,
+    clientIp: clientIp(request),
+    reason,
+    requestId: request.headers.get('x-request-id'),
+  });
+
   return NextResponse.json(
     { ok: false, message: GENERIC_PIN_FAILURE, code: 'PIN_REJECTED' },
     { status: 401, headers: { 'cache-control': 'no-store' } },
