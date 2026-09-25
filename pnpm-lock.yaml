@@ -266,6 +266,9 @@ importers:
       '@sentry/nextjs':
         specifier: 11.0.0
         version: 11.0.0(next@15.5.26(@babel/core@7.29.7(supports-color@8.1.1))(@opentelemetry/api@1.9.1)(@types/node@24.13.6)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react@19.3.0)
+      '@snapbox/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
       '@snapbox/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -275,6 +278,12 @@ importers:
       '@snapbox/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      drizzle-orm:
+        specifier: 0.45.3
+        version: 0.45.3(@opentelemetry/api@1.9.1)(postgres@3.4.9)
+      firebase:
+        specifier: 12.19.0
+        version: 12.19.0
       next:
         specifier: 15.5.26
         version: 15.5.26(@babel/core@7.29.7(supports-color@8.1.1))(@opentelemetry/api@1.9.1)(@types/node@24.13.6)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)

@@ -11,7 +11,7 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  transpilePackages: ['@snapbox/db', '@snapbox/shared', '@snapbox/ui'],
+  transpilePackages: ['@snapbox/auth', '@snapbox/db', '@snapbox/shared', '@snapbox/ui'],
   typedRoutes: true,
   eslint: {
     // Lint dijalankan sebagai task terpisah di CI agar error lint tidak

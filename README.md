@@ -155,6 +155,28 @@ pnpm check:firebase-project-id
 pnpm check:claims-sync
 ```
 
+### Autentikasi web dan middleware (Task 1.2)
+
+`/login` (email + kata sandi Firebase, mode toggle PIN staf) dan `/unauthorized`
+ada di `apps/web/src/app/(auth)/`. Alur masuknya:
+
+1. Browser login lewat Firebase Client SDK (`@snapbox/auth/client`).
+2. ID token ditukar di `POST /api/auth/session`; server memverifikasinya dengan
+   `firebase-admin` lalu membaca `users`, `tenants`, dan `b2b_subscriptions`.
+3. Server menerbitkan cookie `snapbox_session` (`HttpOnly`, `Secure` di
+   production, `SameSite=Lax`) berisi snapshot role/tenant/langganan.
+4. `apps/web/src/middleware.ts` (edge) memverifikasi tanda tangan cookie dengan
+   Web Crypto dan mengalihkan sesuai role + gate langganan. Ia **tidak** memakai
+   `firebase-admin`/Postgres; otorisasi final selalu diulang di server.
+
+Jalur PIN staf (`POST /api/auth/staff-pin`) memakai email + PIN 6 digit yang
+diverifikasi terhadap `booths.operator_pin_hash` (scrypt), bukan kata sandi
+Firebase. Rincian keputusan ada di
+[docs/ADR-004-session-cookie-edge-middleware.md](./docs/ADR-004-session-cookie-edge-middleware.md).
+
+Env baru: `SESSION_COOKIE_SECRET` (secret, base64 tepat 32 byte,
+`openssl rand -base64 32`), wajib ada di runtime server **dan** edge.
+
 ### Observability & Edge (Task 0.6)
 
 Sentry web diinisialisasi di `apps/web/src/instrumentation*` dan dibungkus lewat `apps/web/next.config.ts` (sourcemap upload mati tanpa `SENTRY_AUTH_TOKEN`). Sentry kiosk diinisialisasi di `apps/desktop/vite.config.ts` + `apps/desktop/src/main.tsx`. Runbook WAF, rate limit, dan Turnstile ada di `infra/cloudflare/README.md`; deploy Vercel di `apps/web/vercel.json` + `apps/web/VERCEL.md`. Semua tanpa DSN berarti SDK inert, jadi build tetap lulus tanpa rahasia. Env yang dipakai sudah ada di `.env.example`: `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`, `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ZONE_ID`, `TURNSTILE_SECRET_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `VITE_SENTRY_DSN`, dan `VITE_SENTRY_RELEASE`.

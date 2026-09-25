@@ -36,13 +36,14 @@ Runbook ini mengatur:
 Empat skema di `packages/shared/src/env.ts` memisahkan kelas variabel. Pemisahan
 ini pagar arsitektural, bukan preferensi gaya.
 
-| Kelas                 | Prefix / nama                                                                                        | Boleh hidup di                               | Contoh konsumen                                           |
-| :-------------------- | :--------------------------------------------------------------------------------------------------- | :------------------------------------------- | :-------------------------------------------------------- |
-| PUBLIC (browser-safe) | `NEXT_PUBLIC_*`                                                                                      | Bundle browser, env Vercel (Build + Runtime) | `packages/auth/src/client.ts`, Supabase client            |
-| SERVER_ONLY           | `SUPABASE_*`, `DATABASE_URL`, `DIRECT_URL`, `FIREBASE_ADMIN_*`                                       | Runtime server Next.js, proses Drizzle CLI   | `packages/db/src/client.ts`, `packages/auth/src/admin.ts` |
-| ENCRYPTION            | `ENCRYPTION_MASTER_KEY`, `PAIRING_TOKEN_SECRET`, `LAN_JWT_SECRET`, `DEVICE_JWT_SECRET`               | Runtime server, secret store Edge Function   | Fitur pairing/LAN/JWT perangkat, enkripsi kolom           |
-| THIRD_PARTY           | `PAKASIR_*`, `RESEND_*`, `SENTRY_*`, `CLOUDFLARE_*`, `TURNSTILE_SECRET_KEY`, `WHATSAPP_SALES_NUMBER` | Runtime server, job Build Sentry             | Webhook Pakasir, Resend, upload sourcemap                 |
-| DESKTOP (Vite)        | `VITE_*`                                                                                             | Bundle kiosk Vite                            | `apps/desktop/src/main.tsx`, `vite.config.ts`             |
+| Kelas                 | Prefix / nama                                                                                        | Boleh hidup di                                 | Contoh konsumen                                                  |
+| :-------------------- | :--------------------------------------------------------------------------------------------------- | :--------------------------------------------- | :--------------------------------------------------------------- |
+| PUBLIC (browser-safe) | `NEXT_PUBLIC_*`                                                                                      | Bundle browser, env Vercel (Build + Runtime)   | `packages/auth/src/client.ts`, Supabase client                   |
+| SERVER_ONLY           | `SUPABASE_*`, `DATABASE_URL`, `DIRECT_URL`, `FIREBASE_ADMIN_*`                                       | Runtime server Next.js, proses Drizzle CLI     | `packages/db/src/client.ts`, `packages/auth/src/admin.ts`        |
+| SESSION               | `SESSION_COOKIE_SECRET`                                                                              | Runtime server Next.js **dan** edge middleware | `apps/web/src/lib/auth/session.ts`, `apps/web/src/middleware.ts` |
+| ENCRYPTION            | `ENCRYPTION_MASTER_KEY`, `PAIRING_TOKEN_SECRET`, `LAN_JWT_SECRET`, `DEVICE_JWT_SECRET`               | Runtime server, secret store Edge Function     | Fitur pairing/LAN/JWT perangkat, enkripsi kolom                  |
+| THIRD_PARTY           | `PAKASIR_*`, `RESEND_*`, `SENTRY_*`, `CLOUDFLARE_*`, `TURNSTILE_SECRET_KEY`, `WHATSAPP_SALES_NUMBER` | Runtime server, job Build Sentry               | Webhook Pakasir, Resend, upload sourcemap                        |
+| DESKTOP (Vite)        | `VITE_*`                                                                                             | Bundle kiosk Vite                              | `apps/desktop/src/main.tsx`, `vite.config.ts`                    |
 
 **`NEXT_PUBLIC_*` dan `VITE_*` ter-inline ke bundle browser.** Next.js hanya
 meng-inline `process.env.NEXT_PUBLIC_*` pada akses properti statis; Vite hanya

@@ -533,3 +533,172 @@ body::-webkit-scrollbar-thumb,
     transform: none;
   }
 }
+
+/*
+ * ============================================================================
+ * SCOPE AUTENTIKASI (`auth-*`) — DITAMBAHKAN, BUKAN BAGIAN TOKEN ADR-002
+ * ============================================================================
+ * Sama seperti blok `public-*` di atas: selektor di luar opener `:root`,
+ * `@theme inline`, `@layer base`, `@utility`, dan `@layer components`, sehingga
+ * `scripts/check-token-sync.mjs` tidak membandingkannya dan guard tetap hijau.
+ * Semua kelas wajib berawalan `auth-`.
+ */
+.auth-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.55fr);
+  min-height: 100svh;
+  overflow-x: clip;
+  background: #fffef5;
+  color: #141414;
+}
+
+@media (max-width: 860px) {
+  .auth-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.auth-panel {
+  align-self: center;
+  width: min(100%, 640px);
+  padding: clamp(1.5rem, 5vw, 5rem);
+}
+
+.auth-kicker {
+  margin: 0 0 1.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.auth-panel h1 {
+  margin: 0;
+  max-width: 14ch;
+  font-size: clamp(2.25rem, 5vw, 4rem);
+  line-height: 0.98;
+}
+
+.auth-copy {
+  max-width: 40ch;
+  margin: 1rem 0 2rem;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.auth-form {
+  display: grid;
+  gap: 1rem;
+  max-width: 26rem;
+}
+
+.auth-field {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.auth-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 2px solid #141414;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.auth-switch button {
+  min-height: 44px;
+  border: 0;
+  background: #fffef5;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.auth-switch button + button {
+  border-left: 2px solid #141414;
+}
+
+.auth-switch button[aria-pressed='true'] {
+  background: #ffdd00;
+  font-weight: 700;
+}
+
+.auth-switch button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.auth-status {
+  margin: 0;
+  border: 2px dashed #141414;
+  border-radius: 5px;
+  padding: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.auth-error {
+  margin: 0;
+  border: 2px solid #141414;
+  border-radius: 5px;
+  background: #ffb4b4;
+  padding: 0.75rem;
+  font-weight: 700;
+}
+
+.auth-note {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  border-left: 4px solid #141414;
+  background: #8b5cf6;
+  padding: 3rem;
+}
+
+.auth-note span {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.auth-note strong {
+  max-width: 12ch;
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 3.5vw, 3rem);
+  line-height: 1;
+}
+
+.auth-note p {
+  max-width: 30ch;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+@media (max-width: 860px) {
+  .auth-panel {
+    padding: 2rem 1rem 3rem;
+  }
+
+  .auth-note {
+    min-height: 220px;
+    border-top: 4px solid #141414;
+    border-left: 0;
+    padding: 2rem 1rem;
+  }
+}
+
+.auth-shell :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 3px solid #141414;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-shell * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

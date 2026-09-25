@@ -6,6 +6,9 @@
  *
  * - `publicEnvSchema`  : aman untuk browser, wajib prefix `NEXT_PUBLIC_`.
  * - `serverEnvSchema`  : HANYA server (Firebase Admin, Supabase service role, DB).
+ * - `sessionEnvSchema` : kunci penandatangan cookie sesi; dipakai server DAN edge
+ *                        middleware, jadi BUKAN bagian `secretEnvSchema` yang
+ *                        dikonsumsi `node:crypto`.
  * - `secretEnvSchema`  : kunci enkripsi + signing, tidak pernah dikirim ke mana pun.
  * - `thirdPartyEnvSchema`: kredensial vendor, server-only.
  *
@@ -70,9 +73,30 @@ export const secretEnvSchema = z.object({
   PAIRING_TOKEN_SECRET: base64Key32,
   LAN_JWT_SECRET: base64Key32,
   DEVICE_JWT_SECRET: base64Key32,
+  SESSION_COOKIE_SECRET: base64Key32,
 });
 
-/** Kredensial vendor pihak ketiga. Server-only, rotasi per kuartal. */
+/**
+ * Kunci penandatangan cookie sesi web.
+ *
+ * Dipisah dari `secretEnvSchema` karena dua alasan. Pertama, verifikator edge
+ * (`apps/web/src/middleware.ts`) hanya boleh memakai API Web Crypto, sehingga
+ * ia butuh skema tanpa import `node:*` apa pun. Kedua, verifikator yang sama
+ * tidak memerlukan secret enkripsi lain (kunci enkripsi, signing LAN, dsb),
+ * jadi menaruhnya di `secretEnvSchema` akan memaksa middleware memvalidasi
+ * variabel yang tidak dipakainya.
+ *
+ * Nilai WAJIB base64 dari tepat 32 byte acak agar entropi HMAC-SHA256 terjamin.
+ * Jangan pernah jatuh ke default: verifikasi harus gagal tertutup, bukan gagal
+ * terbuka.
+ */
+export const sessionEnvSchema = z.object({
+  SESSION_COOKIE_SECRET: base64Key32,
+});
+
+/**
+ * Kredensial vendor pihak ketiga. Server-only, rotasi per kuartal.
+ */
 export const thirdPartyEnvSchema = z.object({
   PAKASIR_B2B_API_KEY: nonEmpty,
   PAKASIR_B2B_WEBHOOK_SECRET: nonEmpty,
