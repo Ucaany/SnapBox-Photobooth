@@ -99,8 +99,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/unauthorized', request.url));
   }
 
-  // 3. Gate langganan. CEO tidak terikat langganan (snapshot selalu OK untuknya).
+  // 3. Gate langganan. Owner tetap dapat membuka pemulihan langganan.
   if (session.subscription !== 'OK' && !isSubscriptionExempt(pathname)) {
+    if (session.role === 'OWNER') {
+      return NextResponse.redirect(new URL('/owner-dashboard/subscription', request.url));
+    }
+
     const unauthorized = new URL('/unauthorized', request.url);
     unauthorized.searchParams.set('reason', 'subscription');
     return NextResponse.redirect(unauthorized);

@@ -45,6 +45,10 @@ function isSubscriptionExempt(pathname) {
   return SUBSCRIPTION_EXEMPT_PREFIXES.some((prefix) => matchesPrefix(pathname, prefix));
 }
 
+function safeHomeForRole(role) {
+  return role === 'CEO' ? '/ceo-dashboard' : role === 'OWNER' ? '/owner-dashboard' : null;
+}
+
 function safeRedirectPath(value) {
   if (!value) return null;
   if (!value.startsWith('/')) return null;
@@ -83,6 +87,12 @@ test('hanya halaman langganan Owner yang bebas gate langganan', () => {
   assert.equal(isSubscriptionExempt('/owner-dashboard/subscription-history'), false);
   assert.equal(isSubscriptionExempt('/owner-dashboard'), false);
   assert.equal(isSubscriptionExempt('/ceo-dashboard'), false);
+});
+
+test('Owner punya home dashboard aman', () => {
+  assert.equal(safeHomeForRole('OWNER'), '/owner-dashboard');
+  assert.equal(safeHomeForRole('CEO'), '/ceo-dashboard');
+  assert.equal(safeHomeForRole('STAFF'), null);
 });
 
 test('safeRedirectPath menolak vektor open redirect', () => {

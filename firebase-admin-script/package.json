@@ -1,0 +1,16 @@
+{
+  "name": "firebase-admin-script",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local Firebase Admin utility for provisioning the SnapBox CEO claim.",
+  "scripts": {
+    "set-ceo": "node set-ceo.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "firebase-admin": "^14.5.0"
+  }
+}

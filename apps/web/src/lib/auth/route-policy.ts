@@ -78,7 +78,7 @@ export function isSubscriptionExempt(pathname: string): boolean {
  * menampilkan pesan netral, bukan tautan mati.
  */
 export function safeHomeForRole(role: UserRole): string | null {
-  return role === 'CEO' ? '/ceo-dashboard' : null;
+  return role === 'CEO' ? '/ceo-dashboard' : role === 'OWNER' ? '/owner-dashboard' : null;
 }
 
 /**

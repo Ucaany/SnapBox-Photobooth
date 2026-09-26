@@ -1034,6 +1034,323 @@ body::-webkit-scrollbar-thumb,
   font-weight: 600;
 }
 
+/* ============================================================================
+ * SCOPE DASHBOARD OWNER (`owner-*`)
+ * ========================================================================== */
+.owner-shell {
+  min-height: 100svh;
+  width: 100%;
+  background-color: var(--background);
+  color: var(--foreground);
+  overflow-x: clip;
+}
+
+.owner-main {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.25rem 1rem 3rem;
+}
+.owner-sidebar {
+  background-color: var(--secondary-background);
+}
+.owner-sidebar-header,
+.owner-sidebar-footer {
+  padding: 0.75rem;
+}
+.owner-sidebar-trigger {
+  display: none;
+}
+.owner-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.owner-brand-link {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: 0.5rem;
+  border: 2px solid var(--border);
+  border-radius: var(--border-radius);
+  background: var(--main);
+  color: var(--main-foreground);
+  padding: 0.5rem 0.625rem;
+  box-shadow: var(--shadow);
+}
+.owner-brand-link:focus-visible,
+.owner-notification:focus-visible,
+.owner-account-trigger:focus-visible,
+.owner-menu-item:focus-visible {
+  outline: 3px solid var(--border);
+  outline-offset: 2px;
+}
+.owner-brand-mark {
+  width: 0.75rem;
+  height: 0.75rem;
+  flex: none;
+  border: 2px solid var(--border);
+  border-radius: 2px;
+  background: #ff1f8f;
+}
+.owner-brand-text {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  line-height: 1.05;
+  text-transform: uppercase;
+}
+.owner-brand-text small,
+.owner-header-title p,
+.owner-quota strong,
+.owner-quota span,
+.owner-account-name small {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.group[data-collapsible='icon'] .owner-brand-text,
+.group[data-collapsible='icon'] .owner-sidebar-footer {
+  display: none;
+}
+.owner-sidebar-footer {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  line-height: 1.5;
+}
+.owner-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-bottom: 3px solid var(--border);
+  background: var(--secondary-background);
+  padding: 0.625rem 1rem;
+}
+.owner-header-left,
+.owner-header-right {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.5rem;
+}
+.owner-header-right {
+  margin-left: auto;
+}
+.owner-header-title {
+  min-width: 0;
+}
+.owner-header-title h2 {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.owner-plan-badge,
+.owner-quota {
+  min-height: 32px;
+  border: 2px solid var(--border);
+  border-radius: var(--border-radius);
+  background: var(--background);
+  padding: 0.375rem 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.owner-plan-badge {
+  display: none;
+  background: var(--main);
+  color: var(--main-foreground);
+  text-transform: uppercase;
+}
+.owner-quota {
+  display: none;
+  flex-direction: column;
+  gap: 0.125rem;
+  line-height: 1;
+}
+.owner-quota strong {
+  font-weight: 500;
+}
+.owner-notification {
+  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--border);
+  border-radius: var(--border-radius);
+  background: var(--secondary-background);
+  color: inherit;
+  box-shadow: var(--shadow);
+}
+.owner-notification:hover,
+.owner-account-trigger:hover,
+.owner-menu-item:hover {
+  background: var(--main);
+  color: var(--main-foreground);
+}
+.owner-account {
+  position: relative;
+}
+.owner-account-trigger {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 0.5rem;
+  border: 2px solid var(--border);
+  border-radius: var(--border-radius);
+  background: var(--secondary-background);
+  padding: 0.375rem 0.5rem;
+  font: inherit;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+}
+.owner-account-avatar {
+  display: inline-flex;
+  width: 1.75rem;
+  height: 1.75rem;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--border);
+  border-radius: var(--border-radius);
+  background: var(--main);
+  color: var(--main-foreground);
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  font-weight: 700;
+}
+.owner-account-name {
+  display: none;
+  flex-direction: column;
+  max-width: 10rem;
+  overflow: hidden;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.1;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.owner-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.5rem);
+  z-index: 40;
+  display: flex;
+  width: min(16rem, calc(100vw - 2rem));
+  flex-direction: column;
+  gap: 0.25rem;
+  border: 2px solid var(--border);
+  border-radius: var(--border-radius);
+  background: var(--secondary-background);
+  padding: 0.5rem;
+  box-shadow: var(--shadow);
+}
+.owner-menu-item {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  border: 2px solid transparent;
+  border-radius: var(--border-radius);
+  background: transparent;
+  color: inherit;
+  padding: 0.5rem;
+  font: inherit;
+  font-size: 0.875rem;
+  text-align: left;
+  cursor: pointer;
+}
+.owner-menu-item-danger:hover {
+  background: #dc2626;
+  color: #ffffff;
+}
+.owner-menu-error {
+  border: 2px solid var(--border);
+  background: #ffb4b4;
+  padding: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.owner-intro {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 3px solid var(--border);
+  padding-bottom: 1rem;
+}
+.owner-intro p {
+  margin-bottom: 0.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.owner-intro h1 {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 4vw, 2.25rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.owner-intro span {
+  display: block;
+  max-width: 42rem;
+  margin-top: 0.5rem;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+.owner-intro aside {
+  border: 2px dashed var(--border);
+  border-radius: var(--border-radius);
+  background: var(--secondary-background);
+  padding: 0.5rem 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+}
+@media (min-width: 640px) {
+  .owner-plan-badge,
+  .owner-quota {
+    display: inline-flex;
+  }
+}
+@media (min-width: 768px) {
+  .owner-main {
+    gap: 1.5rem;
+    padding: 1.75rem 2rem 4rem;
+  }
+  .owner-sidebar-trigger {
+    display: inline-flex;
+  }
+}
+@media (min-width: 900px) {
+  .owner-account-name {
+    display: flex;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .owner-shell *,
+  .owner-shell *::before,
+  .owner-shell *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
 /* ------------------------------------------------------------ page intro */
 
 .ceo-intro {
