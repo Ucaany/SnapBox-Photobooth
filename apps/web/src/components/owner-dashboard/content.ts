@@ -45,7 +45,7 @@ export const OWNER_NAV_ITEMS: readonly OwnerNavItem[] = [
     label: 'Mesin',
     group: 'operasional',
     title: 'Mesin',
-    description: 'Konfigurasi dan pantau mesin photobooth.',
+    description: 'Daftar booth realtime, pairing device, dan konfigurasi per booth.',
   },
   {
     slug: 'devices',

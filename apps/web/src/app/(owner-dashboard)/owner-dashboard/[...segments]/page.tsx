@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function OwnerDashboardSectionPage({ params }: PageProps) {
   const { segments } = await params;
   if ((segments?.length ?? 0) !== 1) notFound();
-  if (segments?.[0] === 'outlets') notFound();
+  if (segments?.[0] === 'outlets' || segments?.[0] === 'machines') notFound();
   const item = findOwnerNavItem(segments?.[0] ?? '');
   if (!item || item.slug === '') notFound();
   await getOwnerLayoutData({ allowInactiveSubscription: item.slug === 'subscription' });
