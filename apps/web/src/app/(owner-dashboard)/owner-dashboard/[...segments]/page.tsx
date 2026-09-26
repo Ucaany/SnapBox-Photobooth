@@ -28,6 +28,7 @@ export default async function OwnerDashboardSectionPage({ params }: PageProps) {
       'packages',
       'kiosk-theme',
       'promos',
+      'payment-settings',
     ].includes(segments?.[0] ?? '')
   )
     notFound();
