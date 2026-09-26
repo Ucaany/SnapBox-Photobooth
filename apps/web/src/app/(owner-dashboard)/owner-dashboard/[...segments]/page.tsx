@@ -19,9 +19,16 @@ export default async function OwnerDashboardSectionPage({ params }: PageProps) {
   const { segments } = await params;
   if ((segments?.length ?? 0) !== 1) notFound();
   if (
-    ['outlets', 'machines', 'devices', 'frame-studio', 'templates', 'packages'].includes(
-      segments?.[0] ?? '',
-    )
+    [
+      'outlets',
+      'machines',
+      'devices',
+      'frame-studio',
+      'templates',
+      'packages',
+      'kiosk-theme',
+      'promos',
+    ].includes(segments?.[0] ?? '')
   )
     notFound();
   const item = findOwnerNavItem(segments?.[0] ?? '');

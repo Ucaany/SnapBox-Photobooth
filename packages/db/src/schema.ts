@@ -504,10 +504,12 @@ export const promos = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
-    // Kode voucher case-insensitive (PRD Bab 6.F): expression index `lower(code)`
-    // adalah jaminan sebenarnya. `uniqueIndex(...).on(t.code)` biasa akan
-    // mengizinkan `PROMO2026` dan `promo2026` hidup berdampingan.
-    uniqueIndex('promos_code_lower_idx').on(sql`lower(${t.code})`),
+    uniqueIndex('promos_tenant_code_lower_idx')
+      .on(t.tenantId, sql`lower(${t.code})`)
+      .where(sql`${t.tenantId} is not null`),
+    uniqueIndex('promos_global_code_lower_idx')
+      .on(sql`lower(${t.code})`)
+      .where(sql`${t.tenantId} is null`),
     index('promos_tenant_idx').on(t.tenantId),
   ],
 );
@@ -530,6 +532,7 @@ export const promoRedemptions = pgTable(
   (t) => [
     index('redemption_promo_idx').on(t.promoId),
     index('redemption_customer_idx').on(t.customerEmail),
+    index('redemption_promo_customer_idx').on(t.promoId, t.customerEmail),
   ],
 );
 
