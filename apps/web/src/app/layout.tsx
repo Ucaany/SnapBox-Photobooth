@@ -95,7 +95,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body className="bg-background font-sans text-foreground antialiased">
+      <body
+        suppressHydrationWarning
+        className="bg-background font-sans text-foreground antialiased"
+      >
         {/*
           Urutan provider: ThemeProvider terluar karena tema mengendalikan
           seluruh pohon, lalu ToastProvider di dalamnya supaya toast mewarisi
