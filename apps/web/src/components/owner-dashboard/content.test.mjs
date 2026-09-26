@@ -21,6 +21,7 @@ const items = [
   ['subscription', '/owner-dashboard/subscription'],
   ['notifications', '/owner-dashboard/notifications'],
   ['settings', '/owner-dashboard/settings'],
+  ['support', '/owner-dashboard/support'],
 ];
 
 function formatDeviceQuota(usage, quota) {
@@ -30,12 +31,12 @@ function formatDeviceQuota(usage, quota) {
 }
 
 test('Owner navigation covers exact Task 2.1 routes', () => {
-  assert.equal(items.length, 19);
-  assert.equal(new Set(items.map(([slug]) => slug)).size, 19);
-  assert.equal(new Set(items.map(([, path]) => path)).size, 19);
+  assert.equal(items.length, 20);
+  assert.equal(new Set(items.map(([slug]) => slug)).size, 20);
+  assert.equal(new Set(items.map(([, path]) => path)).size, 20);
   assert.equal(
     items.some(([slug]) => slug === 'support'),
-    false,
+    true,
   );
 });
 

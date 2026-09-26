@@ -175,6 +175,14 @@ export const OWNER_NAV_ITEMS: readonly OwnerNavItem[] = [
     title: 'Pengaturan',
     description: 'Atur preferensi akun dan bisnis.',
   },
+  {
+    slug: 'support',
+    path: '/owner-dashboard/support',
+    label: 'Dukungan',
+    group: 'akun',
+    title: 'Dukungan',
+    description: 'Hubungi tim SnapBox untuk bantuan.',
+  },
 ];
 
 export function findOwnerNavItem(slug: string): OwnerNavItem | undefined {

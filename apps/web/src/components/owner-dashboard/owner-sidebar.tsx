@@ -152,4 +152,5 @@ const GLYPHS: Record<string, string> = {
   notifications: 'M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4',
   settings:
     'M12 3v3M12 18v3M3 12h3M18 12h3M6 6l2 2M16 16l2 2M18 6l-2 2M8 16l-2 2M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6',
+  support: 'M4 5h16v11H8l-4 4zM8 9h8M8 12h5',
 };

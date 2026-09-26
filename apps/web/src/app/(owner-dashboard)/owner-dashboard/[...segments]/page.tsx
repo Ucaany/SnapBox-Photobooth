@@ -34,6 +34,9 @@ export default async function OwnerDashboardSectionPage({ params }: PageProps) {
       'analytics',
       'subscription',
       'reports',
+      'notifications',
+      'settings',
+      'support',
     ].includes(segments?.[0] ?? '')
   )
     notFound();

@@ -24,6 +24,13 @@ export interface StaffInviteEmailInput {
   readonly inviteUrl: string;
 }
 
+export interface OwnerSupportEmailInput {
+  readonly email: string;
+  readonly category: string;
+  readonly subject: string;
+  readonly message: string;
+}
+
 export type SendEmailResult =
   { readonly ok: true } | { readonly ok: false; readonly message: string };
 
@@ -104,6 +111,45 @@ export async function sendStaffInviteEmail(input: StaffInviteEmailInput): Promis
       : { ok: false, message: `Resend menolak permintaan (HTTP ${response.status}).` };
   } catch {
     return { ok: false, message: 'Pengiriman email undangan gagal karena gangguan koneksi.' };
+  }
+}
+
+export async function sendOwnerSupportEmail(
+  input: OwnerSupportEmailInput,
+): Promise<SendEmailResult> {
+  const env = parseEnv(thirdPartyEnvSchema, process.env);
+  const to = process.env.SUPPORT_EMAIL?.trim();
+  if (!env.success || !env.data || !to || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to))
+    return {
+      ok: false,
+      message: 'Email dukungan atau Resend belum dikonfigurasi; pesan belum terkirim.',
+    };
+  try {
+    const response = await fetch(RESEND_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${env.data.RESEND_API_KEY}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: env.data.RESEND_FROM_EMAIL,
+        to: [to],
+        reply_to: input.email,
+        subject: `[SnapBox Support] ${flatten(input.subject)}`,
+        text: `Kategori: ${input.category}\nDari: ${input.email}\n\n${input.message}`,
+        html: `<div style="font-family:system-ui;line-height:1.55;color:#141414"><p>Kategori: ${escapeHtml(input.category)}</p><p>Dari: ${escapeHtml(input.email)}</p><h2>${escapeHtml(input.subject)}</h2><p>${escapeHtml(input.message).replace(/\n/g, '<br>')}</p></div>`,
+      }),
+      signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
+      cache: 'no-store',
+    });
+    return response.ok
+      ? { ok: true }
+      : { ok: false, message: `Pengiriman gagal (HTTP ${response.status}); pesan belum terkirim.` };
+  } catch {
+    return {
+      ok: false,
+      message: 'Pengiriman gagal karena gangguan koneksi; pesan belum terkirim.',
+    };
   }
 }
 
