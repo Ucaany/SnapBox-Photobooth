@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { csvCell } from '@/lib/owner-dashboard/transaction-contract';
 
 const MAX_EXPORT_ROWS = 5_000;
 const DAILY_ROWS = [
@@ -15,6 +14,12 @@ const DAILY_ROWS = [
 ] as const;
 const PERIODS = { '7 hari': 7, '30 hari': 30, '90 hari': 90 } as const;
 type Period = keyof typeof PERIODS;
+
+function csvCell(value: string | number): string {
+  let text = String(value);
+  if (/^[\s]*[=+@-]/.test(text)) text = `'${text}`;
+  return `"${text.replaceAll('"', '""')}"`;
+}
 
 export function ReportsView() {
   const [period, setPeriod] = useState<Period>('7 hari');
