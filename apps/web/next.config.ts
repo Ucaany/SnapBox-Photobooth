@@ -23,7 +23,7 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     // Zod dan Drizzle memakai API Node; jangan di-bundle ke edge runtime.
-    serverActions: { bodySizeLimit: '2mb' },
+    serverActions: { bodySizeLimit: '6mb' },
   },
   async headers() {
     return [
