@@ -27,13 +27,6 @@ export interface StaffInviteEmailInput {
 export type SendEmailResult =
   { readonly ok: true } | { readonly ok: false; readonly message: string };
 
-export interface StaffInviteEmailInput {
-  readonly to: string;
-  readonly staffName: string;
-  readonly companyName: string;
-  readonly inviteUrl: string;
-}
-
 const RESEND_ENDPOINT = 'https://api.resend.com/emails';
 const SEND_TIMEOUT_MS = 10_000;
 
