@@ -1322,6 +1322,30 @@ body::-webkit-scrollbar-thumb,
   font-size: 0.6875rem;
   text-transform: uppercase;
 }
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  .print-report,
+  .print-report * {
+    visibility: visible !important;
+  }
+  .print-report {
+    display: block !important;
+    position: absolute;
+    inset: 0;
+    padding: 1rem;
+    color: #111;
+  }
+  .print-report table {
+    border-collapse: collapse;
+  }
+  .print-report th,
+  .print-report td {
+    border-bottom: 1px solid #777;
+    padding: 0.4rem;
+  }
+}
 @media (min-width: 640px) {
   .owner-plan-badge,
   .owner-quota {
