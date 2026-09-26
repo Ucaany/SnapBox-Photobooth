@@ -17,8 +17,22 @@ export interface InviteEmailInput {
   readonly inviteUrl: string;
 }
 
+export interface StaffInviteEmailInput {
+  readonly to: string;
+  readonly staffName: string;
+  readonly companyName: string;
+  readonly inviteUrl: string;
+}
+
 export type SendEmailResult =
   { readonly ok: true } | { readonly ok: false; readonly message: string };
+
+export interface StaffInviteEmailInput {
+  readonly to: string;
+  readonly staffName: string;
+  readonly companyName: string;
+  readonly inviteUrl: string;
+}
 
 const RESEND_ENDPOINT = 'https://api.resend.com/emails';
 const SEND_TIMEOUT_MS = 10_000;
@@ -68,6 +82,34 @@ export async function sendTenantInviteEmail(input: InviteEmailInput): Promise<Se
   } catch {
     // Timeout, DNS, atau koneksi putus: alasan spesifik tidak membantu CEO,
     // dan pesan asli bisa memuat URL internal.
+    return { ok: false, message: 'Pengiriman email undangan gagal karena gangguan koneksi.' };
+  }
+}
+
+export async function sendStaffInviteEmail(input: StaffInviteEmailInput): Promise<SendEmailResult> {
+  const env = parseEnv(thirdPartyEnvSchema, process.env);
+  if (!env.success || !env.data) return { ok: false, message: 'Konfigurasi Resend belum lengkap.' };
+  try {
+    const response = await fetch(RESEND_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${env.data.RESEND_API_KEY}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: env.data.RESEND_FROM_EMAIL,
+        to: [input.to],
+        subject: `Akses staff SnapBox untuk ${input.companyName}`,
+        text: `Halo ${flatten(input.staffName)},\n\nAnda mendapat akses staff SnapBox untuk ${flatten(input.companyName)}. Tetapkan kata sandi: ${input.inviteUrl}`,
+        html: `<div style="font-family:system-ui;line-height:1.55;color:#141414"><p>Halo ${escapeHtml(input.staffName)},</p><p>Anda mendapat akses staff SnapBox untuk <strong>${escapeHtml(input.companyName)}</strong>.</p><p><a href="${escapeHtml(input.inviteUrl)}" style="display:inline-block;border:2px solid #141414;padding:10px 16px;background:#facc15;color:#141414;font-weight:700">Tetapkan kata sandi</a></p></div>`,
+      }),
+      signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
+      cache: 'no-store',
+    });
+    return response.ok
+      ? { ok: true }
+      : { ok: false, message: `Resend menolak permintaan (HTTP ${response.status}).` };
+  } catch {
     return { ok: false, message: 'Pengiriman email undangan gagal karena gangguan koneksi.' };
   }
 }
