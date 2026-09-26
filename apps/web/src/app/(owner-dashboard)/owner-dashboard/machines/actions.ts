@@ -374,6 +374,96 @@ export async function revokeBoothDevice(boothId: unknown): Promise<MachineAction
   }
 }
 
+/** Revoke one listed device only when its tenant-owned booth still matches. */
+export async function revokeDeviceById(deviceId: unknown): Promise<MachineActionResult> {
+  const parsedId = updateBoothInputSchema.shape.id.safeParse(deviceId);
+  if (!parsedId.success) return fail('NOT_FOUND', 'Perangkat tidak ditemukan.');
+  const auth = await requireOwnerTenant();
+  if (!auth) return fail('UNAUTHORIZED', 'Sesi tidak berwenang.');
+
+  const context = await getAuditRequestContext();
+  try {
+    const boothId = await getDatabase().transaction(async (tx) => {
+      const [device] = await tx
+        .select({ id: devices.id, boothId: devices.boothId })
+        .from(devices)
+        .innerJoin(booths, and(eq(booths.id, devices.boothId), eq(booths.tenantId, auth.tenantId)))
+        .where(
+          and(
+            eq(devices.id, parsedId.data),
+            eq(devices.tenantId, auth.tenantId),
+            eq(devices.isRevoked, false),
+          ),
+        )
+        .limit(1);
+      if (!device) return null;
+      await tx
+        .update(devices)
+        .set({ isRevoked: true, revokedAt: new Date() })
+        .where(
+          and(
+            eq(devices.id, device.id),
+            eq(devices.boothId, device.boothId),
+            eq(devices.tenantId, auth.tenantId),
+            eq(devices.isRevoked, false),
+          ),
+        );
+      await tx
+        .update(pairingTokens)
+        .set({ used: true, usedAt: new Date() })
+        .where(
+          and(
+            eq(pairingTokens.boothId, device.boothId),
+            eq(pairingTokens.tenantId, auth.tenantId),
+            eq(pairingTokens.used, false),
+          ),
+        );
+      await tx
+        .update(sessions)
+        .set({ exitAt: new Date(), state: 'CLEANUP' })
+        .where(
+          and(
+            eq(sessions.boothId, device.boothId),
+            eq(sessions.tenantId, auth.tenantId),
+            isNull(sessions.exitAt),
+          ),
+        );
+      await tx
+        .update(booths)
+        .set({
+          deviceFingerprint: null,
+          pairingCode: null,
+          pairingCodeHash: null,
+          pairingCodeExpiresAt: null,
+          status: 'UNPAIRED',
+          updatedAt: new Date(),
+        })
+        .where(and(eq(booths.id, device.boothId), eq(booths.tenantId, auth.tenantId)));
+      await writeAuditLogTx(
+        tx,
+        {
+          actorUserId: auth.session.userId,
+          actorEmail: auth.session.email,
+          actorRole: 'OWNER',
+          tenantId: auth.tenantId,
+          action: 'booth.revoke',
+          resourceType: 'booth',
+          resourceId: device.boothId,
+          metadata: { deviceId: device.id },
+        },
+        context,
+      );
+      return device.boothId;
+    });
+    if (!boothId) return fail('NOT_FOUND', 'Perangkat tidak ditemukan.');
+    revalidateBooth(boothId);
+    revalidatePath('/owner-dashboard/devices');
+    return { ok: true, boothId, message: 'Perangkat dilepas dari mesin ini.' };
+  } catch {
+    return fail('SERVER_ERROR', 'Perangkat gagal dilepas.');
+  }
+}
+
 /** Membuat/mengganti sesi pairing QR untuk booth yang sudah ada. */
 export async function regeneratePairingSession(input: unknown): Promise<MachineActionResult> {
   const parsed = updateBoothInputSchema.shape.id.safeParse(
