@@ -2,7 +2,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-process.env.ENCRYPTION_MASTER_KEY = Buffer.alloc(32, 7).toString('base64');
+const testSecret = Buffer.alloc(32, 7).toString('base64');
+Object.assign(process.env, {
+  ENCRYPTION_MASTER_KEY: testSecret,
+  PAIRING_TOKEN_SECRET: testSecret,
+  LAN_JWT_SECRET: testSecret,
+  DEVICE_JWT_SECRET: testSecret,
+  SESSION_COOKIE_SECRET: testSecret,
+});
 const { encryptPaymentSecret, decryptPaymentSecret } = await import('./payment-crypto.ts');
 
 test('payment credential encryption round trips and rejects tampering', () => {

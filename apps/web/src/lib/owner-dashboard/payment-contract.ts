@@ -3,7 +3,7 @@ import {
   GATEWAY_PROVIDERS,
   gatewayModeSchema,
   gatewayProviderSchema,
-} from '@snapbox/shared';
+} from '@snapbox/shared/domain';
 import { z } from 'zod';
 
 export const PAYMENT_PROVIDERS = GATEWAY_PROVIDERS;
