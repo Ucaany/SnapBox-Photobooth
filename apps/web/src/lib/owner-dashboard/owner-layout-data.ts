@@ -1,8 +1,10 @@
+import 'server-only';
 import { and, count, desc, eq } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 
 import { b2bSubscriptions, devices, getDatabase, plans, tenants, users } from '@snapbox/db';
 import { SESSION_COOKIE_NAME, verifySession } from '@/lib/auth/session';
+import { isSessionRevoked } from '@/lib/auth/session-revocation';
 import { checkEntitlement, loadEntitlementContext } from '@/lib/entitlement/entitlement-service';
 import { isSubscriptionUsable } from '@/lib/entitlement/entitlement-contract';
 
@@ -21,6 +23,21 @@ export async function getOwnerLayoutData(
   const session = await verifySession(store.get(SESSION_COOKIE_NAME)?.value);
 
   if (!session) redirect('/login?next=/owner-dashboard');
+
+  // Lapisan REVOKE di layout, bukan hanya di `requireOwnerTenant()`.
+  //
+  // Layout adalah modul server PERTAMA yang dijalankan untuk seluruh
+  // owner-dashboard, jadi ia memegang sesi sebelum gate per-aksi mana pun. Bila
+  // revocation hanya diperiksa di `requireOwnerTenant()`, cookie yang dicabut
+  // masih sempat merender halaman yang dijaga layout — termasuk halaman
+  // langganan, yang butuh DB tapi bukan aksi. Meletakkan predicate di sini
+  // menutup celah itu tanpa menambah query: layout sudah membuka koneksi.
+  //
+  // Middleware Edge tetap tidak boleh melakukan ini; verifikasinya murni
+  // kriptografi. Gagal tertutup, sama seperti gate lain.
+  if (await isSessionRevoked(session.sessionId)) {
+    redirect('/login?next=/owner-dashboard');
+  }
 
   const db = getDatabase();
   const [owner] = await db

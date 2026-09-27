@@ -9,6 +9,8 @@
  * `plans` di-join untuk nama yang ditampilkan, sehingga tidak ada denormalisasi
  * yang bisa basi.
  */
+import 'server-only';
+
 import { desc, eq } from 'drizzle-orm';
 
 import { getDatabase, b2bSubscriptions, plans, tenants } from '@snapbox/db';

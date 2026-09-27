@@ -19,6 +19,7 @@
  * kamera. Skema tidak membatasi nilai enum krom/filter di sini agar tingkat
  * baru di aplikasi tidak membuat tenant lama ditolak `INVALID_DATA`.
  */
+
 import { z } from 'zod';
 
 import type { PlanFeatures } from '@snapbox/db';

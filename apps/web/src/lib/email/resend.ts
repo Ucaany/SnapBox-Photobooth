@@ -7,6 +7,8 @@
  *
  * Modul HANYA untuk server. Jangan impor dari komponen client.
  */
+import 'server-only';
+
 import { parseEnv, thirdPartyEnvSchema } from '@snapbox/shared/env';
 
 export interface InviteEmailInput {

@@ -8,6 +8,8 @@
  * Kolom sensitif (`pairing_code_hash`, `*_pin_hash`, `session_jwt_hash`) tidak
  * pernah masuk proyeksi select, sehingga tidak mungkin bocor lewat serialisasi.
  */
+import 'server-only';
+
 import { and, count, desc, eq } from 'drizzle-orm';
 import { booths, devices, getDatabase, outlets, packages, sessions } from '@snapbox/db';
 

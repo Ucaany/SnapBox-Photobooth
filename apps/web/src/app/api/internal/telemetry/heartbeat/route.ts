@@ -17,6 +17,8 @@
  * - `checkKey` unik: kiriman ulang menimpa baris yang sama (idempotent).
  * - `detail` disaring oleh service; secret/token tidak tersimpan.
  */
+import 'server-only';
+
 import { NextResponse } from 'next/server';
 
 import { healthHeartbeatSchema } from '@/lib/ceo-dashboard/health-security-contract';

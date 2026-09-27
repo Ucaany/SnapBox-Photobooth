@@ -13,6 +13,8 @@
  * HANYA untuk runtime Node (`runtime = 'nodejs'`): modul ini menarik
  * `@snapbox/auth/admin` (firebase-admin) dan `@snapbox/db` (postgres).
  */
+import 'server-only';
+
 import { and, desc, eq, isNull, ne } from 'drizzle-orm';
 
 import { toCustomClaims } from '@snapbox/auth';

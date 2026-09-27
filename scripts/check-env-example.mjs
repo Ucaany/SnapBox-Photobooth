@@ -28,7 +28,6 @@ const REQUIRED_NAMES = [
   'NEXT_PUBLIC_FIREBASE_APP_ID',
   'NEXT_PUBLIC_MIDTRANS_CLIENT_KEY',
   'NEXT_PUBLIC_SENTRY_DSN',
-  'NEXT_PUBLIC_TURNSTILE_SITE_KEY',
   // Nomor WhatsApp sales yang di-inline ke bundle klien untuk CTA landing publik
   // (direferensikan literal oleh components/public/whatsapp-cta.tsx).
   'NEXT_PUBLIC_SALES_WHATSAPP',
@@ -41,6 +40,12 @@ const REQUIRED_NAMES = [
   'FIREBASE_ADMIN_PRIVATE_KEY',
   // SESSION (SECRET server + edge middleware).
   'SESSION_COOKIE_SECRET',
+  // Kunci lama untuk jendela tumpang tindih saat rotasi. Tidak secret baru:
+  // nilainya sudah pernah jadi SESSION_COOKIE_SECRET, dan kosong berarti tidak
+  // ada retensi — yang perlu dijaga inventarinya, bukan nilainya.
+  'SESSION_COOKIE_SECRET_PREVIOUS',
+  // Opt-out `Secure` untuk pengembangan lokal di http://localhost.
+  'SESSION_COOKIE_INSECURE_DEV',
   // ENCRYPTION (SECRET server-only).
   'ENCRYPTION_MASTER_KEY',
   'PAIRING_TOKEN_SECRET',
@@ -66,7 +71,6 @@ const REQUIRED_NAMES = [
   // CLOUDFLARE (server only, SECRET).
   'CLOUDFLARE_API_TOKEN',
   'CLOUDFLARE_ZONE_ID',
-  'TURNSTILE_SECRET_KEY',
   // LINKS (bukan secret).
   'WHATSAPP_SALES_NUMBER',
   'TELEMETRY_HASH_SALT',

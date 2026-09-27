@@ -107,6 +107,29 @@ export async function setUserClaims(uid: string, claims: FirebaseClaims): Promis
 }
 
 /**
+ * Membaca custom claim yang sedang tersimpan pada akun Firebase.
+ *
+ * Hanya untuk rekonsiliasi idempoten (`scripts/seed-firebase-claims.ts`):
+ * `setCustomUserClaims` menimpa seluruh claim, jadi tanpa pembacaan ini
+ * seeding tidak bisa membedakan "sudah benar" dari "perlu ditulis ulang".
+ * JALur otorisasi tidak boleh memakainya — `verifyIdToken` adalah satu-satunya
+ * pembaca yang dipercaya.
+ *
+ * @param uid Id pengguna Firebase.
+ * @returns Custom claim tersimpan, atau `{}` bila akun belum punya claim.
+ * @returns `null` bila uid tidak ada di Firebase.
+ * @throws Error bila `FIREBASE_ADMIN_*` belum lengkap.
+ */
+export async function getUserClaims(uid: string): Promise<Record<string, unknown> | null> {
+  try {
+    return (await adminAuth().getUser(uid)).customClaims ?? {};
+  } catch (error) {
+    if ((error as { code?: string }).code === 'auth/user-not-found') return null;
+    throw error;
+  }
+}
+
+/**
  * Membuat pengguna baru tanpa password.
  *
  * Akun masuk lewat provider federasi; password tidak pernah dibuat di sini.

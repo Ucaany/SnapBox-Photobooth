@@ -1,13 +1,32 @@
+import 'server-only';
 import { and, count, eq, sql } from 'drizzle-orm';
 import { booths, getDatabase, outlets, tenants, transactions, users } from '@snapbox/db';
 import { SESSION_COOKIE_NAME, verifySession } from '@/lib/auth/session';
+import { isSessionRevoked } from '@/lib/auth/session-revocation';
 import { checkEntitlement } from '@/lib/entitlement/entitlement-service';
 import { outletIdSchema, type OutletDetail, type OutletListRow } from './outlet-contract';
 
+/**
+ * Gerbang Owner untuk seluruh aksi dan loader tenant.
+ *
+ * Empat lapis, semuanya wajib:
+ * 1. Cookie sesi sah secara kriptografi (`verifySession`, tanpa DB — ia jalan
+ *    juga di Edge, jadi tidak boleh query).
+ * 2. `auth_sessions.revoked_at` kosong. Tanpa ini, `revokeAuthSession` dan
+ *    `revokeAuthSessionsForUser` hanya mengubah tampilan dashboard: cookie yang
+ *    dicabut tetap sah sampai `SESSION_MAX_AGE_SECONDS` (12 jam) habis.
+ * 3. Baris `users` masih OWNER, aktif, tidak terhapus, dan punya tenant.
+ * 4. Tenant masih ACTIVE dan tidak soft-deleted.
+ *
+ * Sengaja tidak melemahkan lapis mana pun: `auth_sessions` hanya dibaca di sini
+ * dan di `requireCeo`, jadi tidak ada jalur otorisasi yang bisa melewati
+ * pencabutan.
+ */
 export async function requireOwnerTenant() {
   const { cookies } = await import('next/headers');
   const session = await verifySession((await cookies()).get(SESSION_COOKIE_NAME)?.value);
   if (!session) return null;
+  if (await isSessionRevoked(session.sessionId)) return null;
   const db = getDatabase();
   const [owner] = await db
     .select({

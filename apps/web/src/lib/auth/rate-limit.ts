@@ -27,18 +27,67 @@ interface Bucket {
 /** Jendela tetap 1 menit, sesuai spesifikasi PRD. */
 const WINDOW_MS = 60_000;
 
-/** Batas per jendela. */
-const IP_LIMIT = 10;
-const EMAIL_LIMIT = 5;
-
 const buckets = new Map<string, Bucket>();
 
 /**
  * Bukti bersama antar-instance tidak ada, tetapi peta tumbuh tanpa batas bila
- * penyerang memalsukan kunci. Pembersihan sederhana ini menjaga memori tetap
- * wajar tanpa perlu timer (timer tidak boleh dipakai di runtime serverless).
+ * penyerang memalsukan kunci. Pembersihan ini menyingkirkan HANYA entri yang
+ * tidak berguna lagi.
+ *
+ * Versi sebelumnya adalah `if (buckets.size >= MAX_BUCKETS) buckets.clear()`, dan
+ * itu bukan hanya tidak menyelesaikan masalah memori: ia menghapus SEMUA
+ * penghitung untuk SEMUA pengguna. 5.000 kunci palsu dari satu penyerang sudah
+ * cukup untuk membuat rate limit auth mati total, dan yang gagal dilindungi
+ * adalah setiap orang yang sedang diserang, bukan penyerangnya.
+ *
+ * Dua tahap, berurutan:
+ * 1. Entri yang jendelanya sudah lewat dibuang lebih dulu.
+ * 2. Kalau peta masih penuh, entri **paling baru** yang dibuang, bukan yang
+ *    tertua. Ini pilihan yang menentukan: saat penyerang membanjiri kunci
+ *    palsu, kunci-kuncinya adalah yang paling baru, sedangkan penghitung korban
+ *    sudah ada lebih lama. Membuang yang terbaru berarti banjir penyerang yang
+ *    hilang, bukan penghitung orang yang sedang dilindungi. Membuang yang
+ *    tertua (FIFO) terlihat lebih"netral" tetapi justru menjadi vektor yang
+ *    lebih murah: 5.000 permintaan sudah cukup untuk menghapus satu penghitung
+ *    tertentu yang sudah ada, bukan hanya membanjiri peta.
+ *
+ * Pembuangan dibatasi `EVICTION_BATCH` per panggilan supaya satu permintaan
+ * tidak bisa menghapus ribuan entri sekaligus.
  */
 const MAX_BUCKETS = 5_000;
+
+/** Batas per jendela. */
+const IP_LIMIT = 10;
+const EMAIL_LIMIT = 5;
+
+/** PRD Bab 8.2: `/api/booth/*` dibatasi 60 req/menit per fingerprint perangkat. */
+const DEVICE_LIMIT = 60;
+
+/** Jumlah entri yang dibuang per kali saat kuota kunci tercapai. */
+const EVICTION_BATCH = 256;
+
+function evictExpired(nowMs: number): void {
+  if (buckets.size < MAX_BUCKETS) return;
+
+  let removed = 0;
+  for (const [key, bucket] of buckets) {
+    if (bucket.resetAt > nowMs) continue;
+    buckets.delete(key);
+    removed += 1;
+    if (removed >= EVICTION_BATCH) return;
+  }
+
+  if (buckets.size < MAX_BUCKETS) return;
+
+  // `Map` mempertahankan urutan sisip, jadi iterasi dari belakang memberi entri
+  // paling baru lebih dulu.
+  const newestFirst = [...buckets.keys()].reverse();
+  for (const key of newestFirst) {
+    buckets.delete(key);
+    removed += 1;
+    if (removed >= EVICTION_BATCH) return;
+  }
+}
 
 function consume(
   key: string,
@@ -48,7 +97,7 @@ function consume(
   const existing = buckets.get(key);
 
   if (!existing || existing.resetAt <= nowMs) {
-    if (buckets.size >= MAX_BUCKETS) buckets.clear();
+    evictExpired(nowMs);
     buckets.set(key, { count: 1, resetAt: nowMs + WINDOW_MS });
     return { allowed: true, retryAfter: 0 };
   }
@@ -101,6 +150,21 @@ export function authEmailRateLimitKey(scope: string, email: string): string {
   return `${scope}:email:${email.trim().toLowerCase()}`;
 }
 
+/**
+ * Kunci batas laju per fingerprint perangkat booth.
+ *
+ * Fingerprint di sini WAJIB berasal dari nilai yang tersimpan di `devices`, bukan
+ * dari header permintaan. Kalau kuncinya berasal dari header, penyerang cukup
+ * mengacak-acak header untuk mendapat jendela baru pada setiap permintaan, dan
+ * batas per perangkat berubah jadi tidak ada batas sama sekali. Karena itu
+ * fingerprint selalu diverifikasi bersama token perangkat lebih dulu
+ * (`authenticateDevice`), dan yang diteruskan ke sini adalah nilai yang sudah
+ * cocok dengan baris `devices`.
+ */
+export function boothDeviceRateLimitKey(scope: string, fingerprint: string): string {
+  return `${scope}:device:${fingerprint}`;
+}
+
 export interface RateLimitResult {
   readonly allowed: boolean;
   /** Detik sampai jendela berikutnya; 0 bila diizinkan. */
@@ -127,7 +191,33 @@ export function checkAuthEmailRateLimit(key: string, nowMs: number = Date.now())
   return consume(key, EMAIL_LIMIT, nowMs);
 }
 
+/**
+ * Memeriksa batas per fingerprint perangkat untuk `/api/booth/*`.
+ *
+ * Dipakai **bersama** dengan bucket per IP, bukan menggantikannya:
+ * - Bucket per fingerprint menahan satu perangkat yang mengirim dari banyak IP.
+ * - Bucket per IP menahan satu IP yang menampung banyak fingerprint berbeda.
+ *
+ * Menghapus yang per IP akan membuka penyerang yang memutar fingerprint;
+ * menghapus yang per fingerprint akan membuat satu perangkat bisa iterating
+ * sendiri. Keduanya harus ada.
+ *
+ * @param key Hasil `boothDeviceRateLimitKey`.
+ * @param nowMs Waktu sekarang, dapat diganti untuk test.
+ */
+export function checkBoothDeviceRateLimit(
+  key: string,
+  nowMs: number = Date.now(),
+): RateLimitResult {
+  return consume(key, DEVICE_LIMIT, nowMs);
+}
+
 /** Mengosongkan seluruh jendela. Dipakai test, bukan runtime. */
 export function resetAuthRateLimits(): void {
   buckets.clear();
+}
+
+/** Jumlah kunci yang sedang dilacak. Dipakai test untuk memeriksa eviction. */
+export function trackedRateLimitKeys(): number {
+  return buckets.size;
 }

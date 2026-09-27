@@ -7,6 +7,8 @@
  *
  * Otorisasi diulang ke DB setiap aksi (ADR-004); snapshot cookie bisa basi.
  */
+import 'server-only';
+
 import { eq } from 'drizzle-orm';
 
 import { getDatabase, plans } from '@snapbox/db';

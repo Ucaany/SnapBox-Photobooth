@@ -292,7 +292,39 @@ Buat service-role key baru di dasbor Supabase, pasang `SUPABASE_SERVICE_ROLE_KEY
 di Vercel, deploy ulang, verifikasi, lalu cabut key lama. Karena key ini melewati
 RLS, jendela dua key aktif harus sesingkat mungkin.
 
-### 7.6 Overlap/revocation kunci signing
+### 7.6 Rotasi `SESSION_COOKIE_SECRET` (dua langkah, boleh saat deploy berjalan)
+
+Nilai cookie sesi berbentuk `kid.payload.signature`, dan `kid` mengikat kunci
+penandatangan. Verifikasi membaca kunci saat ini **plus** setiap kunci yang
+masih terdaftar di `SESSION_COOKIE_SECRET_PREVIOUS`. Instance yang tidak mengenali
+`kid` menolak cookie tersebut — fail-closed, bukan diabaikan.
+
+Dua langkah, dan **kedua langkah wajib**. Melewatkan salah satunya langsung
+mencabut SEMUA sesi yang masih hidup: `SESSION_MAX_AGE_SECONDS` = 12 jam.
+
+```bash
+# LANGKAH 1 — pasang kunci baru, kunci lama tetap diterima.
+#            Deploy penuh dulu; jangan cabut kunci lama di langkah yang sama.
+#            (isi dipisah koma bila lebih dari satu)
+SESSION_COOKIE_SECRET="$(openssl rand -base64 32)"
+SESSION_COOKIE_SECRET_PREVIOUS="<kunci lama>"
+
+# LANGKAH 2 — setelah max age terlewati, cabut kunci lama.
+#            Tidak memaksa logout karena tidak ada cookie hidup yang bertanda itu.
+SESSION_COOKIE_SECRET_PREVIOUS=""
+```
+
+Verifikasi tanpa membocorkan nilai:
+
+```bash
+node --experimental-strip-types --test apps/web/src/lib/auth/session-rotation.test.mjs
+```
+
+Untuk opt-out `Secure` saat pengembangan lokal di `http://localhost`:
+`SESSION_COOKIE_INSECURE_DEV=1`. Hanya nilai persis `1` yang menonaktifkan, dan
+`NODE_ENV` tidak lagi berperan sama sekali.
+
+### 7.7 Overlap/revocation kunci signing
 
 `PAIRING_TOKEN_SECRET`, `LAN_JWT_SECRET`, `DEVICE_JWT_SECRET` dipakai untuk
 membuat dan memverifikasi token. Saat rotasi, sediakan **jendela overlap**: token
@@ -301,7 +333,7 @@ Alur: pasang kunci baru, terima kedua kunci selama jendela grace, lalu cabut kun
 lama. Revocation total (tanpa overlap) membatalkan semua token aktif dan
 memaksa pairing ulang, jadi hanya dipakai saat kompromi.
 
-### 7.7 Migrasi kunci enkripsi (`ENCRYPTION_MASTER_KEY`)
+### 7.8 Migrasi kunci enkripsi (`ENCRYPTION_MASTER_KEY`)
 
 **`ENCRYPTION_MASTER_KEY` BUKAN penukaran env biasa.** Mengganti nilainya
 langsung membuat seluruh ciphertext aktif **tidak terbaca** — data terenkripsi

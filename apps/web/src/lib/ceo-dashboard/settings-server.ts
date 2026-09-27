@@ -8,6 +8,8 @@
  * Otorisasi diulang ke DB setiap aksi (ADR-004); snapshot cookie bisa basi.
  * DILARANG membaca/menulis secret (SMTP, API key, service role) di sini.
  */
+import 'server-only';
+
 import { eq, inArray } from 'drizzle-orm';
 
 import { getDatabase, platformSettings } from '@snapbox/db';

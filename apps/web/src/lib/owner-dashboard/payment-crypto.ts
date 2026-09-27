@@ -1,3 +1,4 @@
+import 'server-only';
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
 import { parseEnv, secretEnvSchema } from '@snapbox/shared/env';
 

@@ -1,3 +1,4 @@
+import 'server-only';
 import { and, desc, eq } from 'drizzle-orm';
 import { getDatabase, templates } from '@snapbox/db';
 

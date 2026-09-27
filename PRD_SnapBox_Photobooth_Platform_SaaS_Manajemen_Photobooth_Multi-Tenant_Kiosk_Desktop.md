@@ -323,11 +323,27 @@
 | Analytics / Finance / Reports | ❌ | ❌ | ❌ | ✅ | ❌ |
 | Export CSV / Bulk ZIP | ❌ | ❌ | ❌ | ✅ | ❌ |
 | Subscription B2B & Checkout | ❌ | ❌ | ❌ | ✅ (milik sendiri) | ✅ (semua) |
-| Staff Dashboard (Read-Only) | ❌ | ❌ | ✅ | ❌ | ❌ |
+| Staff Dashboard (Read-Only) — **TIDAK DIBANGUN, lihat §5.2** | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Konsol Perangkat (Web, limit) | ❌ | ❌ | ❌ | ✅ | ❌ |
 | Kiosk Payment (Tunai/Voucher/QRIS) | ❌ | ✅ | ❌ | ❌ | ❌ |
 | Konsol Perangkat (Tauri via PIN) | ❌ | ❌ | ❌ | ✅ | ❌ |
 | Notifikasi In-App Realtime | ❌ | ❌ | ✅ | ✅ | ✅ |
+
+> **AMENDEMEN 2026-09-27 — D-04.** Otorisasi SnapBox **berbasis peran, bukan
+> berbutir**. Yang dijamin oleh kode adalah tiga hal: CEO boleh lintas tenant,
+> OWNER penuh di dalam tenant-nya, dan STAFF tidak punya halaman tujuan sama
+> sekali — karena `/staff-dashboard` memang belum ada dan **dilarang
+> dibangun** sebelum ada keputusan RBAC baru.
+>
+> Baris "Staff Dashboard (Read-Only)" di tabel ini menjadi ❌ semua pihak,
+> termasuk Staff. Baris Customer CRM "masked" juga tidak ditegakkan di kode
+> mana pun. Keduanya dicoret karena **hanya tidak ada kodenya sama sekali** —
+> bukan karena ada aturan yang menolaknya. Jangan dibaca sebagai jaminan.
+>
+> Alasannya substansial: selama permission granular tidak ada (§5.2), satu-satunya
+> penghalang antara sesi Staff dan aksi destruktif kelas Owner adalah satu
+> pemanggilan `requireOwnerTenant()` per aksi, 41 di antaranya, tanpa satu pun
+> test yang menjaganya.
 
 ### 5.2 Permission Granular (RBAC)
 
@@ -398,7 +414,14 @@
 ### 5.4 Aturan Staff LAN QR
 - QR berisi `lan_token` (JWT 15 menit) + URL `http://<ip-lokal>:3000/staff-auth`.
 - Staff login via PIN operator (6 digit, generate Owner).
-- Middleware validasi: `role === 'STAFF'` redirect ke `/staff-dashboard`.
+- ~~Middleware validasi: `role === 'STAFF'` redirect ke `/staff-dashboard`.~~
+  **AMENDEMEN 2026-09-27 (D-04):** redirect ke `/staff-dashboard` **tidak**
+  dibangun. `safeHomeForRole('STAFF')` mengembalikan `null`, dan login PIN
+  berakhir di `/unauthorized`. Alasannya bukan UI, tapi keamanan: selama
+  permission granular tidak ada (§5.2), tidak ada aturan yang bisa menahan
+  Staff dari aksi destruktif bila route itu ada. Menambahkannya sekarang akan
+  memberi akses Owner-kelas dengan satu gerbang per aksi sebagai satu-satunya
+  penghalang.
 - Endpoint LAN hanya dari IP privat (192.168.x.x, 10.x.x.x, 172.16-31.x.x).
 - Token one-time, replay protected.
 

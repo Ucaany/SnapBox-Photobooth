@@ -13,6 +13,8 @@
  * menjadi `allowed: false`. Tidak ada fallback ke nama tier, snapshot kuota
  * tenant, atau default permisif, karena itu jalur kebocoran kapasitas.
  */
+import 'server-only';
+
 import { desc, eq } from 'drizzle-orm';
 
 import { getDatabase, b2bSubscriptions, plans, tenants } from '@snapbox/db';

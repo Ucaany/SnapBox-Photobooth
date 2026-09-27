@@ -12,6 +12,7 @@
  * - Kontras teks/latar divalidasi server-side pada ambang 4.5:1 (teks normal).
  * - PIN Lock TIDAK disimpan di tema; ia milik `booths` (lihat halaman Machines).
  */
+
 import { z } from 'zod';
 
 export const themeIdSchema = z.string().uuid();

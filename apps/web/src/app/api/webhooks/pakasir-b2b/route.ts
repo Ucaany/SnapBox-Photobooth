@@ -16,6 +16,8 @@
  * (termasuk invoice belum ada / nominal tidak cocok), supaya provider yang
  * mengirim ulang tidak ditolak sebagai duplikat dan pembayaran sah tidak hilang.
  */
+import 'server-only';
+
 import { NextResponse } from 'next/server';
 import { and, eq } from 'drizzle-orm';
 

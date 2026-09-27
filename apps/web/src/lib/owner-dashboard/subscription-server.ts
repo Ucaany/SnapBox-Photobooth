@@ -1,3 +1,4 @@
+import 'server-only';
 import { desc, eq } from 'drizzle-orm';
 
 import { b2bSubscriptions, getDatabase, plans, tenants } from '@snapbox/db';

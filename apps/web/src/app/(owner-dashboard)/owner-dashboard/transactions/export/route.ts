@@ -1,3 +1,4 @@
+import 'server-only';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireOwnerTenant } from '@/lib/owner-dashboard/outlet-server';
 import { csvCell, transactionExportSchema } from '@/lib/owner-dashboard/transaction-contract';

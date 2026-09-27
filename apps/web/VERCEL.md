@@ -71,7 +71,6 @@ meng-inline `NEXT_PUBLIC_*` saat build) dan ikut terkirim ke browser.
 | `NEXT_PUBLIC_FIREBASE_APP_ID`      | Dev / Preview / Production | Build + Runtime | tidak     | App ID web Firebase (`1:xxx:web:xxx`).                                                                     |
 | `NEXT_PUBLIC_SENTRY_DSN`           | Dev / Preview / Production | Build + Runtime | tidak     | Opsional. DSN Sentry sisi klien. Wajib format URL bila diisi.                                              |
 | `NEXT_PUBLIC_MIDTRANS_CLIENT_KEY`  | Dev / Preview / Production | Build + Runtime | tidak     | Opsional. Client key Midtrans (B2C). Server key Midtrans per-tenant disimpan terenkripsi di DB, bukan env. |
-| `NEXT_PUBLIC_TURNSTILE_SITE_KEY`   | Dev / Preview / Production | Build + Runtime | tidak     | Opsional. Site key Cloudflare Turnstile (pasangan publik dari `TURNSTILE_SECRET_KEY`).                     |
 
 ### B. Variabel runtime server (tidak pernah masuk bundle browser)
 
@@ -93,7 +92,6 @@ Production** kecuali dicatat lain.
 | `PAKASIR_B2B_WEBHOOK_SECRET`  | Dev / Preview / Production | Runtime | **ya**  | Secret verifikasi webhook Pakasir B2B.                                                                                               |
 | `RESEND_API_KEY`              | Dev / Preview / Production | Runtime | **ya**  | API key Resend untuk email transaksional.                                                                                            |
 | `RESEND_FROM_EMAIL`           | Dev / Preview / Production | Runtime | tidak   | Alamat pengirim, mis. `SnapBox <noreply@snapbox.id>`.                                                                                |
-| `TURNSTILE_SECRET_KEY`        | Dev / Preview / Production | Runtime | **ya**  | Opsional. Secret key Turnstile; verifikasi sisi server.                                                                              |
 | `WHATSAPP_SALES_NUMBER`       | Dev / Preview / Production | Runtime | tidak   | Nomor WhatsApp sales untuk tautan kontak.                                                                                            |
 
 ### C. Variabel khusus build (dibutuhkan langkah build, bukan runtime)

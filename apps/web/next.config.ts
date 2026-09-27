@@ -8,6 +8,21 @@ import type { NextConfig } from 'next';
  * sebagai sumber TypeScript, bukan hasil build, supaya perubahan skema langsung
  * terpakai tanpa langkah build terpisah.
  */
+/**
+ * `Strict-Transport-Security`.
+ *
+ * Ditaruh di sini, bukan di middleware, karena nilainya konstan per environment
+ * dan tidak bergantung pada request. `max-age` dua tahun dengan
+ * `includeSubDomains` sesuai rekomendasi umum.
+ *
+ * `preload` SENGAJA TIDAK dipakai: preload mengikat domain beserta seluruh
+ * subdomain ke HTTPS, dan keputusan itu tidak bisa diambil di dalam repo yang
+ * tidak tahu subdomain mana yang milik orang lain. Aktifkan dari dashboard
+ * Cloudflare setelah verifikasi `snapbox.id` dan `www.snapbox.id` benar-benar
+ * HTTPS-only.
+ */
+const strictTransportSecurity = 'max-age=63072000; includeSubDomains';
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
@@ -15,7 +30,7 @@ const nextConfig: NextConfig = {
   typedRoutes: true,
   eslint: {
     // Lint dijalankan sebagai task terpisah di CI agar error lint tidak
-    // menggagalkan build produksi secara tidak terduga.
+    // menggagalkan build produksi secara tak terduga.
     ignoreDuringBuilds: true,
   },
   typescript: {
@@ -37,6 +52,7 @@ const nextConfig: NextConfig = {
             key: 'Permissions-Policy',
             value: 'camera=(self), microphone=(), geolocation=()',
           },
+          { key: 'Strict-Transport-Security', value: strictTransportSecurity },
         ],
       },
     ];

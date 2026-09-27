@@ -17,6 +17,7 @@
  * - `quotaTotal` kosong berarti tanpa batas (unlimited),
  * - periode `validFrom` harus lebih awal dari `validUntil`.
  */
+
 import { z } from 'zod';
 
 import type { PromoType } from '@snapbox/shared';

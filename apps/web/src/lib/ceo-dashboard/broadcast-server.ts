@@ -11,6 +11,8 @@
  * menambah dependency demi satu assertion build-time. Batas nyatanya adalah
  * pemisahan file action; tambahkan `server-only` bila nanti paket itu sudah ada.
  */
+import 'server-only';
+
 import { and, count, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 

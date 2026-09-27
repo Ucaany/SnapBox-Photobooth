@@ -15,6 +15,8 @@
  * - Verifikasi signature webhook memakai `node:crypto` `timingSafeEqual`
  *   sehingga perbandingan tidak bocor lewat waktu.
  */
+import 'server-only';
+
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
 import { pakasirWebhookEnvSchema, thirdPartyEnvSchema } from '@snapbox/shared/env';

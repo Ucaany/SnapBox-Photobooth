@@ -1,3 +1,4 @@
+import 'server-only';
 import { and, count, eq } from 'drizzle-orm';
 import { booths, devices, getDatabase, tenants } from '@snapbox/db';
 

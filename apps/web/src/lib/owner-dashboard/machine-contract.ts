@@ -13,6 +13,7 @@
  * - UUID divalidasi sebelum menyentuh DB; id lintas tenant berakhir 404/NOT_FOUND
  *   yang tidak bisa dibedakan dari id tidak ada (PRD Bab 5.5).
  */
+
 import { z } from 'zod';
 
 const optionalText = (max: number) =>

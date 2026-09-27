@@ -13,6 +13,8 @@
  * - IP klien di-hash oleh service, payload mentah tidak disimpan.
  * - Idempotent lewat `providerEventId`; kiriman ulang mengembalikan 200.
  */
+import 'server-only';
+
 import { NextResponse } from 'next/server';
 
 import { wafEventSchema } from '@/lib/ceo-dashboard/health-security-contract';

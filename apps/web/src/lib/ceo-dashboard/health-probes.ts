@@ -12,6 +12,8 @@
  *   dependency yang down tidak menggagalkan halaman (`Promise.allSettled`).
  * - `unavailable` dipakai bila env/kredensial belum diset, BUKAN `healthy`.
  */
+import 'server-only';
+
 import { getDatabase } from '@snapbox/db';
 import { sql } from 'drizzle-orm';
 

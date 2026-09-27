@@ -11,6 +11,8 @@
  *   atau diubah dari route CEO. Promo milik tenant adalah domain Owner dan
  *   diperlakukan `NOT_FOUND` di sini agar keberadaannya tidak bocor.
  */
+import 'server-only';
+
 import { and, desc, eq, isNull } from 'drizzle-orm';
 
 import { getDatabase, promos } from '@snapbox/db';

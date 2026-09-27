@@ -15,6 +15,8 @@
  * - Sesi yang diterbitkan identik dengan jalur kata sandi (cookie yang sama,
  *   otorisasi DB yang sama). Tidak ada jalur otorisasi kedua yang lebih lemah.
  */
+import 'server-only';
+
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -34,6 +36,7 @@ import {
   clientIp,
 } from '@/lib/auth/rate-limit';
 import { safeHomeForRole } from '@/lib/auth/route-policy';
+import { isSameOrigin } from '@/lib/auth/same-origin';
 import { createSession, sessionCookieOptions, verifySession } from '@/lib/auth/session';
 import {
   recordAuthSession,
@@ -60,6 +63,17 @@ const staffPinRequestSchema = z.object({
 const GENERIC_PIN_FAILURE = 'Email atau PIN tidak sesuai.';
 
 export async function POST(request: Request) {
+  // Pemeriksaan same-origin harus mendahului segalanya, termasuk rate limit dan
+  // perbandingan kredensial: tanpa itu penyerang bisa mengikat cookie sesi
+  // korban ke hasil PIN miliknya sendiri (login CSRF). `SameSite=Lax` tidak
+  // menutup jalan ini karena cookie dipasang dari respons.
+  if (!isSameOrigin(request)) {
+    return NextResponse.json(
+      { ok: false, message: GENERIC_PIN_FAILURE, code: 'CROSS_ORIGIN' },
+      { status: 403, headers: { 'cache-control': 'no-store' } },
+    );
+  }
+
   const ipLimit = checkAuthRateLimit(authRateLimitKey(request, 'staff-pin'));
   if (!ipLimit.allowed) {
     await recordRateLimitHit({

@@ -13,6 +13,7 @@
  * Tipe `PlanFeatures` berasal dari `@snapbox/db` sebagai kontrak canonical dan
  * diimpor type-only supaya bundle klien tidak tertarik runtime Drizzle.
  */
+
 import type { PlanFeatures } from '@snapbox/db';
 import type { SubscriptionStatus } from '@snapbox/shared/domain';
 import { parsePlanFeatures } from './plan-features-shape';

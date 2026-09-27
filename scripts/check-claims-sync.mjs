@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import process from 'node:process';
@@ -6,6 +6,9 @@ import process from 'node:process';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const claimsPath = path.join(root, 'packages', 'auth', 'src', 'claims.ts');
 const sharedAuthPath = path.join(root, 'packages', 'shared', 'src', 'auth.ts');
+const seedPath = path.join(root, 'scripts', 'seed-firebase-claims.mts');
+const deployPath = path.join(root, '.github', 'workflows', 'claims-seed.yml');
+const authorizationPath = path.join(root, 'apps', 'web', 'src', 'lib', 'auth', 'authorization.ts');
 
 /**
  * Hapus komentar baris (`// ...`) di ujung baris.
@@ -145,6 +148,58 @@ function main() {
     }
   }
 
+  /*
+   * Penutupan kelas outage D-14 (ADR-007). `CLAIMS_STALE`/`CLAIMS_INVALID`
+   * menolak SETIAPA akun yang claim-nya tidak cocok dengan baris `users`, jadi
+   * claim harus selalu bisa diregenerasi dari DB. Empat hal di bawah adalah
+   * yang membuat itu mungkin; hilangkan satu saja dan outage Owner/CEO bisa
+   * kembali tanpa ada yang menyadarinya.
+   */
+  const seed = readFileOrFail(seedPath);
+  for (const needle of [
+    'buildCustomClaims',
+    'setUserClaims',
+    'toCustomClaims',
+    'CLAIMS_STALE',
+    'CLAIMS_INVALID',
+    'CLAIMS_MISSING',
+  ]) {
+    if (!seed.includes(needle)) {
+      failures.push(
+        `skrip seeding tidak lagi menyebut ${needle}; regenerasi claim dari DB bisa rusak.`,
+      );
+    }
+  }
+
+  const authorization = readFileOrFail(authorizationPath);
+  if (!/throw new AuthorizationError\('CLAIMS_STALE'/.test(authorization)) {
+    failures.push('CLAIMS_STALE bukan lagi hard failure di authorization.ts.');
+  }
+  if (!/throw new AuthorizationError\('CLAIMS_INVALID'/.test(authorization)) {
+    failures.push('CLAIMS_INVALID bukan lagi hard failure di authorization.ts.');
+  }
+
+  // Claim tidak boleh pernah dibangun inline di luar `buildCustomClaims`.
+  const setClaimCallers = readdirSync(path.join(root, 'apps', 'web', 'src'), {
+    recursive: true,
+    withFileTypes: true,
+  })
+    .filter((entry) => entry.isFile() && /\.(ts|tsx)$/.test(entry.name))
+    .map((entry) => readFileSync(path.join(entry.parentPath, entry.name), 'utf8'))
+    .filter((source) => source.includes('setUserClaims('));
+
+  for (const source of setClaimCallers) {
+    if (!source.includes('buildCustomClaims(')) {
+      failures.push('ada call site setUserClaims yang tidak lewat buildCustomClaims.');
+      break;
+    }
+  }
+
+  const deploy = readFileOrFail(deployPath);
+  if (!deploy.includes('pnpm seed:claims')) {
+    failures.push('workflow seeding tidak menjalankan "pnpm seed:claims".');
+  }
+
   if (failures.length > 0) {
     for (const f of failures) console.error(`GAGAL: ${f}`);
     process.exit(1);
@@ -154,6 +209,7 @@ function main() {
     `OK: ${tokenNames.length} klaim sinkron antara firebaseClaimsSchema dan customClaimsSchema.`,
   );
   console.log(`    ${tokenNames.join(', ')}`);
+  console.log('OK: seeding claim ada, idempoten, dan dipanggil pipeline deploy.');
 }
 
 main();

@@ -1,0 +1,62 @@
+# Seeding custom claim Firebase (ADR-007, D-14).
+#
+# KENAPA JOB INI WAJIB ADA DAN BUKAN LANGKAH MANUAL. `CLAIMS_STALE` dan
+# `CLAIMS_INVALID` adalah hard failure yang benar di `authorization.ts`. Kalau
+# baris `users` punya peran/tenant yang belum tercermin di custom claim Firebase,
+# login Owner/CEO ditolak. Klaim hanya ikut berubah lewat `setCustomUserClaims`,
+# jadi planting harus terjadi SETIAP KALI skema peran berubah, bukan sekali
+# saat setup. Dijalankan manual berarti galact outage akan kembali lagi.
+#
+# URUTAN. Job ini harus jalan SETELAH migrasi berhasil, karena baris `users`
+# yang dibaca adalah hasil migrasi terbaru. Kalau migrasi belum jalan, skrip
+# akan membaca skema lama dan claim-nya jadi tidak sinkron.
+#
+# SKRIP. `scripts/seed-firebase-claims.mts` bersifat idempoten: akun yang claim
+#-nya sudah cocok tidak ditulis ulang, jadi job ini aman diulang.
+name: Seed Firebase Claims
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: claims-seed
+  cancel-in-progress: false
+
+jobs:
+  seed:
+    name: Sync custom claims from public.users
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.4.2
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Dry run
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          FIREBASE_ADMIN_PROJECT_ID: ${{ secrets.FIREBASE_ADMIN_PROJECT_ID }}
+          FIREBASE_ADMIN_CLIENT_EMAIL: ${{ secrets.FIREBASE_ADMIN_CLIENT_EMAIL }}
+          FIREBASE_ADMIN_PRIVATE_KEY: ${{ secrets.FIREBASE_ADMIN_PRIVATE_KEY }}
+        run: pnpm seed:claims -- --check
+
+      - name: Seed
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          FIREBASE_ADMIN_PROJECT_ID: ${{ secrets.FIREBASE_ADMIN_PROJECT_ID }}
+          FIREBASE_ADMIN_CLIENT_EMAIL: ${{ secrets.FIREBASE_ADMIN_CLIENT_EMAIL }}
+          FIREBASE_ADMIN_PRIVATE_KEY: ${{ secrets.FIREBASE_ADMIN_PRIVATE_KEY }}
+        run: pnpm seed:claims

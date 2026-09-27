@@ -41,11 +41,25 @@ test('mutations are tenant-scoped and revoke does not delete booths', () => {
 });
 
 test('pairing stores hash only, expires in 10 minutes, and revokes prior tokens', () => {
-  assert.match(pairing, /createHash\('sha256'\)/);
-  assert.match(pairing, /PAIRING_TTL_MS = 10 \* 60 \* 1000/);
+  // Hash dan TTL tinggal di `lib/booth/pairing-token.ts` supaya penerbitan dan
+  // penukaran tidak punya definisi hash yang berbeda. Yang diperiksa di sini
+  // adalah bahwa penerbitan benar-benar memakai kontrak itu, bukan copy-nya.
+  const tokenContract = fs.readFileSync(path.join(here, '../booth/pairing-token.ts'), 'utf8');
+
+  assert.match(tokenContract, /createHash\('sha256'\)/);
+  assert.match(tokenContract, /PAIRING_TTL_MS = 10 \* 60 \* 1000/);
+  assert.match(pairing, /hashPairingCode\(/);
+  assert.match(pairing, /newPairingCode\(\)/);
+  assert.match(pairing, /PAIRING_TTL_MS/);
+
+  // Kode mentah hanya keluar sebagai `sessionCode`; yang masuk DB adalah hash.
   assert.match(pairing, /manualCode: null/);
-  assert.match(pairing, /used: true/);
   assert.doesNotMatch(pairing, /manualCode:\s*manualCode/);
+  assert.doesNotMatch(pairing, /codeHash:\s*code\b/);
+
+  // Token lama untuk booth yang sama dibatalkan saat sesi baru diterbitkan.
+  assert.match(pairing, /used: true/);
+  assert.match(pairing, /eq\(pairingTokens\.used, false\)/);
 });
 
 test('pair-session route authorizes owner and rejects paired booth', () => {

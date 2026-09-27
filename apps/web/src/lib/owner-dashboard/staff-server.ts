@@ -1,3 +1,4 @@
+import 'server-only';
 import { and, asc, count, desc, eq, isNull } from 'drizzle-orm';
 import { getDatabase, tenants, users } from '@snapbox/db';
 import { checkEntitlement } from '@/lib/entitlement/entitlement-service';

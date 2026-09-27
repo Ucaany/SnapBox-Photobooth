@@ -13,10 +13,11 @@
  * - email undangan gagal setelah commit -> provisioning tetap sukses dan
  *   hasilnya `inviteFailed: true` supaya CEO bisa resend dari halaman detail.
  */
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 
 import {
   deleteUser,
@@ -25,7 +26,15 @@ import {
   createUserWithoutPassword,
   setUserDisabled,
 } from '@snapbox/auth/admin';
-import { getDatabase, b2bSubscriptions, booths, tenants, users } from '@snapbox/db';
+import {
+  authSessions,
+  getDatabase,
+  b2bSubscriptions,
+  booths,
+  tenants,
+  users,
+  type Database,
+} from '@snapbox/db';
 
 import { sendTenantInviteEmail } from '@/lib/email/resend';
 
@@ -51,6 +60,40 @@ import {
 // menyentuh DB/Firebase. `setMonth` polos pernah membuat 31 Jan + 1 bulan
 // menjadi 3 Mar, yaitu sekitar satu bulan entitlement ekstra.
 import { periodBounds } from '@/lib/ceo-dashboard/subscription-period';
+import { revokeAuthSessionsForUser } from '@/lib/ceo-dashboard/health-security-server';
+
+type Tx = Parameters<Parameters<Database['transaction']>[0]>[0];
+
+/**
+ * Mencabut seluruh sesi web milik seluruh user tenant, di dalam transaksi yang
+ * sama dengan mutasi status.
+ *
+ * Sengaja memakai `UPDATE ... FROM` langsung dan bukan per-user
+ * `revokeAuthSessionsForUser`: bentuk itu mengembalikan daftar user yang
+ * tersentuh dalam satu pernyataan, sehingga pemanggil tahu persis siapa yang
+ * dicabut. `auth_sessions` tidak punya `tenant_id`, jadi "semua sesi tenant"
+ * adalah dua hop — hop kedua dihilangkan di sini dengan join ke `users`.
+ *
+ * `UPDATE` (bukan `DELETE`) menjaga invariant "baris tidak pernah hilang", yang
+ * jadi dasar keputusan "baris tidak ada = tidak dicabut" di
+ * `session-revocation.ts`.
+ */
+async function revokeTenantSessions(tx: Tx, tenantId: string, now: Date): Promise<string[]> {
+  const revoked = await tx
+    .update(authSessions)
+    .set({ revokedAt: now })
+    .from(users)
+    .where(
+      and(
+        eq(users.tenantId, tenantId),
+        eq(authSessions.userId, users.id),
+        isNull(authSessions.revokedAt),
+      ),
+    )
+    .returning({ userId: authSessions.userId });
+
+  return [...new Set(revoked.map((row) => row.userId))];
+}
 
 function failure(
   code: TenantActionErrorCode,
@@ -309,6 +352,12 @@ export async function changeTenantStatus(input: unknown): Promise<TenantActionRe
   const db = getDatabase();
   const now = new Date();
   const auditContext = await getAuditRequestContext();
+  // `restore` TIDAK mencabut sesi: admin yang sedang membaca halaman harus tetap
+  // bisa menyelesaikan aksinya, dan akun owner juga tidak dinonaktifkan lagi.
+  // Sesi yang sudah dicabut saat suspend/ban tidak dihidupkan kembali oleh
+  // restore — restore mengembalikan tenant, bukan sesi.
+  const shouldRevoke = action !== 'restore';
+  let affectedUserIds: string[] = [];
 
   try {
     await db.transaction(async (tx) => {
@@ -324,6 +373,10 @@ export async function changeTenantStatus(input: unknown): Promise<TenantActionRe
         .update(users)
         .set({ disabled: action !== 'restore', updatedAt: now })
         .where(and(eq(users.tenantId, tenantId), eq(users.role, 'OWNER')));
+
+      if (shouldRevoke) {
+        affectedUserIds = await revokeTenantSessions(tx, tenantId, now);
+      }
 
       // Audit ikut transaksi: status dan jejaknya tidak bisa menyimpang.
       await writeAuditLogTx(
@@ -343,6 +396,14 @@ export async function changeTenantStatus(input: unknown): Promise<TenantActionRe
     });
   } catch {
     return failure('SERVER_ERROR', 'Perubahan status gagal disimpan.');
+  }
+
+  // Pencabutan sesi adalah bagian dari efek suspend/ban, bukan langkah
+  // opsional: tanpa ini cookie owner yang sudah terbit tetap sah selama 12 jam
+  // meski akunnya sudah dinonaktifkan. Best-effort seperti `recordAuthSession`,
+  // karena gate `requireOwnerTenant`/`requireCeo` sudah menolak tenant non-ACTIVE.
+  for (const userId of affectedUserIds) {
+    await revokeAuthSessionsForUser(userId, now.getTime());
   }
 
   const owner = await findTenantOwner(tenantId);
@@ -573,6 +634,7 @@ export async function deleteTenant(input: unknown): Promise<TenantActionResult> 
   const db = getDatabase();
   const now = new Date();
   const auditContext = await getAuditRequestContext();
+  let affectedUserIds: string[] = [];
 
   try {
     await db.transaction(async (tx) => {
@@ -587,6 +649,12 @@ export async function deleteTenant(input: unknown): Promise<TenantActionResult> 
         .update(users)
         .set({ disabled: true, updatedAt: now })
         .where(and(eq(users.tenantId, tenantId), eq(users.role, 'OWNER')));
+
+      // Soft delete tanpa pencabutan sesi hanya memindahkan masalah: tenant sudah
+      // tidak aktif sehingga gate menolak, tapi cookie-nya tetap cryptographically
+      // sah selama 12 jam dan `auth_sessions` akan tetap menampilkannya sebagai
+      // sesi aktif di halaman Security.
+      affectedUserIds = await revokeTenantSessions(tx, tenantId, now);
 
       await writeAuditLogTx(
         tx,
@@ -605,6 +673,10 @@ export async function deleteTenant(input: unknown): Promise<TenantActionResult> 
     });
   } catch {
     return failure('SERVER_ERROR', 'Tenant gagal dihapus. Tidak ada data yang berubah.');
+  }
+
+  for (const userId of affectedUserIds) {
+    await revokeAuthSessionsForUser(userId, now.getTime());
   }
 
   const owner = await findTenantOwner(tenantId);

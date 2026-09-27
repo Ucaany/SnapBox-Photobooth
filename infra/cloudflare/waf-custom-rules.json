@@ -1,5 +1,5 @@
 {
-  "$comment": "Rencana WAF + Turnstile SnapBox, PRD Bab 8.4 (baris 860-874) dan PRD Bab 8.2. DRAFT review-only: TIDAK ada yang dieksekusi terhadap Cloudflare. managedRules mencatat ruleset pihak pertama Cloudflare yang harus diaktifkan; customRules adalah ruleset phase http_request_firewall_custom. Setiap aturan skip/challenge di bawah harus konsisten dengan pengecualian Turnstile di turnstile-widget.json.",
+  "$comment": "Rencana WAF SnapBox, PRD Bab 8.4 (baris 860-874) dan PRD Bab 8.2. DRAFT review-only: TIDAK ada yang dieksekusi terhadap Cloudflare. managedRules mencatat ruleset pihak pertama Cloudflare yang harus diaktifkan; customRules adalah ruleset phase http_request_firewall_custom. AMANDEMEN 2026-09-27 (D-12): aturan ini tidak lagi perlu freestyle konsistensi dengan draf Turnstile karena draf Turnstile DIHAPUS — kunci TURNSTILE tidak pernah dipakai di aplikasi mana pun, dan tidak bisa dipasang tanpa widget asli di akun Cloudflare. Bot protection di sini haruspng Handled Bot Fight Mode, bukan Turnstile.",
   "managedRules": {
     "$comment": "PRD Bab 8.4: proteksi SQL injection, XSS, malicious bots, suspicious requests, API abuse.",
     "cloudflareManagedRuleset": {
@@ -36,7 +36,7 @@
     },
     {
       "name": "skip-monitoring-health-and-sentry-tunnel",
-      "$comment": "Pengecualian wajib: /monitoring-tunnel (Sentry tunnel, PRD Bab 10.5 jalur telemetry) dan /api/health (uptime monitor PRD 8.6) TIDAK boleh kena challenge atau rate limit apa pun. /api/sentry-example bersifat SEMENTARA dan harus dihapus dari daftar ini saat rutenya dihapus.",
+      "$comment": "Pengecualian wajib: /monitoring-tunnel (Sentry tunnel, PRD Bab 10.5 jalur telemetry, route dibuat framework saat build) dan /api/health (uptime monitor PRD 8.6) TIDAK boleh kena challenge atau rate limit apa pun. /api/sentry-example bersifat SEMENTARA dan harus dihapus dari daftar ini saat rutenya dihapus.",
       "expression": "(http.request.uri.path eq \"/monitoring-tunnel\" or starts_with(http.request.uri.path, \"/monitoring-tunnel/\") or http.request.uri.path eq \"/api/health\" or http.request.uri.path eq \"/api/sentry-example\")",
       "action": "skip",
       "skip": {

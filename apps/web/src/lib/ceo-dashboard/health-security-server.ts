@@ -12,6 +12,8 @@
  * - Nilai mentah sensitif (IP, email utuh) tidak pernah disimpan; hanya hash
  *   satu arah atau fingerprint.
  */
+import 'server-only';
+
 import { and, count, desc, eq, gte, isNull, sql } from 'drizzle-orm';
 
 import {

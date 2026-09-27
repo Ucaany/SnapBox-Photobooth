@@ -35,7 +35,6 @@ export const publicEnvSchema = z.object({
   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: nonEmpty,
   NEXT_PUBLIC_FIREBASE_PROJECT_ID: nonEmpty,
   NEXT_PUBLIC_FIREBASE_APP_ID: nonEmpty,
-  NEXT_PUBLIC_TURNSTILE_SITE_KEY: nonEmpty.optional(),
   NEXT_PUBLIC_MIDTRANS_CLIENT_KEY: nonEmpty.optional(),
   NEXT_PUBLIC_SENTRY_DSN: urlLike.optional(),
   /**
@@ -100,6 +99,30 @@ export const secretEnvSchema = z.object({
  */
 export const sessionEnvSchema = z.object({
   SESSION_COOKIE_SECRET: base64Key32,
+  /**
+   * Kunci lama yang MASIH HARUS diterima saat verifikasi, dipisah koma.
+   *
+   * Ada supaya rotasi kunci tidak menjadiONEY: pada deploy bergulir, sebagian
+   * instance memegang kunci baru dan sebagian masih yang lama. Tanpa daftar ini,
+   * cookie yang ditandatangani satu kelompok ditolak kelompok lain dan pengguna
+   * terjebak loop redirect `/login` ↔ dashboard. Kunci di sini hanya dipakai
+   * untuk MEMVERIFIKASI; cookie baru selalu ditandatangani `SESSION_COOKIE_SECRET`.
+   *
+   * Kosong berarti tidak ada kunci lama — nilai default yang benar, bukan
+   * fallback longgar.
+   */
+  SESSION_COOKIE_SECRET_PREVIOUS: z.string().default(''),
+  /**
+   * Opt-out eksplisit untuk `Secure` pada cookie sesi, khusus pengembangan
+   * lokal di `http://localhost`.
+   *
+   * Sengaja BUKAN `NODE_ENV`: preview dan staging sering menjalankan
+   * `NODE_ENV=production` di belakang hostname lain, dan `NODE_ENV` membuat
+   * mereka menerima cookie tanpa `Secure` yang bisa direplay lewat HTTP. Hanya
+   * nilai persis `1` yang menonaktifkan, jadi salah ketik tidak melumpuhkan
+   * kontrol.
+   */
+  SESSION_COOKIE_INSECURE_DEV: z.string().default(''),
 });
 
 /**
@@ -143,7 +166,6 @@ export const thirdPartyEnvSchema = z.object({
   SENTRY_PROJECT: nonEmpty.optional(),
   CLOUDFLARE_API_TOKEN: nonEmpty.optional(),
   CLOUDFLARE_ZONE_ID: nonEmpty.optional(),
-  TURNSTILE_SECRET_KEY: nonEmpty.optional(),
   /** Trio secret telemetry. Dibaca dari `process.env` oleh route telemetry dan
    *  gagal tertutup dengan 503 saat kosong. Validasi base64-32 dilakukan di call
    *  site, bukan di skema ini. */

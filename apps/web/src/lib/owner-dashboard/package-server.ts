@@ -1,3 +1,4 @@
+import 'server-only';
 import { and, asc, eq } from 'drizzle-orm';
 import { booths, getDatabase, packages } from '@snapbox/db';
 import type { OwnerPackage, PackageBooth } from './package-contract';

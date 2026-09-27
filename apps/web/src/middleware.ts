@@ -22,6 +22,7 @@
  */
 import { NextResponse, type NextRequest } from 'next/server';
 
+import { buildContentSecurityPolicy, generateCspNonce } from '@/lib/auth/csp';
 import {
   findRouteRule,
   isProtectedPath,
@@ -33,21 +34,29 @@ import { SESSION_COOKIE_NAME, verifySession } from '@/lib/auth/session';
 
 export const config = {
   /**
-   * Hanya rute privat yang dicek. Mengecualikan aset statis dan API supaya
-   * middleware tidak berjalan pada setiap permintaan file.
-   *
-   * `/api/` sengaja tidak dicek di sini: setiap route API memverifikasi
-   * sesinya sendiri, dan redirect HTML dari middleware akan membingungkan
-   * pemanggil non-browser (fetch).
+   * Middleware berjalan untuk SEMUA halaman, bukan hanya rute privat, karena
+   * Content-Security-Policy di sini memakai nonce yang berbeda tiap request dan
+   * tidak bisa ditulis sebagai header statis di `next.config.ts`. Aset statis
+   * dikecualikan: tidak ada HTML di sana, jadi tidak ada yang perlu dilindungi,
+   * dan menjalankan Web Crypto untuk setiap aset menambah latency tanpa
+   * manfaat.
    */
   matcher: [
-    '/ceo-dashboard/:path*',
-    '/owner-dashboard/:path*',
-    '/staff-dashboard/:path*',
-    '/dashboard/:path*',
-    '/login',
+    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff2?)$).*)',
   ],
 };
+
+/**
+ * Menyisipkan CSP per-request ke respons mana pun yang keluar dari middleware.
+ *
+ * Dipisah karena setiap jalur return (next, redirect, rewrite) harus membawa
+ * header yang sama; lupa di satu jalur berarti CSP hilang tepat di halaman yang
+ * paling menarik untuk diserang.
+ */
+function withCsp(request: NextRequest, response: NextResponse, nonce: string): NextResponse {
+  response.headers.set('Content-Security-Policy', buildContentSecurityPolicy(nonce, request));
+  return response;
+}
 
 /** Membangun URL login dengan `next` yang sudah dipastikan aman. */
 function loginUrl(request: NextRequest): URL {
@@ -64,26 +73,32 @@ function loginUrl(request: NextRequest): URL {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Nonce dibuat per request, di awal, supaya SEMUA jalur return bisa
+  // menyertakannya. HANYA satu CSP per respons: header di-set di sini, bukan di
+  // `next.config.ts`, supaya tidak ada dua CSP yang saling meniadakan.
+  const nonce = generateCspNonce();
+  request.headers.set('x-nonce', nonce);
+
   const session = await verifySession(request.cookies.get(SESSION_COOKIE_NAME)?.value);
 
   // Sudah login lalu membuka `/login`: alihkan ke tujuan yang sesuai perannya.
   // Peran tanpa halaman (Fase 1: OWNER/STAFF) dibiarkan melihat form.
   if (pathname === '/login') {
-    if (!session) return NextResponse.next();
+    if (!session) return withCsp(request, NextResponse.next(), nonce);
 
     const next = safeRedirectPath(request.nextUrl.searchParams.get('next'));
     const home = next ?? safeHomeForRole(session.role);
 
-    if (!home) return NextResponse.next();
+    if (!home) return withCsp(request, NextResponse.next(), nonce);
 
-    return NextResponse.redirect(new URL(home, request.url));
+    return withCsp(request, NextResponse.redirect(new URL(home, request.url)), nonce);
   }
 
-  if (!isProtectedPath(pathname)) return NextResponse.next();
+  if (!isProtectedPath(pathname)) return withCsp(request, NextResponse.next(), nonce);
 
   // 1. Tidak ada sesi sah (hilang, rusak, tanda tangan salah, kedaluwarsa).
   if (!session) {
-    return NextResponse.redirect(loginUrl(request));
+    return withCsp(request, NextResponse.redirect(loginUrl(request)), nonce);
   }
 
   const rule = findRouteRule(pathname);
@@ -93,22 +108,26 @@ export async function middleware(request: NextRequest) {
     // Peran sendiri punya halaman? Arahkan ke sana, jangan ke 403.
     const home = safeHomeForRole(session.role);
     if (home && home !== pathname) {
-      return NextResponse.redirect(new URL(home, request.url));
+      return withCsp(request, NextResponse.redirect(new URL(home, request.url)), nonce);
     }
 
-    return NextResponse.redirect(new URL('/unauthorized', request.url));
+    return withCsp(request, NextResponse.redirect(new URL('/unauthorized', request.url)), nonce);
   }
 
   // 3. Gate langganan. Owner tetap dapat membuka pemulihan langganan.
   if (session.subscription !== 'OK' && !isSubscriptionExempt(pathname)) {
     if (session.role === 'OWNER') {
-      return NextResponse.redirect(new URL('/owner-dashboard/subscription', request.url));
+      return withCsp(
+        request,
+        NextResponse.redirect(new URL('/owner-dashboard/subscription', request.url)),
+        nonce,
+      );
     }
 
     const unauthorized = new URL('/unauthorized', request.url);
     unauthorized.searchParams.set('reason', 'subscription');
-    return NextResponse.redirect(unauthorized);
+    return withCsp(request, NextResponse.redirect(unauthorized), nonce);
   }
 
-  return NextResponse.next();
+  return withCsp(request, NextResponse.next(), nonce);
 }

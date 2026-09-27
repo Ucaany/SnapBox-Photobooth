@@ -14,6 +14,8 @@
  *   dalam transaksi mutasi dan MENERUSKAN error, sehingga aksi kritis tidak
  *   pernah sukses tanpa jejak (PRD Bab 8.8).
  */
+import 'server-only';
+
 import { and, desc, eq, isNull } from 'drizzle-orm';
 import { cookies, headers } from 'next/headers';
 
@@ -29,6 +31,7 @@ import {
 } from '@snapbox/db';
 import type { PlanFeatures } from '@snapbox/db';
 import { SESSION_COOKIE_NAME, verifySession, type SessionPayload } from '@/lib/auth/session';
+import { isSessionRevoked } from '@/lib/auth/session-revocation';
 
 import {
   AUDIT_FIELD_LIMITS,
@@ -56,12 +59,17 @@ export class TenantServerError extends Error {
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
- * Memastikan pemanggil adalah CEO aktif.
+ * Memastikan pemanggil adalah CEO aktif DAN sesinya belum dicabut.
  *
- * Dua lapis: cookie sesi yang sah, lalu baris `users` di DB. Lapis kedua
- * penting karena role di cookie bisa basi setelah perubahan peran di DB.
+ * Tiga lapis, semuanya wajib:
+ * 1. Cookie sesi harus sah secara kriptografi (`verifySession`, tanpa DB).
+ * 2. Baris `users` harus masih CEO dan aktif. Lapis ini penting karena role di
+ *    cookie bisa basi setelah perubahan peran di DB.
+ * 3. `auth_sessions.revoked_at` harus kosong. Tanpa lapis ini, logout dan
+ *    revoke hanya efek UI: cookie yang dicabut tetap sah sampai
+ *    `SESSION_MAX_AGE_SECONDS` (12 jam) habis.
  *
- * @throws {TenantServerError} `UNAUTHORIZED` bila bukan CEO.
+ * @throws {TenantServerError} `UNAUTHORIZED` bila bukan CEO, atau sesi dicabut.
  */
 export async function requireCeo(): Promise<SessionPayload> {
   const store = await cookies();
@@ -69,6 +77,10 @@ export async function requireCeo(): Promise<SessionPayload> {
 
   if (!session) {
     throw new TenantServerError('UNAUTHORIZED', 'Sesi tidak valid. Masuk ulang sebagai CEO.');
+  }
+
+  if (await isSessionRevoked(session.sessionId)) {
+    throw new TenantServerError('UNAUTHORIZED', 'Sesi sudah dicabut. Masuk ulang.');
   }
 
   const db = getDatabase();
@@ -86,6 +98,26 @@ export async function requireCeo(): Promise<SessionPayload> {
 }
 
 /**
+ * Gerbang CEO untuk SELURUH loader baca di modul ini.
+ *
+ * Ini yang menutup KELAS defect, bukan dua insidensinya. Dulu `middleware.ts`
+ * yang menjadi satu-satunya penjaga `/ceo-dashboard/*`, sementara
+ * `ceo-dashboard/layout.tsx` secara eksplisit mendelegasikan otorisasi ke
+ * middleware dan meminta setiap route yang menyentuh DB mengulang ceknya sendiri.
+ * Permintaan itu tidak dipegang: `tenants/[id]` dan `tenants/new` membaca
+ * `ownerEmail`, `ownerPhone`, alamat, catatan, tier plan, jumlah langganan, dan
+ * nama booth tanpa cek apa pun, sehingga PII itu terbuka sampai
+ * `SESSION_MAX_AGE_SECONDS` setelah peran berubah.
+ *
+ * Memindahkan cek ke dalam loader berarti halaman baru yang lupa TIDAK lagi bisa
+ * bocor: loader yang mengimpor data tenant dari modul ini mewarisi ceknya.
+ *
+ * Cek di sini idempoten, jadi pemanggil yang sudah memanggil `requireCeo()`
+ * sendiri tidak dirusak, dan `checkEntitlements` yang hidup di modul lain
+ * tetap butuh pemanggil yang memanggil `requireCeo()`.
+ */
+
+/**
  * Mengambil tenant berdasarkan id.
  *
  * Pemeriksaan UUID ada DI SINI, bukan hanya di halaman, supaya tidak ada
@@ -98,6 +130,8 @@ export async function requireCeo(): Promise<SessionPayload> {
  *   ada/terhapus.
  */
 export async function getTenantByIdOr404(tenantId: string) {
+  await requireCeo();
+
   if (!UUID_PATTERN.test(tenantId)) {
     throw new TenantServerError('NOT_FOUND', 'Tenant tidak ditemukan.');
   }
@@ -118,6 +152,8 @@ export async function getTenantByIdOr404(tenantId: string) {
 
 /** Plan canonical dari DB; `null` bila plan tidak ada/nonaktif. */
 export async function getActivePlan(tier: TenantPlanOption['tier']) {
+  await requireCeo();
+
   const db = getDatabase();
   const [plan] = await db
     .select()
@@ -130,6 +166,8 @@ export async function getActivePlan(tier: TenantPlanOption['tier']) {
 
 /** Semua plan aktif untuk langkah "Plan & Duration". */
 export async function listPlanOptions(): Promise<readonly TenantPlanOption[]> {
+  await requireCeo();
+
   const db = getDatabase();
   const rows = await db
     .select()
@@ -164,6 +202,8 @@ export function toPlanOption(
 
 /** Owner (role OWNER) aktif milik tenant, bila ada. */
 export async function findTenantOwner(tenantId: string) {
+  await requireCeo();
+
   const db = getDatabase();
   const [owner] = await db
     .select({
@@ -184,6 +224,8 @@ export async function findTenantOwner(tenantId: string) {
 
 /** Riwayat langganan tenant, terbaru lebih dulu. */
 export async function listTenantSubscriptions(tenantId: string, limit = 10) {
+  await requireCeo();
+
   const db = getDatabase();
   return db
     .select()
@@ -195,6 +237,8 @@ export async function listTenantSubscriptions(tenantId: string, limit = 10) {
 
 /** Booth tenant, terbaru lebih dulu. */
 export async function listTenantBooths(tenantId: string, limit = 25) {
+  await requireCeo();
+
   const db = getDatabase();
   return db
     .select({
@@ -213,6 +257,8 @@ export async function listTenantBooths(tenantId: string, limit = 25) {
 
 /** Jejak audit tenant untuk panel detail, terbaru lebih dulu. */
 export async function listTenantActivity(tenantId: string, limit = 15) {
+  await requireCeo();
+
   const db = getDatabase();
   return db
     .select({

@@ -9,6 +9,8 @@
  * Consumer QR (`/api/booth/pair`) adalah pekerjaan Fase 3/Tauri; endpoint ini
  * sengaja tidak menebak kontraknya.
  */
+import 'server-only';
+
 import { NextResponse } from 'next/server';
 import { and, eq } from 'drizzle-orm';
 

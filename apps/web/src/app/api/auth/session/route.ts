@@ -8,6 +8,8 @@
  * Route ini adalah SATU-SATUNYA pintu penerbitan sesi. Cookie tidak pernah bisa
  * dipasang dari query/body, dan ID token tidak pernah disimpan.
  */
+import 'server-only';
+
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -23,6 +25,7 @@ import {
   verifySession,
 } from '@/lib/auth/session';
 import { safeHomeForRole } from '@/lib/auth/route-policy';
+import { isSameOrigin } from '@/lib/auth/same-origin';
 import { checkAuthRateLimit, authRateLimitKey, clientIp } from '@/lib/auth/rate-limit';
 import {
   recordAuthSession,
@@ -44,30 +47,6 @@ const sessionRequestSchema = z.object({
 
 /** Pesan generik untuk kegagalan otorisasi; tidak membocorkan sebab spesifik. */
 const GENERIC_AUTH_FAILURE = 'Login tidak dapat diproses. Periksa email dan kata sandi Anda.';
-
-/**
- * Memastikan permintaan datang dari origin sendiri.
- *
- * Ini penting khusus untuk endpoint penerbit cookie. `SameSite=Lax` tetap
- * mengirim cookie pada navigasi POST lintas situs level atas, jadi tanpa
- * pemeriksaan ini penyerang yang bisa memicu POST dari browser korban dapat
- * mengikat cookie sesi korban ke ID token milik penyerang (login CSRF), karena
- * cookie dipasang dari RESPONS, bukan dari state permintaan.
- *
- * Klien non-browser (curl, test) mengirim tanpa `Origin` dan tidak mungkin
- * menjadi sasaran CSRF, jadi ketiadaan header diizinkan. Bila header ada, ia
- * WAJIB cocok host.
- */
-function isSameOrigin(request: Request): boolean {
-  const origin = request.headers.get('origin');
-  if (!origin) return true;
-
-  try {
-    return new URL(origin).host === new URL(request.url).host;
-  } catch {
-    return false;
-  }
-}
 
 /**
  * Apakah kode kegagalan rinci boleh dibocorkan ke klien.
@@ -204,8 +183,22 @@ export async function POST(request: Request) {
   return response;
 }
 
-/** Menghapus cookie sesi (logout sisi server). */
+/**
+ * Menghapus cookie sesi (logout sisi server).
+ *
+ * Pemeriksaan same-origin juga berlaku di sini: tanpa itu siapa pun bisa
+ * memaksa korban logout (cross-site forced logout) dengan DELETE lintas situs,
+ * karena `DELETE` adalah metode yang tidak diizinkan `SameSite=Lax` — sehingga
+ * cookie justru TIDAK ikut terkirim pada navigasi lintas situs, tapi tetap
+ * terkirim pada `fetch`/`sendBeacon` dari origin lain yang sudah memegang
+ * Referer. Menolak lebih awal menutup keduanya, dan risikonya kecil: logout
+ * yang ditolak hanya berarti cookie tidak terhapus untuk permintaan itu.
+ */
 export async function DELETE(request: Request) {
+  if (!isSameOrigin(request)) {
+    return jsonError(403, GENERIC_AUTH_FAILURE, 'CROSS_ORIGIN');
+  }
+
   // Nama cookie diambil dari konstanta, bukan literal, supaya pergantian nama
   // cookie tidak diam-diam mematikan revoke sesi.
   const raw = request.headers

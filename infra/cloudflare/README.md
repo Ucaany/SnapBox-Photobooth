@@ -8,7 +8,7 @@ tidak ada API token, tidak ada Zone ID, tidak ada perubahan dashboard.
 
 ## Tujuan
 
-- Menyimpan rencana rate limit, WAF, dan Turnstile sebagai berkas yang bisa
+- Menyimpan rencana rate limit dan WAF sebagai berkas yang bisa
   di-review, di-diff, dan diterapkan ulang secara deterministik.
 - Menyediakan runbook penerapan, verifikasi, dan rollback supaya penerapan
   nanti tidak bergantung pada ingatan operator.
@@ -19,9 +19,8 @@ Berkas:
 
 | Berkas                          | Isi                                                                          | Target endpoint API                                                       |
 | :------------------------------ | :--------------------------------------------------------------------------- | :------------------------------------------------------------------------ |
-| `rate-limit-rules.json`         | 8 aturan rate limit PRD Bab 8.2                                              | `PUT /zones/{zone_id}/rulesets/{id}` phase `http_ratelimit`               |
+| `rate-limit-rules.json`         | 4 aturan rate limit, semuanya `ip.src` dan semuanya bisa cocok               | `PUT /zones/{zone_id}/rulesets/{id}` phase `http_ratelimit`               |
 | `waf-custom-rules.json`         | Managed ruleset + 4 custom rule                                              | `PUT /zones/{zone_id}/rulesets/{id}` phase `http_request_firewall_custom` |
-| `turnstile-widget.json`         | Rencana widget Turnstile                                                     | Dashboard Turnstile / `POST /accounts/{account_id}/challenges/widgets`    |
 | `workers/rate-limit-counter.md` | Draf desain Worker + Workers KV untuk header identitas (DRAFT, belum dibuat) | Task 7.1                                                                  |
 
 ## Prasyarat
@@ -30,11 +29,8 @@ Berkas:
   - `Zone:Read`
   - `Zone WAF:Edit`
   - `Zone Settings:Edit`
-  - `Account Turnstile:Edit`
 - `CLOUDFLARE_ZONE_ID` = Zone ID untuk `snapbox.id` (sudah ada di daftar env,
   jangan buat env var baru).
-- `TURNSTILE_SECRET_KEY` dan `NEXT_PUBLIC_TURNSTILE_SITE_KEY` hanya diisi
-  setelah widget Turnstile benar-benar dibuat.
 - `wrangler` versi 3+ dan/atau `curl` + `jq`.
 
 Aturan rate limit Cloudflare memakai **Rulesets API**, bukan endpoint rate limit
@@ -106,12 +102,29 @@ pnpm dlx wrangler whoami
 pnpm dlx wrangler zones list
 ```
 
-### 5. Turnstile
+### 5. Turnstile — SENGAJA TIDAK ADA (2026-09-27, D-12)
 
-Buat widget sesuai `turnstile-widget.json` (nama, domain, mode `managed`,
-clearance `interactive`). Setelah dibuat, salin site key ke
-`NEXT_PUBLIC_TURNSTILE_SITE_KEY` dan secret key ke `TURNSTILE_SECRET_KEY`
-(server-only). Jangan commit nilainya.
+Draf widget Turnstile dan deklarasi env-nya **dihapus**, bukan ditulis ulang.
+Alasannya, dan ini yang perlu diketahui kalau nanti ditanya lagi:
+
+- `NEXT_PUBLIC_TURNSTILE_SITE_KEY` dan `TURNSTILE_SECRET_KEY` dideklarasikan
+  tetapi **nol pemakai di seluruh aplikasi** — tidak ada satu pun endpoint yang
+  memanggil siteverify. Widget hanya bisa diterbitkan di akun Cloudflare nyata,
+  dan widget itu tidak pernah dibuat, jadi secret-nya tidak pernah ada.
+- Memasang widget tanpa secret yang sebenarnya tidak menambah keamanan:
+  endpoint yang tidak memverifikasi token sama sekali tetap terbuka.
+- Yang tersisa kalau deklarasi dibiarkan adalah inventaris env yang menyatakan
+  ada lapisan bot protection yang tidak ada. Itu lebih buruk dari tidak ada,
+  karena pemeriksaan keamanan membaca inventaris dan menyimpulkan ada kontrol.
+
+**Bot protection yang benar-benar aktif** setelah draf ini di-deploy adalah
+`botFightMode` di `waf-custom-rules.json` (mode `bot_fight_mode`). Kalau paket
+zona naik ke yang mendukung Super Bot Fight Mode, ganti ke SBFM dengan
+`definitely-automated = block` dan catat perubahannya di sini.
+
+Untuk memasang Turnstile nanti, syaratnya bukan "ingin" melainkan: ada endpoint
+`/api/auth/*` yang memanggil `siteverify` lebih dulu, dan widget asli di akun
+Cloudflare. Tambahkan kedua env var saat itu juga.
 
 ## DNS Pointing
 
@@ -142,24 +155,50 @@ curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
 
 ## Verifikasi
 
-Rate limit (contoh `/api/contact`, plafon 5/jam per IP):
+Semua perintah di bawah memakai path yang **benar-benar ada** di
+berkas `route.ts` di bawah `apps/web/src/app/api/`. Versi lama memakai endpoint
+form kontak yang tidak pernah ada, sehingga runbook melaporkan 404 sebagai
+"tidak kena rate limit" — negatif palsu yang terlihat seperti konfigurasi yang
+benar. `pnpm check:infra-drafts` kini
+menolak draf maupun README yang menyebut path yang tidak ada.
+
+Rate limit auth (10/menit per IP, path nyata `/api/auth/session`):
 
 ```bash
-for i in $(seq 1 8); do
-  curl -s -o /dev/null -w "%{http_code}\n" https://snapbox.id/api/contact
+for i in $(seq 1 12); do
+  curl -s -o /dev/null -w "%{http_code}\n" -X POST https://snapbox.id/api/auth/session \
+    -H 'content-type: application/json' -d '{}'
 done
-# harapan: lima 2xx/4xx pertama, lalu 429 untuk sisanya
+# harapan: 400 (body tidak valid) untuk 10 pertama, lalu 429
 ```
 
-Webhook (happy path wajib tetap lolos; 300/min per IP):
+Rate limit booth (60/menit per IP, path nyata `/api/booth/heartbeat`):
+
+```bash
+for i in $(seq 1 65); do
+  curl -s -o /dev/null -w "%{http_code}\n" -X POST https://snapbox.id/api/booth/heartbeat \
+    -H 'content-type: application/json' -d '{}'
+done
+# harapan: 400 untuk 60 pertama, lalu 429
+```
+
+Webhook (happy path wajib tetap lolos; 300/menit per IP, path nyata
+`/api/webhooks/pakasir-b2b`):
 
 ```bash
 for i in $(seq 1 20); do
-  curl -s -o /dev/null -w "%{http_code}\n" -X POST https://snapbox.id/api/webhooks/x
+  curl -s -o /dev/null -w "%{http_code}\n" -X POST https://snapbox.id/api/webhooks/pakasir-b2b \
+    -H 'content-type: application/json' -d '{}'
 done
+# harapan: 401 (signature tidak valid) untuk semua — 401 BUKAN 429, itu artinya
+# rate limit tidak menahan trafik webhook yang sah.
 ```
 
-WAF dan Turnstile:
+Cara membaca hasil: `429` berarti rule bekerja. `400`/`401` berarti request
+menembus sampai origin dan ditolak di aplikasi — juga benar, selama jumlahnya
+sesuai plafon.
+
+WAF (termasuk Bot Fight Mode):
 
 - Dashboard → **Security → Events** menampilkan aksi tiap rule (block, managed
   challenge, skip) beserta rule id dan IP.
@@ -196,25 +235,26 @@ kembali normal.
 
 ## Batasan
 
-| Batasan                                                    | Detail                                                                                                     | Dikerjakan di         |
-| :--------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------- | :-------------------- |
-| Tidak ada eksekusi                                         | Semua berkas DRAFT; tidak ada token/zone id yang dipasok ke sini.                                          | Task penerapan Fase 8 |
-| Karakteristik email (`auth-5-per-min-per-email`)           | Email ada di body, bukan header; butuh Transform Rule `http_request_transform` yang menyalinnya ke header. | Task penerapan Fase 8 |
-| Rule `$requiresWorker` (booth, payment, operator, pairing) | Butuh Worker yang menyuntik `x-device-fingerprint`, `x-booth-id`, `x-tenant-id`.                           | Task 7.1              |
-| Counter Workers KV                                         | Draf desain di `workers/rate-limit-counter.md`; KV eventually consistent sehingga best-effort.             | Task 7.1              |
-| `/api/sentry-example`                                      | Rute sementara; pengecualian di WAF harus dihapus saat rute dihapus.                                       | Task 0.6 lanjutan     |
-| Turnstile site/secret key                                  | Baru terbit saat widget dibuat; env var yang ada dipakai apa adanya.                                       | Task penerapan Fase 8 |
+| Batasan                                                    | Detail                                                                                                              | Dikerjakan di         |
+| :--------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------ | :-------------------- |
+| Tidak ada eksekusi                                         | Semua berkas DRAFT; tidak ada token/zone id yang dipasok ke sini.                                                   | Task penerapan Fase 8 |
+| Karakteristik email (`auth-5-per-min-per-email`)           | Email ada di body, bukan header; butuh Transform Rule `http_request_transform` yang menyalinnya ke header.          | Task penerapan Fase 8 |
+| Rule `$requiresWorker` (booth, payment, operator, pairing) | Butuh Worker yang menyuntik `x-device-fingerprint`, `x-booth-id`, `x-tenant-id`.                                    | Task 7.1              |
+| Counter Workers KV                                         | Draf desain di `workers/rate-limit-counter.md`; KV eventually consistent sehingga best-effort.                      | Task 7.1              |
+| `/api/sentry-example`                                      | Rute sementara; pengecualian di WAF harus dihapus saat rute dihapus.                                                | Task 0.6 lanjutan     |
+| Turnstile                                                  | Dihapus 2026-09-27 (D-12): nol pemakai, tidak ada widget, tidak ada env var. Bot protection memakai Bot Fight Mode. | —                     |
 
 Draf ini WAJIB ditinjau ulang terhadap PRD Bab 8.2 setiap kali PRD berubah:
 angka per endpoint, daftar path, dan dimensi identitas bisa bergeser. Skrip
 `pnpm check:infra-drafts` memvalidasi berkas di direktori ini: ketiga
 berkas JSON ter-parse, `README.md` ada, setiap path `/api/...` di
-`rate-limit-rules.json` ada di allowlist PRD 8.2, setiap path PRD 8.2 punya
-rule dengan kecocokan path eksak, jumlah rule tepat 8, dan setiap rule punya
-nama unik yang tidak kosong. Skrip ini TIDAK memeriksa ambang angka
+`rate-limit-rules.json` menunjuk path yang benar-benar ada di
+`apps/web/src/app/api/`, setiap path di `README.md` juga ada, tidak ada aturan
+yang ditandai `$requiresWorker`/`$requiresTransform`, tidak ada karakteristik
+berbasis header, dan setiap rule punya nama unik yang tidak kosong. Skrip ini TIDAK memeriksa ambang angka
 (300/min, 10/min, dan seterusnya) maupun konsistensi daftar pengecualian
-Turnstile/WAF (`/monitoring-tunnel`, `/api/health`, `/api/sentry-example`),
+WAF (`/monitoring-tunnel`, `/api/health`, `/api/sentry-example`),
 yang tetap harus disinkronkan manual antara `waf-custom-rules.json` dan
-`turnstile-widget.json`;
+`rate-limit-rules.json`;
 jalankan skrip itu setelah mengubah PRD atau salah satu draf. Jika skrip
 memberi peringatan, perbarui draf sebelum dipakai.

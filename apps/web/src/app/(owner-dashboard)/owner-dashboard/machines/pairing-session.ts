@@ -6,16 +6,15 @@
  * atomik. Kode mentah hanya hidup di dalam return value; yang tersimpan di DB
  * hanyalah hash SHA-256.
  */
-import { createHash, randomBytes } from 'node:crypto';
+import 'server-only';
+
 import { and, eq } from 'drizzle-orm';
 
 import { pairingTokens, type Database } from '@snapbox/db';
 
-/** Masa berlaku sesi pairing, 10 menit (PRD Bab 6.B). */
-export const PAIRING_TTL_MS = 10 * 60 * 1000;
+import { PAIRING_TTL_MS, hashPairingCode, newPairingCode } from '@/lib/booth/pairing-token';
 
-/** Panjang kode sesi (URL-safe base64, ±24 karakter). */
-const SESSION_CODE_BYTES = 18;
+export { PAIRING_TTL_MS };
 
 export interface IssuedPairingSession {
   readonly expiresAt: string;
@@ -24,10 +23,6 @@ export interface IssuedPairingSession {
 }
 
 type Tx = Parameters<Parameters<Database['transaction']>[0]>[0];
-
-function hashPairingCode(code: string): string {
-  return createHash('sha256').update(code).digest('hex');
-}
 
 /**
  * Menonaktifkan token booth ini yang belum terpakai, lalu menyisipkan baris
@@ -51,7 +46,7 @@ export async function insertPairingSession(
       ),
     );
 
-  const code = randomBytes(SESSION_CODE_BYTES).toString('base64url');
+  const code = newPairingCode();
   const expiresAt = new Date(Date.now() + PAIRING_TTL_MS);
 
   await tx.insert(pairingTokens).values({

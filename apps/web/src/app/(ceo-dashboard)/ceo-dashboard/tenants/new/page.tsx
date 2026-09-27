@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 
-import { listPlanOptions } from '@/lib/ceo-dashboard/tenant-server';
+import { listPlanOptions, TenantServerError } from '@/lib/ceo-dashboard/tenant-server';
 
 import { TenantProvisioningWizard } from './tenant-provisioning-wizard';
 
@@ -22,11 +23,22 @@ export const dynamic = 'force-dynamic';
  *
  * Server component memuat plan canonical dari tabel `plans` supaya langkah
  * "Plan & Duration" menampilkan harga nyata, bukan angka yang ditulis ulang di
- * komponen. Otorisasi sudah dilakukan middleware; server action tetap
- * memeriksanya ulang.
+ * komponen. Otorisasi TIDAK hanya di middleware: `listPlanOptions()` memanggil
+ * `requireCeo()` di dalam loader, jadi halaman ini aman walau suatu saat
+ * middleware berubah.
  */
 export default async function NewTenantPage() {
-  const planOptions = await listPlanOptions();
-
-  return <TenantProvisioningWizard planOptions={planOptions} />;
+  try {
+    const planOptions = await listPlanOptions();
+    return <TenantProvisioningWizard planOptions={planOptions} />;
+  } catch (error) {
+    // Sama seperti halaman detail: sesi yang bukan CEO (atau yang sudah dicabut)
+    // dijawab 404, bukan 403. `listPlanOptions()` memanggil `requireCeo()` di
+    // dalamnya, jadi gerbangnya ada di loader dan halaman ini tidak bisa
+    // melewatinya hanya dengan menambahkan loader baru.
+    if (error instanceof TenantServerError) {
+      if (error.code === 'NOT_FOUND' || error.code === 'UNAUTHORIZED') notFound();
+    }
+    throw error;
+  }
 }

@@ -9,6 +9,8 @@
  * `kiosk_theme_versions` hanya menyimpan snapshot publikasi (maksimum lima).
  * Simpan draft biasa tidak menambah riwayat.
  */
+import 'server-only';
+
 import { and, desc, eq, isNull, sql } from 'drizzle-orm';
 import { getDatabase, kioskThemeVersions, kioskThemes } from '@snapbox/db';
 

@@ -80,14 +80,17 @@ export type SessionInput = Omit<SessionPayload, 'iat' | 'exp' | 'sessionId'> & {
 };
 
 /**
- * Secret HMAC. Dibaca malas (lazy) supaya modul ini bisa diimpor di runtime
- * yang belum tentu punya env (mis. unit test) selama tanda tangan tidak dipakai.
+ * Env kunci penandatangan cookie sesi, dibaca malas supaya modul ini bisa
+ * diimpor di runtime yang belum tentu punya env (mis. unit test) selama
+ * tanda tangan tidak dipakai.
  *
  * @throws Error bila `SESSION_COOKIE_SECRET` hilang/tidak 32 byte base64.
  */
-function getSecret(): string {
+function getSecretEnv() {
   const env = parseEnv(sessionEnvSchema, {
     SESSION_COOKIE_SECRET: process.env.SESSION_COOKIE_SECRET,
+    SESSION_COOKIE_SECRET_PREVIOUS: process.env.SESSION_COOKIE_SECRET_PREVIOUS,
+    SESSION_COOKIE_INSECURE_DEV: process.env.SESSION_COOKIE_INSECURE_DEV,
   });
 
   if (!env.success || !env.data) {
@@ -96,27 +99,41 @@ function getSecret(): string {
     );
   }
 
-  return env.data.SESSION_COOKIE_SECRET;
+  return env.data;
 }
 
 /** Panjang kunci HMAC yang diharapkan, byte. */
 const KEY_LENGTH_BYTES = 32;
 
+/** Panjang `kid` dalam karakter base64url, yaitu 48 bit. */
+const KID_LENGTH = 8;
+
+/** Satu kunci penandatangan beserta identitasnya. */
+interface SigningKey {
+  readonly kid: string;
+  readonly key: CryptoKey;
+}
+
+/** Satu pasangan kunci yang sah untuk satu instance. */
+interface KeyRing {
+  readonly current: SigningKey;
+  /** Kunci lama, dipetakan lewat `kid`; tidak pernah dipakai untuk menandatangani. */
+  readonly previous: ReadonlyMap<string, SigningKey>;
+}
+
 /**
- * Cache kunci HMAC.
+ * Cache kunci HMAC, di-*invalidasi* oleh nilai secret, bukan oleh identitas
+ * instance.
  *
- * Secret mentah disimpan bersama kunci turunannya supaya rotasi
- * `SESSION_COOKIE_SECRET` terdeteksi. Tanpa ini, instance yang sudah panas akan
- * terus memakai kunci lama: cookie yang ditandatangani instance baru ditolak
- * instance lama sehingga pengguna terjebak loop redirect `/login` ↔ dashboard
- * selama deploy bergulir.
+ *_detection_ rotasi harus membandingkan nilai secret, bukan objek `CryptoKey`:
+ * kunci turunan selalu objek baru, sehingga perbandingan objek tidak pernah
+ * mendeteksi apa pun. `rotationFingerprint` menggabungkan SEMUA secret yang
+ * relevan, jadi penambahan/penghapusan kunci lama juga tercatat.
  */
-let cachedSecret: string | null = null;
-let cachedKey: CryptoKey | null = null;
+let cachedRotation: string | null = null;
+let cachedRing: KeyRing | null = null;
 
-async function getKey(): Promise<CryptoKey> {
-  const secret = getSecret();
-
+async function importKey(secret: string): Promise<SigningKey> {
   // `atob` mengabaikan karakter setelah yang pertama tidak valid, jadi panjang
   // hasil decode diperiksa eksplisit: kunci pendek berarti entropi berkurang,
   // dan itu harus gagal, bukan diam-diam dipakai.
@@ -127,22 +144,42 @@ async function getKey(): Promise<CryptoKey> {
     );
   }
 
-  if (cachedKey && cachedSecret === secret) {
-    return cachedKey;
+  const digest = await crypto.subtle.digest('SHA-256', keyBytes);
+
+  return {
+    kid: toBase64Url(new Uint8Array(digest)).slice(0, KID_LENGTH),
+    key: await crypto.subtle.importKey('raw', keyBytes, { name: 'HMAC', hash: 'SHA-256' }, false, [
+      'sign',
+      'verify',
+    ]),
+  };
+}
+
+async function getKeyRing(): Promise<KeyRing> {
+  const { SESSION_COOKIE_SECRET, SESSION_COOKIE_SECRET_PREVIOUS } = getSecretEnv();
+
+  const previous = SESSION_COOKIE_SECRET_PREVIOUS.split(',')
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
+
+  const rotationFingerprint = `${SESSION_COOKIE_SECRET}|${previous.join(',')}`;
+  if (cachedRing && cachedRotation === rotationFingerprint) {
+    return cachedRing;
   }
 
-  const key = await crypto.subtle.importKey(
-    'raw',
-    keyBytes,
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign', 'verify'],
-  );
+  const retired = await Promise.all(previous.map((secret) => importKey(secret)));
 
-  cachedSecret = secret;
-  cachedKey = key;
+  const ring: KeyRing = {
+    current: await importKey(SESSION_COOKIE_SECRET),
+    // `Map` dari pasangan `[kid, kunci]`. Satu kunci bisa diulang di daftar
+    // hanya kalau nilainya sama persis, jadi menuliskannya dua kali aman.
+    previous: new Map(retired.map((entry) => [entry.kid, entry])),
+  };
 
-  return key;
+  cachedRotation = rotationFingerprint;
+  cachedRing = ring;
+
+  return ring;
 }
 
 /** base64url tanpa padding, bentuk aman untuk nama cookie dan URL. */
@@ -169,14 +206,25 @@ const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
 /**
- * Menandatangani payload JSON menjadi `payload.signature`.
+ * Menandatangani payload JSON menjadi `kid.payload.signature`.
+ *
+ * Prefix `kid` ada supaya rotasi `SESSION_COOKIE_SECRET` tidak merusak sesi yang
+ * sedang berjalan. Tanpa prefix, satu instance yang sudah memegang kunci baru
+ * akan menolak cookie yang ditandatangani instance yang masih memegang kunci
+ * lama, dan pengguna terjebak loop redirect `/login` ↔ dashboard selama deploy
+ * bergulir. Mitigasi lama untuk ini cuma catatan prosedural ("jangan rotasi di
+ * tengah deploy"), dan catatan prosedural bukan kontrol.
+ *
+ * `kid` ditandatangani juga, jadi penyerang tidak bisa menukar `kid` untuk
+ * mengarahkan verifikasi ke kunci lain.
  *
  * @param payload Isi sesi yang sudah lengkap dengan `iat`/`exp`.
  * @throws Error bila `SESSION_COOKIE_SECRET` tidak valid.
  */
 export async function signSession(payload: SessionPayload): Promise<string> {
-  const body = toBase64Url(encoder.encode(JSON.stringify(payload)));
-  const signature = await crypto.subtle.sign('HMAC', await getKey(), encoder.encode(body));
+  const { current } = await getKeyRing();
+  const body = `${current.kid}.${toBase64Url(encoder.encode(JSON.stringify(payload)))}`;
+  const signature = await crypto.subtle.sign('HMAC', current.key, encoder.encode(body));
 
   return `${body}.${toBase64Url(new Uint8Array(signature))}`;
 }
@@ -184,9 +232,17 @@ export async function signSession(payload: SessionPayload): Promise<string> {
 /**
  * Memverifikasi dan mengurai cookie sesi.
  *
- * Gagal tertutup: cookie hilang, bentuk rusak, tanda tangan salah, payload tidak
- * sesuai skema, atau sudah kedaluwarsa semuanya menghasilkan `null`. Pemanggil
- * memperlakukan `null` sebagai anonymous, bukan error.
+ * Gagal tertutup: cookie hilang, bentuk rusak, `kid` tak dikenal, tanda tangan
+ * salah, payload tidak sesuai skema, atau sudah kedaluwarsa semuanya menghasilkan
+ * `null`. Pemanggil memperlakukan `null` sebagai anonymous, bukan error.
+ *
+ * Bentuk yang diterima:
+ * - `kid.payload.signature` — bentuk sekarang. `kid` harus ada di keyring
+ *   instance ini; `kid` tak dikenal DITOLAK, bukan diabaikan.
+ * - `payload.signature` — bentuk lama tanpa `kid`. Tetap diterima, dicoba
+ *   terhadap kunci saat ini lalu setiap kunci lama, supaya cookie yang sudah
+ *   terbit sebelum deploy tidak langsung menggugurkan semua pengguna. Bentuk ini
+ *   tidak pernah dihasilkan lagi oleh `signSession`.
  *
  * @param raw Nilai cookie mentah, biasanya `request.cookies.get(...)`.
  */
@@ -195,28 +251,61 @@ export async function verifySession(
 ): Promise<SessionPayload | null> {
   if (!raw) return null;
 
-  const separator = raw.lastIndexOf('.');
-  if (separator <= 0) return null;
+  // Bentuk legacy `payload.signature` tidak punya `kid` untuk dicocokkan, jadi
+  // `kid` null dan semua kunci menjadi kandidat. Bentuk sekarang menanggungkan
+  // `kid` di dalam teks yang ditandatangani, sehingga menukarnya mustahil
+  // tanpa mengetahui secret.
+  const segments = raw.split('.');
+  const legacy = segments.length === 2;
+  if (!legacy && segments.length !== 3) return null;
 
-  const body = raw.slice(0, separator);
-  const signature = fromBase64Url(raw.slice(separator + 1));
+  const kid = legacy ? null : (segments[0] ?? '');
+  const payloadPart = legacy ? (segments[0] ?? '') : (segments[1] ?? '');
+  const body = legacy ? payloadPart : `${kid}.${payloadPart}`;
+  const signature = fromBase64Url(segments[segments.length - 1] ?? '');
   if (!signature) return null;
 
-  let valid = false;
+  let ring: KeyRing;
   try {
-    valid = await crypto.subtle.verify(
-      'HMAC',
-      await getKey(),
-      signature as BufferSource,
-      encoder.encode(body),
-    );
+    ring = await getKeyRing();
   } catch {
     // Secret hilang/tidak valid: verifikasi tidak bisa dilakukan, jadi tolak.
     return null;
   }
+
+  // Kandidat kunci. Untuk bentuk legacy semua kunci dicoba; jumlahnya kecil dan
+  // dibatasi env.
+  const candidates = legacy
+    ? [ring.current, ...ring.previous.values()]
+    : [kid === ring.current.kid ? ring.current : ring.previous.get(kid ?? '')].filter(
+        (entry): entry is SigningKey => entry !== undefined,
+      );
+
+  if (candidates.length === 0) return null;
+
+  let valid = false;
+  for (const candidate of candidates) {
+    try {
+      if (
+        await crypto.subtle.verify(
+          'HMAC',
+          candidate.key,
+          signature as BufferSource,
+          encoder.encode(body),
+        )
+      ) {
+        valid = true;
+        break;
+      }
+    } catch {
+      return null;
+    }
+  }
   if (!valid) return null;
 
-  const json = fromBase64Url(body);
+  // `payloadPart` adalah payload JSON dalam base64url; bentuk sekarang
+  // menambah `kid.` di depannya, dan `kid` itu ikut ditandatangani.
+  const json = fromBase64Url(payloadPart);
   if (!json) return null;
 
   let decoded: unknown;
@@ -269,11 +358,28 @@ export async function createSession(
  *
  * `SameSite=Lax` sesuai PRD Bab 8.2 (CSRF Next.js built-in + Lax), `HttpOnly`
  * mencegah akses JS, `Path=/` agar seluruh rute mengirimkannya.
+ *
+ * `Secure` TIDAK lagi bergantung pada `NODE_ENV`. Dulu `NODE_ENV === 'production'`
+ * berarti preview dan staging — yang memang sering menjalankan
+ * `NODE_ENV=production` di belakang hostname lain — menerima cookie tanpa
+ * `Secure`, sehingga bisa direplay lewat HTTP. Sekarang `Secure` aktif kecuali
+ * ada opt-out eksplisit `SESSION_COOKIE_INSECURE_DEV=1`, yang hanya berguna
+ * untuk `http://localhost` saat pengembangan. Cara opt-outnya dicatat sebagai
+ * perintah di `docs/ENVIRONMENT-AND-SECRETS.md`.
  */
 export function sessionCookieOptions(maxAge: number) {
+  let insecureDev = false;
+  try {
+    insecureDev = getSecretEnv().SESSION_COOKIE_INSECURE_DEV.trim() === '1';
+  } catch {
+    // Env belum lengkap: `Secure` tetap aktif, karena mengaktifkannya adalah
+    // perilaku benar di setiap runtime. `sessionCookieOptions` tidak boleh
+    // melemahkan kontrol hanya karena env belum dimuat.
+  }
+
   return {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: !insecureDev,
     sameSite: 'lax' as const,
     path: '/',
     maxAge,

@@ -1,3 +1,4 @@
+import 'server-only';
 import { and, desc, eq, gt, isNull, or } from 'drizzle-orm';
 import { getDatabase, notifications } from '@snapbox/db';
 import {

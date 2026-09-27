@@ -1,3 +1,4 @@
+import 'server-only';
 import { and, desc, eq, sql } from 'drizzle-orm';
 import { getDatabase, promos, promoRedemptions } from '@snapbox/db';
 import { checkEntitlement } from '@/lib/entitlement/entitlement-service';

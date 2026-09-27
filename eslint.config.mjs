@@ -97,9 +97,12 @@ export default [
     files: ['apps/web/**/*.{ts,tsx}'],
   })),
 
-  // Skrip build & config Node: `console` wajar dipakai untuk melaporkan progres.
+  // Skrip build, config, dan skrip operator Node: `console` wajar dipakai untuk
+  // melaporkan progres. `scripts/` masuk daftar karena output ke terminal ITU
+  // tujuannya; silencing `no-console` di sana bukan membuka peluang log diam-diam
+  // di jalur request, yang tidak pernah ada di berkas-berkas ini.
   {
-    files: ['**/*.config.{ts,mts,js,mjs}', '**/seed.ts'],
+    files: ['**/*.config.{ts,mts,js,mjs}', '**/seed.ts', 'scripts/**/*.{mts,mjs}'],
     rules: { 'no-console': 'off' },
   },
 

@@ -33,8 +33,9 @@ export const dynamic = 'force-dynamic';
  * `/ceo-dashboard/tenants/[id]` (PRD Task 1.4).
  *
  * Server component memuat profil, langganan, booth, dan audit NYATA dari DB.
- * Id yang tidak ada, terhapus, atau bukan UUID ditutup sebagai 404, bukan 403,
- * supaya keberadaan tenant tidak bocor lewat perbedaan respons (PRD Bab 5.5).
+ * Id yang tidak ada, terhapus, atau bukan UUID ditutup sebagai 404, begitu juga
+ * sesi yang bukan CEO, supaya keberadaan tenant tidak bocor lewat perbedaan
+ * respons (PRD Bab 5.5).
  *
  * Pemeriksaan UUID TIDAK diulang di sini: `getTenantByIdOr404` sudah menjadi
  * satu-satunya penjaga sehingga tidak ada dua regex yang bisa menyimpang.
@@ -221,7 +222,17 @@ export default async function TenantDetailPage({ params }: { params: Promise<{ i
       </div>
     );
   } catch (error) {
-    if (error instanceof TenantServerError && error.code === 'NOT_FOUND') notFound();
+    // `NOT_FOUND` (tenant tidak ada/terhapus) dan `UNAUTHORIZED` (sesi bukan
+    // CEO, atau sesi sudah dicabut) KEDUA-nya dijawab 404, bukan 403.
+    //
+    // Alasannya-PRD Bab 5.5: perbedaan 403-vs-404 adalah oracle. 403 untuk
+    // "kamu tidak berhak" membocorkan bahwa tenant itu ADA; 404 untuk
+    // "tidak ada" dan "bukan untukmu" menutup informasi itu. Untuk halaman yang
+    // membaca ownerEmail, ownerPhone, alamat, catatan, dan tagihan, itu
+    // perbedaan sekecil apa pun sudah cukup untuk memetakan portofolio tenant.
+    if (error instanceof TenantServerError) {
+      if (error.code === 'NOT_FOUND' || error.code === 'UNAUTHORIZED') notFound();
+    }
     throw error;
   }
 }

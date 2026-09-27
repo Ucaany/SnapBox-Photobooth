@@ -38,6 +38,15 @@ interface RouteAccessRule {
  * Aturan peran per prefix. Urutan penting: prefix terpanjang dicek lebih dulu
  * supaya tidak ada aturan umum yang menutupi aturan spesifik.
  */
+/*
+ * `/staff-dashboard` di bawah ini adalah DEKLARASI, bukan izin. Rute itu tidak
+ * ada dan tidak boleh dibangun sebelum ada keputusan RBAC baru (D-04, ADR-009):
+ * selama permission granular tidak ada, satu-satunya penghalang antara sesi
+ * Staff dan aksi destruktif kelas Owner adalah satu `requireOwnerTenant()` per
+ * aksi.Petunjuk yang membuat ini gagal adalah
+ * `apps/web/src/lib/auth/role-authorization.test.mjs`, yang menolak direktori
+ * route itu kalau pernah dibuat.
+ */
 const ROUTE_ACCESS_RULES: readonly RouteAccessRule[] = [
   { prefix: '/ceo-dashboard', roles: ['CEO'] },
   { prefix: '/owner-dashboard', roles: ['OWNER'] },
