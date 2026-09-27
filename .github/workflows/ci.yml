@@ -74,6 +74,11 @@ jobs:
       - name: Migration journal parity guard
         run: pnpm check:migration-journal
 
+      # Setiap kolom tenant_id wajib punya FK ke tenants. Tanpa itu RLS hanya
+      # bisa membandingkan nilainya, tidak bisa memverifikasinya benar.
+      - name: Tenant foreign key guard
+        run: pnpm check:tenant-fk
+
       - name: Brand palette guard
         run: pnpm check:brand
 

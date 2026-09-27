@@ -33,7 +33,7 @@ export function OwnerNotificationsView({ items }: { items: Notification[] }) {
   return (
     <div className="space-y-6">
       <header>
-        <p className="text-muted-foreground text-sm font-medium tracking-[0.18em] uppercase">
+        <p className="text-sm font-medium tracking-[0.18em] text-muted-foreground uppercase">
           Akun
         </p>
         <h1 className="text-3xl font-bold">Notifikasi</h1>

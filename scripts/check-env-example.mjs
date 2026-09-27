@@ -54,9 +54,15 @@ const REQUIRED_NAMES = [
   'PAKASIR_B2B_API_URL',
   'RESEND_API_KEY',
   'RESEND_FROM_EMAIL',
+  // Penerima email dukungan owner (bukan secret, tapi server-only). Kosong =
+  // pesan dari halaman `/kontak` dibuang tanpa terkirim.
+  'SUPPORT_EMAIL',
   'SENTRY_AUTH_TOKEN',
   'SENTRY_ORG',
   'SENTRY_PROJECT',
+  // Build/CI saja, bukan secret: mengisi `VITE_SENTRY_RELEASE` saat build
+  // desktop lewat `define` di vite.config.ts.
+  'SENTRY_RELEASE',
   // CLOUDFLARE (server only, SECRET).
   'CLOUDFLARE_API_TOKEN',
   'CLOUDFLARE_ZONE_ID',
@@ -69,6 +75,11 @@ const REQUIRED_NAMES = [
   // DESKTOP (Vite, bukan Next.js).
   'VITE_SENTRY_DSN',
   'VITE_SENTRY_RELEASE',
+  // CLI (sekali jalan, bukan variabel runtime).
+  'CEO_EMAIL',
+  // Path di filesystem ke JSON service account untuk `applicationDefault()`,
+  // bukan nilai yang disalin dari dasbor vendor.
+  'GOOGLE_APPLICATION_CREDENTIALS',
 ];
 
 /**

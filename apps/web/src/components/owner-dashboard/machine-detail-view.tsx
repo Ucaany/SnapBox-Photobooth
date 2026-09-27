@@ -166,7 +166,7 @@ export function MachineDetailView({ machine, outlets, tenantId }: Props) {
             <span className="text-sm">Realtime terputus — data dapat usang</span>
           )}
         </div>
-        <p className="text-muted-foreground mt-2">
+        <p className="mt-2 text-muted-foreground">
           {machine.outletName ?? 'Tanpa outlet'}
           {machine.locationTag ? ` · ${machine.locationTag}` : ''} · Fingerprint{' '}
           <span className="font-mono">{machine.deviceFingerprintMasked ?? '—'}</span>
@@ -267,7 +267,7 @@ export function MachineDetailView({ machine, outlets, tenantId }: Props) {
           <Card className="border-4 shadow-[6px_6px_0_0_var(--color-border)]">
             <CardContent className="space-y-4 pt-6">
               <h2 className="text-xl font-bold">PIN Lock capture</h2>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-sm text-muted-foreground">
                 Saat aktif, kiosk mengunci Alt+F4/Windows/Esc selama sesi foto.
               </p>
               <div className="flex items-center gap-3">
@@ -356,7 +356,7 @@ export function MachineDetailView({ machine, outlets, tenantId }: Props) {
         <h2 id="pkg-title" className="mb-3 text-xl font-bold">
           Harga paket per booth
         </h2>
-        <p className="text-muted-foreground mb-3 text-sm">
+        <p className="mb-3 text-sm text-muted-foreground">
           Hanya paket yang sudah dikhususkan untuk booth ini yang dapat diubah di sini.
         </p>
         {machine.packages.length === 0 ? (
@@ -372,7 +372,7 @@ export function MachineDetailView({ machine, outlets, tenantId }: Props) {
               >
                 <div className="grow">
                   <p className="font-bold">{pkg.name}</p>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-sm text-muted-foreground">
                     {pkg.isOverride ? 'Khusus booth ini' : 'Mewarisi paket tenant'}:{' '}
                     {idr(pkg.price)}
                   </p>
@@ -449,7 +449,7 @@ export function MachineDetailView({ machine, outlets, tenantId }: Props) {
         )}
       </section>
 
-      <p className="text-muted-foreground text-xs">
+      <p className="text-xs text-muted-foreground">
         Tenant <span className="font-mono">{tenantId.slice(0, 8)}</span> · dibuka{' '}
         {new Date(machine.createdAt).toLocaleDateString('id-ID')}
       </p>

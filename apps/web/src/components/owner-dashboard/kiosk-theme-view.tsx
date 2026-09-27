@@ -113,11 +113,11 @@ export function KioskThemeView({ data }: { data: KioskThemesData }) {
     <main className="space-y-7">
       <header className="flex flex-wrap items-end justify-between gap-4 border-b-4 border-border pb-5">
         <div>
-          <p className="text-muted-foreground text-sm font-bold tracking-[0.2em] uppercase">
+          <p className="text-sm font-bold tracking-[0.2em] text-muted-foreground uppercase">
             Operasional / Kiosk
           </p>
           <h1 className="mt-2 text-4xl font-black tracking-tight">Tema kiosk</h1>
-          <p className="text-muted-foreground mt-2 max-w-xl">
+          <p className="mt-2 max-w-xl text-muted-foreground">
             Atur identitas visual kiosk, teks sambutan, mode attract, dan gaya panel.
           </p>
         </div>
@@ -143,7 +143,7 @@ export function KioskThemeView({ data }: { data: KioskThemesData }) {
         <div className="space-y-6">
           <div className="border-4 border-border bg-background p-5 shadow-[6px_6px_0_0_var(--color-border)] sm:p-7">
             <h2 className="text-2xl font-extrabold">Warna</h2>
-            <p className="text-muted-foreground mt-1 text-sm">
+            <p className="mt-1 text-sm text-muted-foreground">
               Warna teks diturunkan otomatis agar kontras minimal 4,5:1 terhadap latar.
             </p>
             <div className="mt-5 grid gap-5 sm:grid-cols-2">
@@ -172,7 +172,7 @@ export function KioskThemeView({ data }: { data: KioskThemesData }) {
                     />
                   </span>
                   {fieldErrors[key] && (
-                    <span className="text-destructive mt-1 block text-xs font-semibold">
+                    <span className="mt-1 block text-xs font-semibold text-destructive">
                       {fieldErrors[key]}
                     </span>
                   )}
@@ -195,7 +195,7 @@ export function KioskThemeView({ data }: { data: KioskThemesData }) {
               ))}
             </ul>
             {fieldErrors.form && (
-              <p className="text-destructive mt-3 text-sm font-semibold">{fieldErrors.form}</p>
+              <p className="mt-3 text-sm font-semibold text-destructive">{fieldErrors.form}</p>
             )}
           </div>
 
@@ -212,7 +212,7 @@ export function KioskThemeView({ data }: { data: KioskThemesData }) {
                   autoComplete="off"
                 />
                 {fieldErrors.logoUrl && (
-                  <span className="text-destructive mt-1 block text-xs font-semibold">
+                  <span className="mt-1 block text-xs font-semibold text-destructive">
                     {fieldErrors.logoUrl}
                   </span>
                 )}
@@ -256,7 +256,7 @@ export function KioskThemeView({ data }: { data: KioskThemesData }) {
                   className={fieldClass}
                 />
                 {fieldErrors.ctaText && (
-                  <span className="text-destructive mt-1 block text-xs font-semibold">
+                  <span className="mt-1 block text-xs font-semibold text-destructive">
                     {fieldErrors.ctaText}
                   </span>
                 )}
@@ -297,7 +297,7 @@ export function KioskThemeView({ data }: { data: KioskThemesData }) {
                     autoComplete="off"
                   />
                   {fieldErrors.attractVideoUrl && (
-                    <span className="text-destructive mt-1 block text-xs font-semibold">
+                    <span className="mt-1 block text-xs font-semibold text-destructive">
                       {fieldErrors.attractVideoUrl}
                     </span>
                   )}
@@ -381,7 +381,7 @@ export function KioskThemeView({ data }: { data: KioskThemesData }) {
             >
               Publikasikan
             </button>
-            <span className="text-muted-foreground text-sm">
+            <span className="text-sm text-muted-foreground">
               Publikasi mengirim event THEME_UPDATED ke kiosk tenant ini.
             </span>
           </div>
@@ -391,7 +391,7 @@ export function KioskThemeView({ data }: { data: KioskThemesData }) {
           <div className="space-y-3">
             <div className="flex items-end justify-between border-b-2 border-border pb-3">
               <div>
-                <p className="text-muted-foreground text-sm font-bold">PRATINJAU LANGSUNG</p>
+                <p className="text-sm font-bold text-muted-foreground">PRATINJAU LANGSUNG</p>
                 <h2 id="preview-heading" className="mt-1 text-2xl font-extrabold">
                   {KIOSK_ORIENTATION_LABELS[draft.orientation]}
                 </h2>
@@ -475,7 +475,7 @@ export function KioskThemeView({ data }: { data: KioskThemesData }) {
           <section aria-labelledby="history-heading" className="space-y-3">
             <div className="flex items-end justify-between border-b-2 border-border pb-3">
               <div>
-                <p className="text-muted-foreground text-sm font-bold">RIWAYAT</p>
+                <p className="text-sm font-bold text-muted-foreground">RIWAYAT</p>
                 <h2 id="history-heading" className="mt-1 text-2xl font-extrabold">
                   Versi terbit
                 </h2>
@@ -483,7 +483,7 @@ export function KioskThemeView({ data }: { data: KioskThemesData }) {
               <span className="font-mono text-sm">{data.versions.length}/5</span>
             </div>
             {data.versions.length === 0 ? (
-              <p className="text-muted-foreground border-2 border-dashed border-border p-5 text-sm">
+              <p className="border-2 border-dashed border-border p-5 text-sm text-muted-foreground">
                 Belum ada versi terbit. Publikasikan tema untuk menyimpan snapshot.
               </p>
             ) : (
@@ -497,7 +497,7 @@ export function KioskThemeView({ data }: { data: KioskThemesData }) {
                       {KIOSK_PANEL_LABELS[version.panelStyle]} ·{' '}
                       {KIOSK_ORIENTATION_LABELS[version.orientation]}
                     </p>
-                    <p className="text-muted-foreground mt-1 text-xs">
+                    <p className="mt-1 text-xs text-muted-foreground">
                       {new Date(version.createdAt).toLocaleString('id-ID')}
                     </p>
                     <button

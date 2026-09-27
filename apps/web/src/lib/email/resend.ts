@@ -118,7 +118,7 @@ export async function sendOwnerSupportEmail(
   input: OwnerSupportEmailInput,
 ): Promise<SendEmailResult> {
   const env = parseEnv(thirdPartyEnvSchema, process.env);
-  const to = process.env.SUPPORT_EMAIL?.trim();
+  const to = env.data?.SUPPORT_EMAIL?.trim();
   if (!env.success || !env.data || !to || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to))
     return {
       ok: false,

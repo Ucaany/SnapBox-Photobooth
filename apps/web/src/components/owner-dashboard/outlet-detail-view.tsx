@@ -7,7 +7,7 @@ export function OutletDetailView({ outlet }: { outlet: OutletDetail }) {
         Kembali ke outlet
       </Link>
       <header>
-        <p className="text-muted-foreground text-sm tracking-[0.18em] uppercase">Detail outlet</p>
+        <p className="text-sm tracking-[0.18em] text-muted-foreground uppercase">Detail outlet</p>
         <h1 className="text-3xl font-bold">{outlet.name}</h1>
         <p>
           {outlet.isActive ? 'Aktif' : 'Nonaktif'} · dibuat{' '}

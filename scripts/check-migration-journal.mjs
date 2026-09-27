@@ -248,7 +248,7 @@ async function checkApplied(url) {
 
     const pending = journal.entries.filter((e) => e.when > appliedMax).length;
     process.stdout.write(
-      `Bookkeeping sinkron: journal max when=${journalMax} > database max created_at=${appliedMax}. ` +
+      `Bookkeeping sinkron: journal max when=${journalMax}, database max created_at=${appliedMax}. ` +
         `${pending} entri menunggu dijalankan.\n`,
     );
     return true;

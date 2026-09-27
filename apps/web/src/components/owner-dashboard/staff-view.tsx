@@ -44,7 +44,7 @@ export function StaffView({
   return (
     <div className="space-y-8">
       <header>
-        <p className="text-muted-foreground text-sm font-medium tracking-[0.18em] uppercase">
+        <p className="text-sm font-medium tracking-[0.18em] text-muted-foreground uppercase">
           Akses tim
         </p>
         <h1 className="text-3xl font-bold">Staff</h1>
@@ -89,7 +89,7 @@ export function StaffView({
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <h3 className="font-bold">{row.fullName}</h3>
-                      <p className="text-muted-foreground text-sm">{row.email}</p>
+                      <p className="text-sm text-muted-foreground">{row.email}</p>
                     </div>
                     <span>{row.disabled ? 'Nonaktif' : 'Aktif'}</span>
                   </div>

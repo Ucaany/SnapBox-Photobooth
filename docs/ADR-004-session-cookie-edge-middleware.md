@@ -2,10 +2,21 @@
 
 ## Status
 
+**SUPERSEDED 2026-09-27 oleh `ADR-020`.** Isi di bawah dipertahankan apa
+adanya sebagai catatan tanggal.
+
 Diterima. Menyelesaikan ketegangan antara dua mandat PRD yang tidak bisa
 dipenuhi sekaligus apa adanya: Bab 8.2 baris 813 mewajibkan `middleware.ts`
 berjalan di **edge runtime**, sementara Task 1.2 mewajibkan verifikasi token
 lewat **`firebase-admin`**.
+
+> **Catatan supersesi.** Solusi di ADR ini benar, tetapi konsekuensinya
+> tidak tercatat di dalamnya: batas edge runtime membuat verifikasi sesi
+> **murni kriptografis** (HMAC + kedaluwarsa), tanpa akses database.
+> Runtime pass 2026-09-27 mengonfirmasi konsekuensinya: `auth_sessions
+.revoked_at` ditulis tapi **tidak pernah dibaca** di jalur verifikasi, jadi
+> cookie yang dicabut tetap sah selama 12 jam, dan peran yang melekat di
+> dalam cookie tidak berubah saat peran di DB diturunkan.
 
 ## Konteks
 

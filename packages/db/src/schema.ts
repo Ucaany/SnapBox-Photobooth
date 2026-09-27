@@ -89,7 +89,7 @@ export const users = pgTable(
     fullName: varchar('full_name', { length: 150 }).notNull(),
     phone: varchar('phone', { length: 20 }),
     role: userRoleEnum('role').notNull(),
-    tenantId: uuid('tenant_id'),
+    tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }),
     parentTenantId: uuid('parent_tenant_id'),
     disabled: boolean('disabled').notNull().default(false),
     lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
@@ -536,7 +536,9 @@ export const promoRedemptions = pgTable(
     promoId: uuid('promo_id')
       .notNull()
       .references(() => promos.id, { onDelete: 'cascade' }),
-    tenantId: uuid('tenant_id').notNull(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
     transactionId: uuid('transaction_id'),
     customerEmail: varchar('customer_email', { length: 255 }),
     discountApplied: numeric('discount_applied', { precision: 12, scale: 2 }).notNull(),
@@ -646,7 +648,7 @@ export const activityLogs = pgTable(
     actorUserId: uuid('actor_user_id'),
     actorEmail: varchar('actor_email', { length: 255 }),
     actorRole: userRoleEnum('actor_role'),
-    tenantId: uuid('tenant_id'),
+    tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }),
     boothId: uuid('booth_id'),
     deviceId: uuid('device_id'),
     action: varchar('action', { length: 80 }).notNull(),
@@ -765,7 +767,7 @@ export const deviceLogs = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     deviceId: uuid('device_id').references(() => devices.id, { onDelete: 'cascade' }),
     boothId: uuid('booth_id'),
-    tenantId: uuid('tenant_id'),
+    tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }),
     level: varchar('level', { length: 20 }).notNull(),
     service: varchar('service', { length: 60 }),
     event: varchar('event', { length: 120 }),
@@ -822,7 +824,9 @@ export const sessions = pgTable(
       onDelete: 'cascade',
     }),
     boothId: uuid('booth_id').notNull(),
-    tenantId: uuid('tenant_id').notNull(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
     deviceId: uuid('device_id'),
     state: varchar('state', { length: 40 }).notNull(),
     actor: varchar('actor', { length: 40 }),

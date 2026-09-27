@@ -40,7 +40,7 @@ export function DevicesView({ data }: { data: OwnerDevicesData }) {
   return (
     <div className="space-y-6">
       <header>
-        <p className="text-muted-foreground text-sm font-medium tracking-[0.18em] uppercase">
+        <p className="text-sm font-medium tracking-[0.18em] text-muted-foreground uppercase">
           Operasional
         </p>
         <h1 className="text-3xl font-bold">Perangkat</h1>

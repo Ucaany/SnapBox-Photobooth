@@ -31,24 +31,38 @@
 -- berulang: `enable row level security` sifatnya idempotent.
 -- FORCE row level security SENGAJA tidak dipakai: aplikasi terhubung langsung
 -- sebagai role owner (Supabase `postgres`, lihat bentuk DATABASE_URL di
--- .env.example) dan migration/seed Drizzle berjalan sebagai role itu. Dengan
--- FORCE, tabel owner ikut tunduk RLS dan jalur langsung tersebut akan ditolak
--- sebelum ada policy. PRD Bab 10.2/ADR-004 hanya meminta RLS aktif sebagai
--- lapisan kedua, bukan FORCE.
--- KETERBATASAN (eksplisit): `DATABASE_URL` aplikasi connect sebagai owner
--- tabel, dan owner MELEWATI RLS kecuali FORCE di-set. Jadi helper ini, dengan
--- `enable` saja, TIDAK bisa menjadi security boundary tunggal: ia hanya
--- melindungi jalur non-owner (mis. PostgREST/Realtime via `authenticated`),
--- sedangkan jalur owner/`DATABASE_URL` tetap bebas. `enable` tanpa FORCE inert
--- di jalur owner/direct.
--- Jalur upgrade (konkret): buat role DML non-owner khusus aplikasi (role owner
--- dipertahankan HANYA untuk migration), arahkan `DATABASE_URL` aplikasi ke role
--- itu, lalu set `force row level security` untuk role tersebut sehingga policy
--- benar-benar berlaku di jalur aplikasi.
--- ponytail: ceiling = jalur direct/owner dan service_role-bypass harus tetap
--- jalan; jalur upgrade = dedicated non-owner DML role (owner dicadangkan untuk
--- migration) + `force row level security` untuk role itu, setelah SEMUA akses
--- memakai role non-owner dengan policy eksplisit.
+-- .env.example) dan migration/seed Drizzle berjalan sebagai role itu.
+-- PRD Bab 10.2/ADR-004 hanya meminta RLS aktif sebagai lapisan kedua, bukan FORCE.
+--
+-- STATUS 2026-09-27 (D-03 / BE-001, diverifikasi ke database live).
+-- Paragraf lama di blok ini menyebut FORCE sebagai bagian dari jalur upgrade, dan
+-- itu tidak berlaku untuk database ini. Berkas ini sudah ter-apply, jadi koreksi
+-- berikut hanya untuk pembaca; tidak ada DDL yang berubah.
+--
+-- 1. Role `postgres` yang dipakai `DATABASE_URL` MEMEGANG ATRIBUT `BYPASSRLS`
+--    (rolsuper=false, rolbypassrls=true), dan ia juga owner 35/35 tabel. Jadi
+--    jalur aplikasi melewati RLS dua kali, bukan sekali.
+-- 2. `FORCE` hanya mencabut pengecualian OWNER; ia tidak menundukkan role
+--    ber-atribut `BYPASSRLS`. Untuk kredensial sekarang FORCE tidak mengubah apa-
+--    apa, termasuk pada jalur migrasi/seed yang tidak akan ditolak.
+-- 3. Untuk role NON-owner, RLS sudah berlaku begitu `enable` di-set. FORCE tidak
+--    perlu agar policy berjalan pada role itu; yang menentukan adalah role-nya:
+--    bukan owner, dan tidak memegang BYPASSRLS.
+-- 4. Role itu sudah ada: `snapbox_app` (`20260101000800_app_dml_role.sql`),
+--    anggota `authenticated` sehingga 35 policy `TO authenticated` yang sudah ada
+--    langsung berlaku padanya.
+--
+-- Sampai primitive itu ada, role itu belum boleh jadi `DATABASE_URL`: `app.tenant_id` belum pernah
+-- di-set di kode aplikasi, jadi `app.current_tenant_id()` NULL dan setiap tabel
+-- tenant mengembalikan nol baris. Fail-closed disengaja sampai primitive
+-- per-request `set local app.tenant_id` ada.
+--
+-- Bukti (2026-09-27, lewat Supabase pooler sebagai `snapbox_app`): dengan
+-- `app.tenant_id` = tenant A dan query TANPA predikat tenant, hanya 1 tenant
+-- terlihat dan 0 baris tenant lain; query identik sebagai `postgres` melihat 4
+-- tenant. Plan-nya memuat filter policy:
+--   Filter: (app.is_ceo() OR ((booths.tenant_id IS NOT NULL)
+--           AND (booths.tenant_id = app.current_tenant_id())))
 -- Pemanggil tetap memakai literal nama tabel biasa:
 --     select app.enforce_rls('public.booths');
 -- Fungsi ini TIDAK dipanggil untuk tabel apa pun di file ini.

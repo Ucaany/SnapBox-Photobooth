@@ -1,5 +1,9 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import test from 'node:test';
+
+const root = join('apps/web/src');
 
 const items = [
   ['', '/owner-dashboard'],
@@ -44,4 +48,25 @@ test('Owner quota text handles finite, unlimited, and unavailable values', () =>
   assert.equal(formatDeviceQuota(2, 5), '2 / 5');
   assert.equal(formatDeviceQuota(2, -1), '2 / Tak terbatas');
   assert.equal(formatDeviceQuota(2, null), 'Tidak tersedia');
+});
+
+test('Owner subscription gate denies inactive subscriptions by default', async () => {
+  const source = await readFile(join(root, 'lib/owner-dashboard/owner-layout-data.ts'), 'utf8');
+  assert.match(source, /options:.*= \{\}/);
+  assert.match(source, /!options.allowInactiveSubscription/);
+});
+
+test('Owner customers route has an honest empty state', async () => {
+  const route = await readFile(
+    join(root, 'app/(owner-dashboard)/owner-dashboard/customers/page.tsx'),
+    'utf8',
+  );
+  assert.match(route, /Data pelanggan belum tersedia/);
+});
+
+test('Owner dashboard renders operational summary rather than placeholder', async () => {
+  const page = await readFile(join(root, 'app/(owner-dashboard)/owner-dashboard/page.tsx'), 'utf8');
+  assert.match(page, /data.deviceUsage/);
+  assert.match(page, /data.deviceQuota/);
+  assert.doesNotMatch(page, /akan tersedia di sini/);
 });

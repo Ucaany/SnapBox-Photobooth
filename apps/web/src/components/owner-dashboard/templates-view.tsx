@@ -100,9 +100,9 @@ export function TemplatesView({ templates }: { templates: OwnerTemplate[] }) {
     <main className="space-y-7">
       <header className="flex flex-wrap items-end justify-between gap-4 border-b-4 border-border pb-5">
         <div>
-          <p className="text-muted-foreground text-sm font-bold">Operasional / Studio</p>
+          <p className="text-sm font-bold text-muted-foreground">Operasional / Studio</p>
           <h1 className="mt-2 text-4xl font-black tracking-tight">Template foto</h1>
-          <p className="text-muted-foreground mt-2 max-w-xl">
+          <p className="mt-2 max-w-xl text-muted-foreground">
             Atur susunan pose dan ukuran cetak untuk sesi photobooth.
           </p>
         </div>
@@ -128,7 +128,7 @@ export function TemplatesView({ templates }: { templates: OwnerTemplate[] }) {
         >
           <div className="flex flex-wrap items-baseline justify-between gap-3">
             <div>
-              <p className="text-muted-foreground text-sm font-bold">LAYOUT BUILDER</p>
+              <p className="text-sm font-bold text-muted-foreground">LAYOUT BUILDER</p>
               <h2 className="mt-1 text-2xl font-extrabold">
                 {editing ? 'Edit template' : 'Template baru'}
               </h2>
@@ -160,7 +160,7 @@ export function TemplatesView({ templates }: { templates: OwnerTemplate[] }) {
                   className={`${buttonClass} min-h-16 text-left ${draft.layoutType === layout.value ? 'bg-main shadow-[3px_3px_0_0_var(--color-border)]' : 'bg-background'}`}
                 >
                   <span className="block font-bold">{layout.label}</span>
-                  <span className="text-muted-foreground text-xs">
+                  <span className="text-xs text-muted-foreground">
                     {layout.rows} baris · {layout.cols} kolom
                   </span>
                 </button>
@@ -265,7 +265,7 @@ export function TemplatesView({ templates }: { templates: OwnerTemplate[] }) {
         <section aria-labelledby="preview-title" className="space-y-4">
           <div className="flex items-end justify-between border-b-2 border-border pb-3">
             <div>
-              <p className="text-muted-foreground text-sm font-bold">PRATINJAU LANGSUNG</p>
+              <p className="text-sm font-bold text-muted-foreground">PRATINJAU LANGSUNG</p>
               <h2 id="preview-title" className="mt-1 text-2xl font-extrabold">
                 {preset.label}
               </h2>
@@ -290,7 +290,7 @@ export function TemplatesView({ templates }: { templates: OwnerTemplate[] }) {
                 (_, index) => (
                   <div
                     key={index}
-                    className="text-muted-foreground grid min-h-0 place-items-center border border-border/70 bg-secondary-background text-xs font-bold"
+                    className="grid min-h-0 place-items-center border border-border/70 bg-secondary-background text-xs font-bold text-muted-foreground"
                   >
                     POSE {index + 1}
                   </div>
@@ -298,7 +298,7 @@ export function TemplatesView({ templates }: { templates: OwnerTemplate[] }) {
               )}
             </div>
           </div>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-sm text-muted-foreground">
             {draft.aspectRatio} · {draft.poseGrid.rows * draft.poseGrid.cols} bidang foto
           </p>
         </section>
@@ -310,7 +310,7 @@ export function TemplatesView({ templates }: { templates: OwnerTemplate[] }) {
       >
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <p className="text-muted-foreground text-sm font-bold">LIBRARY</p>
+            <p className="text-sm font-bold text-muted-foreground">LIBRARY</p>
             <h2 id="template-list-title" className="mt-1 text-2xl font-extrabold">
               Template tersimpan
             </h2>
@@ -330,7 +330,7 @@ export function TemplatesView({ templates }: { templates: OwnerTemplate[] }) {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <h3 className="text-lg font-bold break-words">{template.name}</h3>
-                      <p className="text-muted-foreground mt-1 text-sm">
+                      <p className="mt-1 text-sm text-muted-foreground">
                         {layout?.label ?? template.layoutType} · {template.printDimensions} in
                       </p>
                       <p className="mt-1 text-sm">

@@ -52,7 +52,7 @@ export function OutletsView({ outlets, quota }: Props) {
   return (
     <div className="space-y-8">
       <header>
-        <p className="text-muted-foreground text-sm font-medium tracking-[0.18em] uppercase">
+        <p className="text-sm font-medium tracking-[0.18em] text-muted-foreground uppercase">
           Operasional
         </p>
         <h1 className="text-3xl font-bold">Outlet</h1>
@@ -93,7 +93,7 @@ export function OutletsView({ outlets, quota }: Props) {
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <h3 className="font-bold">{row.name}</h3>
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-sm text-muted-foreground">
                         {row.address || 'Alamat belum diisi'} · {row.boothCount} booth
                       </p>
                     </div>

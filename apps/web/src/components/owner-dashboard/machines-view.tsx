@@ -106,7 +106,7 @@ export function MachinesView({ data, tenantId }: Props) {
     <div className="space-y-8">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-muted-foreground text-sm font-medium tracking-[0.18em] uppercase">
+          <p className="text-sm font-medium tracking-[0.18em] text-muted-foreground uppercase">
             Operasional
           </p>
           <h1 className="text-3xl font-bold">Mesin</h1>
@@ -129,7 +129,7 @@ export function MachinesView({ data, tenantId }: Props) {
         <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6">
           <span className="font-semibold">Kuota perangkat: {quotaText}</span>
           {data.quota.limit !== null && data.quota.limit !== -1 && (
-            <span className="text-muted-foreground text-sm">
+            <span className="text-sm text-muted-foreground">
               Tambah add-on Rp99k/device bila kuota habis.
             </span>
           )}
@@ -243,7 +243,7 @@ export function MachinesView({ data, tenantId }: Props) {
             className="space-y-4 border-4 border-border bg-background p-5 shadow-[6px_6px_0_0_var(--color-border)]"
           >
             <h2 className="text-xl font-bold">Add New Device</h2>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-sm text-muted-foreground">
               Buat booth baru lalu tampilkan QR pairing (berlaku 10 menit, sekali pakai).
             </p>
             <label className="block text-sm font-semibold">
@@ -311,7 +311,7 @@ export function MachinesView({ data, tenantId }: Props) {
             </p>
           )}
 
-          <p className="text-muted-foreground text-xs">
+          <p className="text-xs text-muted-foreground">
             Tenant <span className="font-mono">{tenantId.slice(0, 8)}</span> · konsumen QR
             (`/api/booth/pair`) dijalankan kiosk Fase 3.
           </p>

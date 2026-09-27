@@ -130,11 +130,11 @@ export function FrameStudioView({ data }: { data: OwnerFramesData }) {
     <main className="space-y-7">
       <header className="flex flex-wrap items-end justify-between gap-4 border-b-4 border-border pb-5">
         <div>
-          <p className="text-muted-foreground text-sm font-bold tracking-[0.2em] uppercase">
+          <p className="text-sm font-bold tracking-[0.2em] text-muted-foreground uppercase">
             Studio / Operasional
           </p>
           <h1 className="mt-2 text-4xl font-black tracking-tight">Frame Studio</h1>
-          <p className="text-muted-foreground mt-2 max-w-xl">
+          <p className="mt-2 max-w-xl text-muted-foreground">
             Atur overlay, chroma key, dan booth untuk setiap frame.
           </p>
         </div>
@@ -189,7 +189,7 @@ export function FrameStudioView({ data }: { data: OwnerFramesData }) {
             ) : (
               <div>
                 <p className="text-lg font-bold">Lepas frame di sini</p>
-                <p className="text-muted-foreground mt-1 text-sm">
+                <p className="mt-1 text-sm text-muted-foreground">
                   atau klik untuk memilih · PNG/JPG · maks. 5 MB
                 </p>
                 <p className="mt-4 text-xs font-semibold">Minimum 800 × 600 px</p>
@@ -291,7 +291,7 @@ export function FrameStudioView({ data }: { data: OwnerFramesData }) {
               {isPending ? 'Menyimpan…' : draft.id ? 'Simpan perubahan' : 'Simpan frame'}
             </Button>
             {draft.file && (
-              <span className="text-muted-foreground text-sm">
+              <span className="text-sm text-muted-foreground">
                 {draft.file.name} · {bytes(draft.file.size)}
               </span>
             )}
@@ -306,7 +306,7 @@ export function FrameStudioView({ data }: { data: OwnerFramesData }) {
             <span className="font-mono text-sm">{data.frames.length} frame</span>
           </div>
           {data.frames.length === 0 ? (
-            <p className="text-muted-foreground border-2 border-dashed border-border p-7">
+            <p className="border-2 border-dashed border-border p-7 text-muted-foreground">
               Belum ada frame. Upload desain pertama Anda.
             </p>
           ) : (
@@ -327,14 +327,14 @@ export function FrameStudioView({ data }: { data: OwnerFramesData }) {
                         className="max-h-full w-auto object-contain"
                       />
                     ) : (
-                      <span className="text-muted-foreground text-sm">Pratinjau tak tersedia</span>
+                      <span className="text-sm text-muted-foreground">Pratinjau tak tersedia</span>
                     )}
                   </div>
                   <div className="space-y-3 p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <h3 className="font-extrabold">{frame.name}</h3>
-                        <p className="text-muted-foreground mt-1 text-xs">
+                        <p className="mt-1 text-xs text-muted-foreground">
                           {frame.width} × {frame.height} · {bytes(frame.fileSizeBytes)}
                         </p>
                       </div>

@@ -11,14 +11,27 @@ export const metadata: Metadata = {
 };
 
 export default async function OwnerDashboardPage() {
-  await getOwnerLayoutData({ allowInactiveSubscription: false });
+  const data = await getOwnerLayoutData();
   return (
     <section className="owner-intro">
       <div>
         <p>Operasional</p>
         <h1>Dashboard Owner</h1>
-        <span>Ringkasan operasional akan tersedia di sini.</span>
+        <span>Ringkasan operasional SnapBox Anda.</span>
       </div>
+      <aside>
+        <p>Pemilik: {data.ownerName}</p>
+        <p>Plan: {data.planName ?? 'Belum tersedia'}</p>
+        <p>Perangkat aktif: {data.deviceUsage}</p>
+        <p>
+          Kuota perangkat:{' '}
+          {data.deviceQuota === null
+            ? 'Tidak tersedia'
+            : data.deviceQuota === -1
+              ? 'Tak terbatas'
+              : data.deviceQuota}
+        </p>
+      </aside>
     </section>
   );
 }

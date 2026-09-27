@@ -43,11 +43,11 @@ export function SubscriptionView({ data }: { data: SubscriptionData }) {
     <div className="space-y-7">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-muted-foreground text-sm font-medium tracking-[0.18em] uppercase">
+          <p className="text-sm font-medium tracking-[0.18em] text-muted-foreground uppercase">
             Akun & penagihan
           </p>
           <h1 className="text-3xl font-bold">Langganan</h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="mt-1 text-muted-foreground">
             Status plan SnapBox dan riwayat invoice Pakasir B2B.
           </p>
         </div>
@@ -114,7 +114,7 @@ export function SubscriptionView({ data }: { data: SubscriptionData }) {
           <h2 id="plan-options" className="text-xl font-bold">
             Pilihan plan
           </h2>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-sm text-muted-foreground">
             Harga mengikuti katalog plan aktif. Perubahan masih draft.
           </p>
         </div>
@@ -167,7 +167,7 @@ export function SubscriptionView({ data }: { data: SubscriptionData }) {
             <h2 id="addons" className="text-xl font-bold">
               Add-on perangkat
             </h2>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-sm text-muted-foreground">
               Aktif saat ini: {data.addOnDevices} perangkat tambahan.
             </p>
           </div>
@@ -183,7 +183,7 @@ export function SubscriptionView({ data }: { data: SubscriptionData }) {
           <h2 id="invoice-history" className="text-xl font-bold">
             Histori invoice
           </h2>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-sm text-muted-foreground">
             Data subscription tenant ini; status lunas hanya dari catatan pembayaran server.
           </p>
         </div>

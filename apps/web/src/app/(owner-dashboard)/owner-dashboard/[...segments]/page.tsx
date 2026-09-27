@@ -33,6 +33,7 @@ export default async function OwnerDashboardSectionPage({ params }: PageProps) {
       'finance',
       'analytics',
       'subscription',
+      'customers',
       'reports',
       'notifications',
       'settings',

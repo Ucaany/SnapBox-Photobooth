@@ -14,7 +14,7 @@ export interface OwnerLayoutData {
 }
 
 export async function getOwnerLayoutData(
-  options: { allowInactiveSubscription?: boolean } = { allowInactiveSubscription: true },
+  options: { allowInactiveSubscription?: boolean } = {},
 ): Promise<OwnerLayoutData> {
   const { cookies } = await import('next/headers');
   const store = await cookies();

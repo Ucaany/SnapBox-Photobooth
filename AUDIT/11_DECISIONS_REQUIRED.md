@@ -11,23 +11,61 @@
 
 ## Summary
 
-| #        | Decision                                                   | Tier | Freezes                              | Answer first?          |
-| -------- | ---------------------------------------------------------- | ---- | ------------------------------------ | ---------------------- |
-| **D-01** | Brand palette and border/shadow language                   | 1    | ~~17 items~~ **ANSWERED 2026-09-26** | **Answered**           |
-| **D-04** | Granular RBAC: wire it or delete it                        | 1    | 2 items + all of `/staff-dashboard`  | **Yes**                |
-| **D-03** | Runtime database role and `FORCE ROW LEVEL SECURITY`       | 1    | 4 items                              | **Yes**                |
-| **D-06** | API error envelope                                         | 1    | 1 item, all error handling           | **Yes**                |
-| **D-05** | Demo vs real for the five data-light surfaces              | 2    | 1 item + a PRD revision              | Yes                    |
-| **D-02** | Pairing code: QR-only vs QR + manual code                  | 2    | 2 items                              | Yes                    |
-| **D-07** | B2C launch provider set                                    | 2    | 2 items                              | Before payment work    |
-| **D-10** | Telemetry tables: snapshot or exclude from Drizzle         | 2    | 1 item                               | Before any `generate`  |
-| **D-08** | `/download/[token]` and `/legal/*`: build or amend the PRD | 2    | 1 item                               | Before Fase 8          |
-| **D-09** | Device Console: Fase 3 reality or PRD correction           | 2    | 1 item                               | Before Fase 2 sign-off |
-| **D-12** | Cloudflare WAF / Turnstile: deploy or drop                 | 3    | 2 items                              | Before launch          |
-| **D-11** | UI primitives vs hand-rolled as the Owner standard         | 3    | 1 item                               | With D-01              |
-| **D-13** | Dark mode: implement or remove the toggle                  | 3    | 1 item                               | With D-01              |
-| **D-15** | `/gallery`: gate, keep public, or delete                   | 3    | 1 item                               | Anytime                |
-| **D-14** | How `app_role` claims are seeded for OWNER/CEO             | 1    | 1 item, but a **live outage risk**   | **Yes — check first**  |
+> **STATUS 2026-09-27 — SEMUA KEPUTUSAN DIJAWAB.** Runtime pass
+> (`14_R01_RUNTIME_BASELINE_2026-09-27.md`) mengonfirmasi D-03, D-05, D-07,
+> D-10, D-12, D-13, D-14, dan D-15 terhadap data live; sisanya dijawab dari
+> bukti statis yang sudah ada di berkas ini. Setiap jawaban dicatat di tiga
+> tempat: ADR superseding di `docs/`, amendemen PRD di mana PRD yang salah,
+> dan header keputusan di bawah.
+>
+> **Tidak ada keputusan yang ditunda.** Kalau ada yang terlihat tidak
+> dijawab, itu bug di tabel ini, bukan keputusan yang menggantung.
+>
+> **Satu hal berubah sifatnya setelah runtime:** D-14 bukan lagi "kemungkinan
+> outage" — **ini outage yang sedang terjadi** (Owner login ditolak). Lihat
+> `docs/ADR-007`. D-03 acquiring dua syarat baru yang tidak ada di teks
+> aslinya: role aplikasi memegang `BYPASSRLS`, jadi `FORCE RLS` sendiri tidak
+> cukup. Lihat `docs/ADR-006`.
+
+| #        | Decision                                                   | Tier | Freezes                                       | Answer first?            |
+| -------- | ---------------------------------------------------------- | ---- | --------------------------------------------- | ------------------------ |
+| **D-01** | Brand palette and border/shadow language                   | 1    | ~~17 items~~ ANSWERED 2026-09-26              | **Answered**             |
+| **D-02** | Pairing code: QR-only vs QR + manual code                  | 2    | F-01, F-43, B-30/B-31 — ANSWERED 2026-09-27   | Answered                 |
+| **D-03** | Runtime database role and `FORCE ROW LEVEL SECURITY`       | 1    | B-00b, B-08, B-17, B-42 — ANSWERED 2026-09-27 | **Answered**             |
+| **D-04** | Granular RBAC: wire it or delete it                        | 1    | F-19, B-06, Task 2.18 — ANSWERED 2026-09-27   | **Answered**             |
+| **D-05** | Demo vs real for the five data-light surfaces              | 2    | F-24, Task 2.14/2.15 — ANSWERED 2026-09-27    | Answered                 |
+| **D-06** | API error envelope                                         | 1    | F-29 — ANSWERED 2026-09-27                    | **Answered**             |
+| **D-07** | B2C launch provider set                                    | 2    | B-23, B-24, B-25, F-24 — ANSWERED 2026-09-27  | Answered                 |
+| **D-08** | `/download/[token]` and `/legal/*`: build or amend the PRD | 2    | F-44, F-45, 5.14, 8.7 — ANSWERED 2026-09-27   | Answered                 |
+| **D-09** | Device Console: Fase 3 reality or PRD correction           | 2    | F-44, Fase 2 sign-off — ANSWERED 2026-09-27   | Answered                 |
+| **D-10** | Telemetry tables: snapshot or exclude from Drizzle         | 2    | B-15 — ANSWERED 2026-09-27                    | Answered                 |
+| **D-11** | UI primitives vs hand-rolled as the Owner standard         | 3    | F-11 — ANSWERED 2026-09-27                    | Answered                 |
+| **D-12** | Cloudflare WAF / Turnstile: deploy or drop                 | 3    | B-37, B-38 — ANSWERED 2026-09-27              | Answered                 |
+| **D-13** | Dark mode: implement or remove the toggle                  | 3    | F-15 — ANSWERED 2026-09-27                    | Answered                 |
+| **D-14** | How `app_role` claims are seeded for OWNER/CEO             | 1    | **OUTAGE AKTIF** — ANSWERED 2026-09-27        | **Answered — act first** |
+| **D-15** | `/gallery`: gate, keep public, or delete                   | 3    | F-06, F-11 — ANSWERED 2026-09-27              | Answered                 |
+
+### Peta jawaban → ADR
+
+| #    | Jawaban                                                       | Opsi      | ADR       | PRD diamandemen?            |
+| ---- | ------------------------------------------------------------- | --------- | --------- | --------------------------- |
+| D-02 | QR saja; pertahankan 144-bit; hapus kode 6 digit              | **A**     | `ADR-008` | Ya — §6.B                   |
+| D-03 | Role DML non-owner **non-BYPASSRLS**, lalu `FORCE`            | **A+**    | `ADR-006` | Ya — §5.5                   |
+| D-04 | Hapus 75 permission; peran saja; larang `/staff-dashboard`    | **B**     | `ADR-009` | Ya — §5.1, §5.2             |
+| D-05 | Tetap demo berlabel; pindah dari nav produksi                 | **B**     | `ADR-014` | Ya — acceptance Fase 2      |
+| D-06 | Adopsi amplop PRD §10.13                                      | **A**     | `ADR-010` | **Tidak** — PRD sudah benar |
+| D-07 | Satu gateway B2C saat peluncuran: Midtrans                    | 1 gateway | `ADR-015` | Tidak                       |
+| D-08 | Amendemen PRD; `/legal/*` Fase 8; `/download` postponed       | amendemen | `ADR-016` | Ya — Bab 3.A                |
+| D-09 | Tetap Fase 3; koreksi teks acceptance Fase 2                  | amendemen | `ADR-016` | Ya — Bab 3.C + acceptance   |
+| D-10 | Pulihkan paritas snapshot                                     | **A**     | `ADR-017` | Tidak                       |
+| D-11 | `packages/ui` adalah standar                                  | pustaka   | `ADR-011` | Tidak                       |
+| D-12 | Deploy **setelah** ruleset diperbaiki ke rute nyata           | deploy    | `ADR-019` | Tidak                       |
+| D-13 | **Hapus** toggle dark mode                                    | hapus     | `ADR-012` | Tidak                       |
+| D-14 | Skrip seeding idempoten di pipeline; check tetap hard failure | skrip     | `ADR-007` | Ya — §8.2                   |
+| D-15 | Gate `notFound()` di luar development                         | gate      | `ADR-013` | Tidak                       |
+
+`ADR-002` dan `ADR-004` **superseded** oleh `ADR-020` (2026-09-27). Keduanya
+tidak diedit di tempat; statusnya diubah dan isinya dipertahankan.
 
 ---
 
@@ -86,9 +124,12 @@
 
 ---
 
-## D-02 — Pairing code: QR only, or QR + manual code? · **TIER 2**
+## D-02 — Pairing code: QR only, or QR + manual code? · **TIER 2** · ✅ **ANSWERED 2026-09-27** (ADR-008, static)
 
 **Finding:** `PC-02`, `FE-021g`. Canonical: `04_FRONTEND_API_CONTRACT.md` FE-021g; `05` BE-003.
+
+> **Jawaban 2026-09-27.** Opsi **A** — QR saja secara formal. Entropi 144-bit dan hash SHA-256 polos **dipertahankan**; kode manual dan `pairing_code` 6 karakter **dibatalkan, bukan diimplementasikan** (menyenangkannya berarti menurunkan keamanan).
+> ADR: `docs/ADR-008`
 
 **What is in conflict.** `ADR-001` and PRD §6.B both require **QR + a manual code**, with server-side hashing, rate limiting, and lockout. The implementation generates a 24-character 144-bit token, stores only its SHA-256 hash, and returns **`manualCode: null`** — hardcoded at `pair-session/route.ts:114`. `machine-contract.ts:110` declares the field, and `machines-view.tsx:305` renders a branch that **can never execute**. PRD §6.B separately describes a 6-digit `booths.pairing_code`, which exists as dead columns never written.
 
@@ -106,9 +147,12 @@
 
 ---
 
-## D-03 — Runtime database role and `FORCE ROW LEVEL SECURITY` · **TIER 1**
+## D-03 — Runtime database role and `FORCE ROW LEVEL SECURITY` · **TIER 1** · ✅ **ANSWERED 2026-09-27** (ADR-006, RUNTIME-VERIFIED)
 
 **Finding:** `BE-001`. Canonical: `08_DATABASE_TENANT_AUDIT.md` §2 and §5c.
+
+> **Jawaban 2026-09-27.** Opsi **A**, dengan **dua syarat tambahan dari runtime**: role aplikasi tidak boleh owner **dan tidak boleh memegang `BYPASSRLS`**; `FORCE RLS` sendiri **tidak memperbaiki apa pun** untuk kredensial sekarang.
+> ADR: `docs/ADR-006` · Dikonfirmasi terhadap data live (lihat `AUDIT/14_R01_RUNTIME_BASELINE_2026-09-27.md`)
 
 **What is in conflict.** Nothing conflicts — the code is simply honest about the gap. `packages/db/src/client.ts:30-56` connects with `postgres(DATABASE_URL)`, which per the migration comments is the Supabase **table owner**. RLS is `ENABLE`d on all 35 tables but **not `FORCE`d**, so PostgreSQL exempts the owner. The migration set states this itself:
 
@@ -132,9 +176,12 @@
 
 ---
 
-## D-04 — Granular RBAC: wire the 75 permissions, or delete them? · **TIER 1**
+## D-04 — Granular RBAC: wire the 75 permissions, or delete them? · **TIER 1** · ✅ **ANSWERED 2026-09-27** (ADR-009, static)
 
 **Finding:** `BE-005`. Canonical: `06_SECURITY_AUDIT.md` BE-005.
+
+> **Jawaban 2026-09-27.** Opsi **B** — hapus 75 permission, andalkan peran. `/staff-dashboard` **dilarang dibangun** sampai ada keputusan RBAC baru. Akses berbutir nanti dibangun dari **tabel database**, bukan enum.
+> ADR: `docs/ADR-009`
 
 **What is in conflict.** `packages/shared/src/auth.ts` defines 75 `PERMISSIONS`, three role-permission sets, `hasPermission()`, and `canAccessTenant()`. A repo-wide grep returns **matches only inside `auth.ts` itself — zero importers.** Real enforcement is role-string equality: `requireCeo()` checks `role !== 'CEO'`, `requireOwnerTenant()` checks `role !== 'OWNER'`.
 
@@ -158,9 +205,12 @@
 
 ---
 
-## D-05 — Demo vs real for five data-light surfaces · **TIER 2**
+## D-05 — Demo vs real for five data-light surfaces · **TIER 2** · ✅ **ANSWERED 2026-09-27** (ADR-014, static)
 
 **Finding:** `FE-006`. Canonical: `01_FRONTEND_AUDIT.md` FE-006.
+
+> **Jawaban 2026-09-27.** Opsi **B** — tetap demo berlabel, tapi dipindah dari nav produksi ke "Pratinjau". `finance`/`analytics` nyata terblokir di belakang D-07 karena `insert(transactions)` = nol.
+> ADR: `docs/ADR-014`
 
 **What is in conflict.** Five Owner nav slots render data that does not come from the database:
 
@@ -188,9 +238,12 @@
 
 ---
 
-## D-06 — API error envelope · **TIER 1**
+## D-06 — API error envelope · **TIER 1** · ✅ **ANSWERED 2026-09-27** (ADR-010, static)
 
 **Finding:** `FE-021b`. Canonical: `04_FRONTEND_API_CONTRACT.md` FE-021b.
+
+> **Jawaban 2026-09-27.** Opsi **A** — adopsi amplop PRD §10.13. `developerMessage` tidak pernah masuk respons. Ini satu-satunya keputusan di register ini yang **PRD sudah benar**.
+> ADR: `docs/ADR-010`
 
 **What is in conflict.** Three shapes coexist across 9 route files, and the canonical one is used by **zero** handlers:
 
@@ -216,9 +269,12 @@
 
 ---
 
-## D-07 — B2C launch provider set · **TIER 2**
+## D-07 — B2C launch provider set · **TIER 2** · ✅ **ANSWERED 2026-09-27** (ADR-015, static)
 
 **Finding:** `BE-011`. Canonical: `05_BACKEND_API_AUDIT.md` BE-011.
+
+> **Jawaban 2026-09-27.** **Satu gateway B2C saat peluncuran: Midtrans.** Adapter dan webhook **harus tiba bersama**. Xendit/Doku tetap tipe tanpa adapter. B2B tetap Pakasir.
+> ADR: `docs/ADR-015`
 
 **What is in conflict.** Nothing is decided. `GATEWAY_PROVIDERS` lists all four (`MIDTRANS`, `XENDIT`, `DOKU`, `PAKASIR`) as types, and `payment-provider-test.ts:11-25` performs **real** connectivity calls against all four live sandbox and production hosts. But there is **no** `PaymentProvider` implementation, **no** `POST /api/payment/create`, **no** `/api/webhooks/b2c/[provider]`, and **no** writer to `transactions`. The PRD's B2C payment is schema plus credential storage.
 
@@ -234,9 +290,12 @@ One B2C path exists: **B2B** via Pakasir, and its webhook is production-grade.
 
 ---
 
-## D-08 — `/download/[token]` and `/legal/*`: build, or amend the PRD? · **TIER 2**
+## D-08 — `/download/[token]` and `/legal/*`: build, or amend the PRD? · **TIER 2** · ✅ **ANSWERED 2026-09-27** (ADR-016, static)
 
 **Finding:** `PC-04`, `PC-05`. Canonical: `09` §2.
+
+> **Jawaban 2026-09-27.** **Amendemen PRD.** `/legal/*` → Direncanakan (Fase 8, karena Task 8.7 butuh). `/download/[token]` → Direncanakan, tidak dibangun (`download_tokens` tanpa penulis/pembaca). `robots.ts` berhenti mengompensasi.
+> ADR: `docs/ADR-016`
 
 **What is in conflict.** PRD §3.A and §7.2 list `/download/[token]`, `/legal/privacy`, and `/legal/terms` as routes. None exists. `robots.ts:10-12` documents omitting the legal sitemaps _"because they don't exist yet"_ — so the PRD is knowingly unmet and the robots file is compensating. `robots.ts:20` blocks a `/download/` path that does not exist.
 
@@ -248,9 +307,12 @@ PRD Task 8.7 also requires a DPA and cookie consent, neither of which has a rout
 
 ---
 
-## D-09 — Device Console: Fase 3 reality, or Fase 2 claim? · **TIER 2**
+## D-09 — Device Console: Fase 3 reality, or Fase 2 claim? · **TIER 2** · ✅ **ANSWERED 2026-09-27** (ADR-016, RUNTIME-VERIFIED)
 
 **Finding:** `PC-09`. Canonical: `09` §2.
+
+> **Jawaban 2026-09-27.** Enam rute **tetap Fase 3**; teks acceptance Fase 2 dikoreksi menjadi "seluruh bagian dashboard yang ada di Fase 2".
+> ADR: `docs/ADR-016` · Dikonfirmasi terhadap data live (lihat `AUDIT/14_R01_RUNTIME_BASELINE_2026-09-27.md`)
 
 **What is in conflict.** PRD §3.C requires six routes under `/owner-dashboard/devices/[boothId]/diagnostics/*`. They are scheduled in **Fase 3**, which comes _after_ Fase 2 — but Fase 2's acceptance says _"Owner bisa navigasi seluruh dashboard."_ Those two statements cannot both hold. All six routes are absent; there is no `devices/[boothId]` folder at all.
 
@@ -260,9 +322,12 @@ PRD Task 8.7 also requires a DPA and cookie consent, neither of which has a rout
 
 ---
 
-## D-10 — Telemetry tables: snapshot them, or exclude them from Drizzle? · **TIER 2**
+## D-10 — Telemetry tables: snapshot them, or exclude them from Drizzle? · **TIER 2** · ✅ **ANSWERED 2026-09-27** (ADR-017, static)
 
 **Finding:** `BE-021`. Canonical: `05_BACKEND_API_AUDIT.md` BE-021.
+
+> **Jawaban 2026-09-27.** Opsi **A** — pulihkan paritas snapshot. Opsi B (hapus dari `schema.ts`) ditolak karena `health-security-server.ts` memakai ketiganya lewat Drizzle.
+> ADR: `docs/ADR-017`
 
 **What is in conflict.** `security_events`, `auth_sessions`, and `system_health_checks` are declared in `packages/db/src/schema.ts` but appear in **no** Drizzle snapshot (`meta/` holds 0000, 0002, 0004 only). Meanwhile `supabase/migrations/20260101000500:10-13` states the invariant: _"tidak boleh ada migration Drizzle yang membuat tabel ini lagi"_ — because two DDL sources with `IF NOT EXISTS` make the second a silent no-op with possible column drift.
 
@@ -274,9 +339,12 @@ PRD Task 8.7 also requires a DPA and cookie consent, neither of which has a rout
 
 ---
 
-## D-12 — Cloudflare WAF / rate limiting / Turnstile: deploy or drop? · **TIER 3**
+## D-12 — Cloudflare WAF / rate limiting / Turnstile: deploy or drop? · **TIER 3** · ✅ **ANSWERED 2026-09-27** (ADR-019, RUNTIME-VERIFIED)
 
 **Finding:** `BE-010`, `BE-028`. Canonical: `06_SECURITY_AUDIT.md`.
+
+> **Jawaban 2026-09-27.** **Deploy, tapi ruleset diperbaiki dulu** ke endpoint yang benar-benar ada. 5 aturan untuk rute yang tidak ada dihapus; prosedur verifikasi README ditulis ulang agar bisa gagal; `check:infra-drafts` memvalidasi terhadap `app/`, bukan allowlist PRD.
+> ADR: `docs/ADR-019` · Dikonfirmasi terhadap data live (lihat `AUDIT/14_R01_RUNTIME_BASELINE_2026-09-27.md`)
 
 **What is in conflict.** `infra/cloudflare/README.md:6-7` states plainly that nothing in that directory is executed against any account. The drafts are **complete but inert**:
 
@@ -293,9 +361,12 @@ PRD Task 8.7 also requires a DPA and cookie consent, neither of which has a rout
 
 ---
 
-## D-11 — UI primitives vs hand-rolled, as the Owner-dashboard standard · **TIER 3**
+## D-11 — UI primitives vs hand-rolled, as the Owner-dashboard standard · **TIER 3** · ✅ **ANSWERED 2026-09-27** (ADR-011, static)
 
 **Finding:** `FE-014`, `FE-003d`. Canonical: `01_FRONTEND_AUDIT.md` FE-014.
+
+> **Jawaban 2026-09-27.** **`packages/ui` adalah standar**; kontrol hand-rolled yang menggandakan primitive hilang. Inventaris ulang primitive setelah D-15.
+> ADR: `docs/ADR-011`
 
 **What is in conflict.** `packages/ui` ships 64 primitives, all genuinely neobrutalist. **15 of 21 Owner views bypass them**, 6 mix both systems on one screen, and **41 of the 64 exist only to serve `/gallery`**.
 
@@ -305,9 +376,12 @@ Nothing forces a choice, which is why the drift happened. Either the library is 
 
 ---
 
-## D-13 — Dark mode: implement the tokens, or remove the toggle? · **TIER 3**
+## D-13 — Dark mode: implement the tokens, or remove the toggle? · **TIER 3** · ✅ **ANSWERED 2026-09-27** (ADR-012, RUNTIME-VERIFIED)
 
 **Finding:** `FE-009`. Canonical: `01_FRONTEND_AUDIT.md` FE-009.
+
+> **Jawaban 2026-09-27.** **Hapus toggle.** `globals.css` punya 0 aturan dark; toggle cuma mengubah scrollbar. Menutup juga kontradiksi `themeColor: #FFDD00`.
+> ADR: `docs/ADR-012` · Dikonfirmasi terhadap data live (lihat `AUDIT/14_R01_RUNTIME_BASELINE_2026-09-27.md`)
 
 **What is in conflict.** `ThemeToggle` and `themeInitScript` write `data-theme="dark"` and `style.colorScheme = 'dark'`. **`globals.css` contains no `[data-theme='dark']`, `.dark`, or `prefers-color-scheme` rule at all** (grep: 0 matches). The toggle renders in the CEO header only; the Owner header has none.
 
@@ -317,9 +391,12 @@ Nothing forces a choice, which is why the drift happened. Either the library is 
 
 ---
 
-## D-15 — `/gallery`: gate it, keep it public, or delete it? · **TIER 3**
+## D-15 — `/gallery`: gate it, keep it public, or delete it? · **TIER 3** · ✅ **ANSWERED 2026-09-27** (ADR-013, RUNTIME-VERIFIED)
 
 **Finding:** `FE-003d`. Canonical: `01_FRONTEND_AUDIT.md` FE-003d.
+
+> **Jawaban 2026-09-27.** **Gate `notFound()` di luar development.** Bukan hanya `noindex`. Ditemukan terburuk a11y di app: 4 pelanggaran critical, semuanya dapat dijangkau anonim.
+> ADR: `docs/ADR-013` · Dikonfirmasi terhadap data live (lihat `AUDIT/14_R01_RUNTIME_BASELINE_2026-09-27.md`)
 
 **What is in conflict.** `app/gallery/` is a ~4 200-line internal design-system catalog. It is **not in the middleware matcher**, so it has **no auth and no role check**. `robots.ts` and `noindex` are advisory to crawlers, not access control. It is **unlinked** — 3 grep hits, all comments — so any anonymous visitor who types `/gallery` gets it, including 20 dummy tenant names and heavy-dependency chunks (`@tanstack/react-table`, `react-day-picker`, `recharts`, `react-hook-form`, `zod`) served as public downloads.
 
@@ -331,9 +408,12 @@ Nothing forces a choice, which is why the drift happened. Either the library is 
 
 ---
 
-## D-14 — How are `app_role` claims seeded for OWNER and CEO? · **TIER 1 — CHECK BEFORE ANY DEPLOY**
+## D-14 — How are `app_role` claims seeded for OWNER and CEO? · **TIER 1 — CHECK BEFORE ANY DEPLOY** · ✅ **ANSWERED 2026-09-27** (ADR-007, RUNTIME-VERIFIED — OUTAGE AKTIF)
 
 **Finding:** `BE-005` adjacent, `00` §9 item 6. Canonical: `06_SECURITY_AUDIT.md` §2d.
+
+> **Jawaban 2026-09-27.** **Skrip seeding idempoten di `scripts/seed-firebase-claims.mjs`, wajib jalan di pipeline deploy.** `CLAIMS_STALE`/`CLAIMS_INVALID` **tetap hard failure** — yang diperbaiki sumber datanya, bukan relaksasinya.
+> ADR: `docs/ADR-007` · Dikonfirmasi terhadap data live (lihat `AUDIT/14_R01_RUNTIME_BASELINE_2026-09-27.md`)
 
 **What is in conflict.** `packages/auth/src/claims.ts:33-39` validates custom claims, and `authorization.ts:257-259` rejects a mismatch between the token claim and the DB row with `CLAIMS_STALE`. `setUserClaims` (`packages/auth/src/admin.ts:105-107`) has **exactly one call site in the entire repository**: `staff/actions.ts:70-77`, staff creation only.
 

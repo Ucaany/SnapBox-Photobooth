@@ -56,7 +56,7 @@ export function ReportsView() {
   return (
     <main className="space-y-7">
       <header className="no-print">
-        <p className="text-muted-foreground text-sm font-semibold tracking-[0.18em] uppercase">
+        <p className="text-sm font-semibold tracking-[0.18em] text-muted-foreground uppercase">
           Insight
         </p>
         <h1 className="text-3xl font-bold">Laporan</h1>
@@ -76,7 +76,7 @@ export function ReportsView() {
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <h2 className="text-xl font-bold">Ringkasan transaksi</h2>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-sm text-muted-foreground">
                 Angka sintetis untuk pratinjau ekspor.
               </p>
             </div>
@@ -132,7 +132,7 @@ export function ReportsView() {
               </tbody>
             </table>
           </div>
-          <p className="text-muted-foreground text-xs">
+          <p className="text-xs text-muted-foreground">
             Ekspor dibatasi maksimal {MAX_EXPORT_ROWS.toLocaleString('id-ID')} baris.
           </p>
         </div>
@@ -140,7 +140,7 @@ export function ReportsView() {
         <div className="space-y-5 border-2 border-foreground p-5 shadow-[4px_4px_0_0_currentColor]">
           <div>
             <h2 className="text-xl font-bold">Jadwal laporan</h2>
-            <p className="text-muted-foreground text-sm">Simulasi preferensi pengiriman.</p>
+            <p className="text-sm text-muted-foreground">Simulasi preferensi pengiriman.</p>
           </div>
           <label className="block font-semibold">
             Frekuensi

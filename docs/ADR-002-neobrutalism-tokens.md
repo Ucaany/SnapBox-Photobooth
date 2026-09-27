@@ -2,7 +2,18 @@
 
 ## Status
 
+**SUPERSEDED 2026-09-27 oleh `ADR-005` (palette) dan `ADR-020` (berkas ini
+dan ADR-004).** Isi di bawah dipertahankan apa adanya sebagai catatan
+tanggal.
+
 Diterima. Menggantikan keputusan design system Task 0.2 di PRD Bab 4.
+
+> **Catatan supersesi.** ADR ini **setengah benar** dan tidak pernah
+> menyatakan batasnya. Klaimnya bahwa palet repo adalah biru benar untuk
+> dashboard Owner dan CEO, dan **tidak** berlaku di permukaan marketing
+> publik dan auth, yang masih memakai kuning/violet/pink PRD. `ADR-005`
+> menetapkan palet biru penuh tanpa gradient sebagai sumber kebenaran repo.
+> Pembaca yang hanya membaca ADR ini akan menyimpulkan sebaliknya.
 
 ## Konteks
 

@@ -112,8 +112,23 @@
 - `/login` (Login): Halaman login Email & Password neobrutalism untuk CEO, Owner, Staff (dengan mode PIN/kode untuk jalur khusus).
 - `/unauthorized` (Akses Ditolak): 403 dengan tombol kembali ke login.
 - `/unduh-aplikasi` (Unduh Desktop App): Installer Windows `.exe` (NSIS) + Linux `.deb` + changelog + minimum hardware + tombol "Buka Konsol Perangkat (Web)".
-- `/download/[token]` (Ambil Soft Copy): Halaman publik via QR — validasi token 7 hari + single-use, menampilkan raw JPG + framed JPG + GIF.
-- `/legal/privacy` & `/legal/terms`: Kebijakan privasi & ToS.
+> **AMENDEMEN 2026-09-27 — D-08, `docs/ADR-016-planned-routes-and-phase-acceptance.md`.**
+> Ketiga rute di bawah **tidak ada** dan tidak akan ada di fase sekarang.
+> `robots.ts` sebelumnya mengompensasi dengan sengaja tidak memasukkan
+> masuk sitemap, dan memblokir path `/download/` yang juga tidak ada — itu
+> membuat PRD tidak bisa dipakai sebagai checklist.
+>
+> - `/legal/privacy` dan `/legal/terms` → dipindah ke **Direncanakan (Fase 8)**.
+>   Dibangun di sana karena PRD Task 8.7 (DPA, cookie consent) membutuhkannya.
+> - `/download/[token]` → dipindah ke **Direncanakan**, tidak dibangun
+>   sekarang: `download_tokens` tidak punya penulis maupun pembaca (PC-04),
+>   jadi tidak ada yang bisa mengarahkan token ke sana.
+>
+> Aturan yang berlaku mulai sekarang: **tidak ada rute yang tercatat sebagai
+> "sekarang" tanpa file rute.** Kalau mau masuk daftar, harus ada.
+
+- `/download/[token]` (Ambil Soft Copy): Halaman publik via QR — validasi token 7 hari + single-use, menampilkan raw JPG + framed JPG + GIF. **[DIRENCANAKAN — Fase 8]**
+- `/legal/privacy` & `/legal/terms`: Kebijakan privasi & ToS. **[DIRENCANAKAN — Fase 8]**
 
 ### B. Super Admin / CEO Area (Setelah Login)
 - `/ceo-dashboard` (Dasbor Utama): Metrik besar (Total Tenant, Active Booths, MRR, Churn), grafik pertumbuhan, recent events, alert sistem.
@@ -138,6 +153,10 @@
 - `/owner-dashboard/machines/[boothId]`: Konfigurasi harga per booth, paper count, maintenance mode, PIN Lock toggle, unpair/revoke, sessions, history.
 - `/owner-dashboard/devices` (Device & Add-On Manager): Device paired, revoke, kuota add-on, renewal, tombol upgrade add-on.
 - `/owner-dashboard/devices/[boothId]/diagnostics` (Konsol Perangkat Web): Entry ke 5 tab diagnostik.
+> **AMENDEMEN 2026-09-27 — D-09.** Enam rute di bawah adalah **Fase 3**, dan
+> acceptance Fase 2 telah dikoreksi agar tidak mengklaimnya. Status per
+> 2026-09-27: tidak ada folder `devices/[boothId]` sama sekali.
+
 - `/owner-dashboard/devices/[boothId]/diagnostics/kamera`: Scan + kalibrasi (mirror/rotasi/zoom) + troubleshooting wizard.
 - `/owner-dashboard/devices/[boothId]/diagnostics/printer`: Pilih printer default, paper profile, test print, spooler status.
 - `/owner-dashboard/devices/[boothId]/diagnostics/operator`: Generate QR operator, sesi operator aktif, tombol Disconnect/Revoke.
@@ -196,25 +215,49 @@
 *Panduan visual konkret agar AI coding assistant tidak membuat UI yang kaku atau default. Mengikuti skill anti-slop, taste, dan neobrutalism-components.*
 
 ### Filosofi Desain
-- **Anti-AI-Slop**: Hindari layout generik "centered card + purple gradient + Inter tebal". Wajib hierarki visual tegas, border hitam tebal (3–4px), shadow keras (bukan blur), dan warna aksen neon yang disengaja.
+- **Anti-AI-Slop**: Hindari layout generik "centered card + gradient + Inter tebal". Wajib hierarki visual tegas, border hitam tebal (lebar PENDING), shadow keras (bukan blur), dan warna aksen brand yang disengaja.
 - **Neobrutalism Authentic**: Base komponen dari `neobrutalism-components` (ekmas) — Box, Button, Card, Input, Tabs, Badge, Alert, Dialog, Table, Select, Accordion, Progress, Slider, Tooltip, DropdownMenu.
 - **Taste-Driven Composition**: Setiap halaman punya "hero moment" khas (stagger text, marquee, sticky feature, editorial asymmetry). Proporsi whitespace 1:3 antara gap dan konten. Tidak semua section punya border tebal — hanya section kritis.
 - **Contextual Density**: Landing = editorial; Dashboard = dense; Device Console = terminal-teknis; Kiosk = touch-first besar; Operator = cepat.
 
 ### Skema Warna (Neobrutalism Palette)
-- **Primary (SnapBox Neon Yellow)**: `#FFDD00` — HSL(51, 100%, 50%) — CTA utama, badge aktif, highlight.
-- **Secondary (Electric Violet)**: `#8B5CF6` — HSL(263, 90%, 65%) — aksen sekunder, gradient kiosk.
-- **Accent (Hot Pink)**: `#FF1F8F` — HSL(330, 100%, 60%) — alert, promo, badge "BARU".
-- **Success (Neon Green)**: `#16A34A` — HSL(142, 70%, 45%) — status PAID, ONLINE, ACTIVE.
-- **Danger (Blood Red)**: `#DC2626` — HSL(0, 85%, 55%) — suspend, error, delete.
-- **Warning (Amber)**: `#F59E0B` — LOW_PAPER, GRACE_PERIOD, WARNING.
-- **Background (Warm White)**: `#FFFEF5` — HSL(48, 100%, 98%).
-- **Surface (Cream)**: `#F5F0DC` — HSL(48, 60%, 94%) — card sekunder.
-- **Foreground (Ink Black)**: `#141414` — HSL(0, 0%, 8%) — border, text, shadow.
-- **Border**: 3–4px solid `#141414` pada card, button, input, modal.
-- **Hard Shadow Default**: `box-shadow: 6px 6px 0 0 #141414`.
-- **Hard Shadow Pressed**: `box-shadow: 2px 2px 0 0 #141414` + `translate(2px, 2px)`.
-- **Kiosk Adaptif**: Owner dapat override primary/accent/background kiosk dengan validasi kontras min 4.5:1.
+
+> **STATUS 2026-09-26 — bagian palet ini SUDAH DIAMENDEMEN. Bacalah
+> `docs/ADR-005-blue-palette-no-gradients.md` lebih dulu.**
+>
+> **Hubungan dengan ADR-002 berubah arah.** Dulu `ADR-002` menyatakan PRD Bab 4
+> "usang" sementara PRD tetap pegang palet kuning/violet/pink, jadi `ADR-002`
+> hanya setengah benar. Sekarang kebalikannya: **PRD Bab 4-lah dokumen yang
+> usang**, dan `ADR-002` (yang catatannya soal birunya sudah benar) adalah
+> sumber kebenaran. Konsekuensi praktis: kalau bagian warna, border, atau
+> shadow di PRD ini bertentangan dengan `ADR-002` atau `ADR-005`, yang
+> menang adalah ADR, dan PRD yang perlu diamendemen.
+>
+> Palet di bawah semuanya BARU, mengikuti keputusan pemilik (AUDIT/11 D-01, opsi B):
+> satu ramp biru, tanpa gradient. Baris **Border** dan **Hard Shadow** TIDAK
+> ikut diputuskan dan sengaja dibiarkan pending: tebakan yang salah di blok
+> token terlihat sudah diputuskan, dan owner belum menjawab. Jangan perlakukan
+> angka 2px/6px di sini sebagai beres; lihat catatan di baris masing-masing.
+>
+> Ramp ini hidup di `BRAND.palette` (`apps/web/src/content/public.ts`) dan
+> dicetak ke CSS oleh `scripts/check-brand-palette.mjs`. Palet lama
+> (Neon Yellow / Electric Violet / Hot Pink / Warm White / Cream) dicabut.
+
+- **Primary (Brand Blue)**: `#5294FF` — HSL(217, 100%, 66%) — CTA utama, badge aktif, highlight. Sama dengan token `--main` yang sudah dipakai dashboard.
+- **Primary Strong**: `#1D4ED8` — **wajib untuk TEKS** di atas permukaan terang (6.7:1 di putih). Isian biru terang `#5294FF` hanya boleh dipakai sebagai latar, bukan warna teks.
+- **Primary Mid**: `#2563EB` — langkah tengah ramp, untuk isian antara `primary` dan `strong`.
+- **Tint**: `#93C5FD` — biru pucat: isian dekoratif, dan **teks di atas latar gelap** (10.4:1 di tinta).
+- **Mist**: `#DCEBFE` — permukaan pucat: blok Features, jalur mentransparansi. Sama dengan token `--background`.
+- **Background / Surface**: `#FFFFFF` — permukaan kartu dan shell.
+- **Success (Neon Green)**: `#16A34A` — HSL(142, 70%, 45%) — status PAID, ONLINE, ACTIVE. Semantik status, **bukan** warna brand.
+- **Danger (Blood Red)**: `#DC2626` — HSL(0, 85%, 55%) — suspend, error, delete. Semantik status, bukan warna brand.
+- **Warning (Amber)**: `#F59E0B` — LOW_PAPER, GRACE_PERIOD, WARNING. Semantik status, bukan warna brand.
+- **Foreground (Ink Black)**: `#141414` — HSL(0, 0%, 8%) — border, text, shadow. Tinta, bukan warna brand.
+- **Border**: ⚠️ **PENDING — belum diputuskan.** PRD lama menyebut 3–4px, sementara 318 dari 358 deklarasi border di kode adalah `border-2`. Owner harus menetapkan satu angka sebelum ini ditulis menjadi token.
+- **Hard Shadow Default**: ⚠️ **PENDING — belum diputuskan.** PRD lama menyebut `6px 6px 0`, sementara token `--shadow` `4px 4px 0`, `.public-hard-shadow` `6px`, `.ceo-dialog` `8px`, dan ada 28 nilai `shadow-[…]` arbitrer yang melewati semuanya. Dimensinya belum diseragamkan.
+- **Hard Shadow Pressed**: ⚠️ **PENDING — ikut Hard Shadow Default.**
+- **Kiosk Adaptif**: Owner dapat override primary/accent/background kiosk dengan validasi kontras min 4.5:1. Default editor adalah `#5294FF` / `#1D4ED8` / `#DCEBFE`.
+- **Larangan gradient**: ❌ Tidak ada gradient brand. Pengecualian tunggal yang masih berlaku adalah peta transparansi 8px (`.checkerboard`) untuk preview gambar di Frame Studio, karena itu affordance transparansi, bukan identitas.
 
 ### Tipografi
 - **Heading**: `Space Grotesk` (700/800), uppercase untuk section title, tracking `-0.02em`, clamp 2rem–5rem.
@@ -224,13 +267,13 @@
 - **Angka Metrik**: Space Grotesk 900 + `font-feature-settings: "tnum"`.
 
 ### Aturan Komponen (Wajib)
-- **Button**: `rounded-md` maksimal, border 3px hitam, shadow 4px 4px 0, hover translate (2px, 2px) + shadow 2px. Variasi: primary (yellow), secondary (violet), destructive (red), outline.
-- **Card**: Border 4px hitam, shadow 6px 6px 0, background warm white, header divider 3px.
-- **Input/Textarea**: Border 3px hitam, focus ring 2px violet + shadow turun.
+- **Button**: `rounded-md` maksimal, border hitam (lebar PENDING, lihat Skema Warna), shadow keras (offset PENDING), hover translate (2px, 2px) + shadow turun. Variasi: primary (biru `#5294FF`), strong (biru tua `#1D4ED8`), destructive (red), outline.
+- **Card**: Border hitam (lebar PENDING), shadow keras (offset PENDING), background `#FFFFFF`, header divider hitam.
+- **Input/Textarea**: Border hitam, focus ring 2px biru tua `#1D4ED8` + shadow turun.
 - **Badge**: Pill `rounded-full`, border 2px hitam, uppercase kecil, warna status.
 - **Dialog/Modal**: Backdrop hitam 60%, modal border 4px, shadow 8px 8px 0, close besar kanan atas.
-- **Tabs**: Underline tebal 3px hitam + yellow highlight untuk active.
-- **Table**: Header background yellow, border 3px per cell, zebra `#FFFEF5`/`#F5F0DC`.
+- **Tabs**: Underline tebal hitam + biru `#5294FF` highlight untuk active.
+- **Table**: Header background biru `#5294FF`, border hitam per cell, zebra `#FFFFFF`/`#DCEBFE`.
 - **Alert (NeoAlert)**: Border 4px + icon besar, warna severity, auto-dismiss 3s default (success), persistent untuk danger.
 - **Slider**: Track 6px hitam, thumb kotak 24×24 hitam border putih.
 - **Icons**: `lucide-react` + custom SnapBox set (camera, frame, printer, kiosk, voucher, chroma). Ukuran 20/24/32px.
@@ -240,7 +283,7 @@
 - **Clean + Bold**: Whitespace generous (gap 32–64px) tapi elemen kunci sangat bold.
 - **Micro-animations**: Framer Motion untuk stagger text, marquee, page transition, countdown kiosk.
 - **Kiosk Fullscreen**: Adaptif light/dark mengikuti kiosk theme, font besar, tombol besar.
-- **Gradient Sengaja**: Hanya hero (yellow → violet → pink) dengan border hitam tebal.
+- ~~**Gradient Sengaja**~~: **DICABUT 2026-09-26.** Tidak ada gradient brand di permukaan mana pun. Hero memakai satu warna solid `#5294FF` dengan border hitam tebal. Pengecualian tunggal: peta transparansi 8px di Frame Studio.
 - **Konsol Perangkat**: Terminal-like, mono font, tetap neobrutalism.
 - **Anti-Slop Conflict Resolution**: Jika multiple skill (anti-slop, taste, neobrutalism) bertentangan → hierarki: **Most Specific Skill > Project Design System > PRD > General UI Convention**. Semua konflik tertulis sebagai ADR. Dilarang menghasilkan visual Frankenstein (neobrutalism + glassmorphism + material + shadcn default).
 - **Dilarang Keras**: Generic SaaS dashboard, semua section card, excessive rounded corners, purple gradient default, glassmorphism tanpa fungsi, repetitive 3-card layout, generic hero, default shadcn appearance, excessive pills, oversized decorative icons, random floating blobs, Inter-only typography jika tidak sesuai brand, whitespace berlebihan yang mengurangi informasi.
@@ -253,7 +296,7 @@
 ---
 
 ## 5. Pembagian Hak Akses Pengguna
-*Tabel hak akses + matriks plan tier. Model RBAC granular dengan `permission` string (contoh: `tenant.read`, `booth.pair`, `payment.configure`).*
+*Tabel hak akses + matriks plan tier. ~~Model RBAC granular dengan `permission` string~~ **AMENDEMEN 2026-09-27 (D-04):** RBAC granular dibatalkan — otorisasi berbasis peran. Lihat §5.2 dan `docs/ADR-009-role-based-authorization-only.md`.*
 
 ### 5.1 Matriks Hak Akses Menu / Halaman
 
@@ -287,6 +330,32 @@
 | Notifikasi In-App Realtime | ❌ | ❌ | ✅ | ✅ | ✅ |
 
 ### 5.2 Permission Granular (RBAC)
+
+> **AMENDEMEN 2026-09-27 — D-04, `docs/ADR-009-role-based-authorization-only.md`.**
+> Daftar permission di bawah **dibatalkan sebagai kontrol akses**. Ia
+> dipindahkan ke "Referensihistorik" dan tidak lagi diwajibkan.
+>
+> Alasan: 75 permission ini ada di `packages/shared/src/auth.ts` dengan
+> **nol importer** di seluruh repo. Tidak ada satu pun action atau route yang
+> memanggilnya. Otorisasi yang benar-benar ditegakkan adalah kesamaan string
+> peran (`requireCeo()`, `requireOwnerTenant()`), dan audit static
+> (`AUDIT/05` BE-004, BE-030) menemukan 55 dari 55 actions serta 9 route
+> handler menutup gerbang dengan benar.
+>
+> Konsekuensi yang harus disepakati: **PRD tidak lagi mengklaim kontrol akses
+> berbutir.** Yang dijamin adalah — CEO lintas tenant, OWNER penuh di dalam
+> tenant-nya, STAFF monitoring. `/staff-dashboard` **dilarang dibangun**
+> sampai ada keputusan RBAC baru; mem-build-nya sekarang akan memberi Staff
+> akses destruktif kelas Owner dengan satu pemanggilan
+> `requireOwnerTenant()` per aksi sebagai satu-satunya penghalang.
+>
+> Kalau akses berbutir dibutuhkan nanti, bentuk yang benar adalah **tabel
+> permission di database**, bukan enum 75 konstanta — enum tidak punya jalur
+> migrasi dan butuh 41 titik pemanggilan manual.
+
+<details>
+<summary>Referensi historis — 75 permission granular (DIBATALKAN, tidak diwajibkan)</summary>
+
 - **Tenant**: `tenant.read`, `tenant.create`, `tenant.update`, `tenant.suspend`, `tenant.ban`, `tenant.restore`, `tenant.delete`.
 - **Booth**: `booth.read`, `booth.create`, `booth.update`, `booth.delete`, `booth.pair`, `booth.revoke`, `booth.maintenance`.
 - **Device**: `device.read`, `device.pair`, `device.revoke`, `device.configure`, `device.diagnostics`.
@@ -302,6 +371,8 @@
 - **Kiosk**: `kiosk.theme.read`, `kiosk.theme.update`, `kiosk.theme.publish`, `kiosk.lockdown`.
 - **Report**: `report.read`, `report.schedule`, `report.export`.
 - **Audit**: `audit.read`, `audit.export`.
+
+</details>
 
 ### 5.3 Batasan Berbasis Plan Tier (Feature Entitlement)
 
@@ -338,6 +409,35 @@
 - Postgres RLS policy aktif sebagai lapisan kedua setelah service-layer authorization.
 - Cross-tenant access → 404 (bukan 403) untuk mencegah IDOR information disclosure.
 
+> **AMENDEMEN 2026-09-27 — D-03, `docs/ADR-006-runtime-db-role-and-forced-rls.md`.**
+> Kalimat "RLS policy aktif sebagai lapisan kedua" **tidak benar sampai
+> 2026-09-27**, dan runtime pass membuktikannya.
+>
+> Semua traffic aplikasi connect lewat `postgres(DATABASE_URL)`, yang pada
+> 2026-09-27 resolving ke role `postgres`: **owner dari 35 tabel**, RLS
+> `ENABLE` tapi tidak satu pun `FORCE`, dan memegang atribut
+> **`rolbypassrls = true`**. Pengukuran langsung: sesi yang sah dengan klaim
+> tenant A, query tanpa predikat tenant, mengembalikan **4 booth dari 4
+> tenant**. Role `authenticated` pada klaim yang sama mengembalikan 1.
+>
+> Policy-nya benar; perannya yang salah.
+>
+> Karena itu §5.5 gaining dua syarat baru, keduanya **wajib**:
+> 1. `DATABASE_URL` aplikasi **WAJIB** memakai role DML yang **bukan owner**
+>    dan **tidak memegang `BYPASSRLS`**. Role owner hanya untuk migrasi
+>    (`DIRECT_URL`).
+> 2. `FORCE ROW LEVEL SECURITY` diaktifkan **setelah** butir 1 terverifikasi.
+>    **Aktifkan `FORCE` saja tidak memperbaiki apa pun** — role `BYPASSRLS`
+>    melewati RLS meski `FORCE` di-set.
+>
+> Urutan: buat role → cabut `BYPASSRLS` → uji lintas-tenant → `FORCE` → uji
+> ulang. Migrasi dan seed tetap memakai role owner, jadi `FORCE` lebih dulu
+> akan menolak jalur itu.
+>
+> Sampai langkah 1 dan 2 beres, lapis kedua ini **tidak ada**, dan semua
+> isolasi tenant bertumpu pada ~60 predikat `WHERE tenant_id = …` di
+> service layer.
+
 ---
 
 ## 6. Alur Kerja dan Fitur Utama
@@ -356,7 +456,22 @@
    - High-risk action (suspend/ban/delete/change pricing) → confirmation dialog + alasan jika relevan + audit log.
 
 ### B. Modul Owner — Outlet & Machine Manager, Pairing & Revoke
-1. **Cara Kerja**: Owner buka `/owner-dashboard/outlets` → buat cabang. Lalu `/owner-dashboard/machines` → "Add New Device". Sistem buat baris `booths` dengan `pairing_code` (6 karakter alfanumerik uppercase via `crypto.randomBytes`) + `pairing_code_expires_at` 10 menit + QR. Teknisi buka Konsol Perangkat di SnapBox Desktop → scan QR / ketik kode → POST ke `/api/booth/pair`. Status booth ONLINE, Supabase Realtime push konfigurasi ke Desktop.
+1. **Cara Kerja**: Owner buka `/owner-dashboard/outlets` → buat cabang. Lalu `/owner-dashboard/machines` → "Add New Device". Sistem membuat token pairing 144-bit (24 karakter, `crypto.randomBytes`), menyimpan **hanya** hash SHA-256-nya, dengan masa berlaku 10 menit, lalu menampilkannya sebagai **QR**. Teknisi buka Konsol Perangkat di SnapBox Desktop → scan QR → POST ke `/api/booth/pair`. Status booth ONLINE, Supabase Realtime push konfigurasi ke Desktop.
+
+> **AMENDEMEN 2026-09-27 — D-02, `docs/ADR-008-pairing-qr-only.md`.**
+> Teks asli persisted "6 karakter alfanumerik … + scan QR / ketik kode".
+> **Kode manual dan `pairing_code` 6 karakter dibatalkan, bukan diimplementasikan.**
+>
+> Alasannya keamanan, dan urutannya berbalik dari yang terlihat: 6 karakter
+> dengan hash SHA-256 **tanpa salt** adalah target serangan lookup — 10^6 ruang
+> dan satu rainbow table menutup semuanya. Entropi 144-bit yang ada sekarang
+> aman dan **dipertahankan**. Menyelaraskan PRD di sini berarti menurunkan
+> keamanan, bukan sekadar memenuhi spesifikasi.
+>
+> Yang berubah: kredensialnya QR saja. `manualCode` dihapus dari kontrak dan
+> cabang UI yang tidak pernah bisa dieksekusi ikut dihapus. Penukaran
+> (`POST /api/booth/pair`) adalah pekerjaan terpisah dan **belum ada**
+> (BE-003) — teks ini tidak mengizinkannya dianggap selesai.
 2. **Aturan Sistem**:
    - Pairing code valid 10 menit (`now() < pairing_code_expires_at`).
    - Pairing session single-use, tenant scoped, booth scoped, HIGH entropy token, server hanya menyimpan hash.
@@ -453,7 +568,11 @@
    - **Subscription State Machine**: `PENDING → ACTIVE → EXPIRING → GRACE_PERIOD → EXPIRED → SUSPENDED`. (Banned terpisah sebagai state paralel immutable.)
 
 ### K. Modul Tauri Desktop — Pairing, Config Sync, & Heartbeat
-1. **Cara Kerja**: Tauri buka → welcome screen "Belum terhubung". Konsol Perangkat (tap 5 sudut / hold `Space+V` 5 detik) → PIN admin → tab Panel Operator → masukkan kode pairing. POST `/api/booth/pair` `{ pairing_code, device_fingerprint, app_version, platform }`. Server validasi → balikkan `{ booth_id, session_jwt, booth_config, kiosk_theme }`. App subscribe Supabase Realtime `booth:{booth_id}`.
+> **AMENDEMEN 2026-09-27 — D-02.** Baris di bawah masih menyebut
+> `pairing_code` dan "ketik manual code". Keduanya **dibatalkan**; pairing
+> adalah QR dengan token 144-bit. Lihat `docs/ADR-008-pairing-qr-only.md`.
+
+1. **Cara Kerja**: Tauri buka → welcome screen "Belum terhubung". Konsol Perangkat (tap 5 sudut / hold `Space+V` 5 detik) → PIN admin → tab Panel Operator → scan QR pairing. POST `/api/booth/pair` `{ pairing_token, device_fingerprint, app_version, platform }`. Server validasi → balikkan `{ booth_id, session_jwt, booth_config, kiosk_theme }`. App subscribe Supabase Realtime `booth:{booth_id}`.
 2. **Aturan Sistem**:
    - Device fingerprint = SHA-256(MAC + OS + app version).
    - JWT session expiry 30 hari, disimpan di OS secure storage (Windows DPAPI / Linux Secret Service). **DILARANG**: localStorage, plaintext JSON, `.env` desktop, SQLite plaintext, cookie tanpa protection.
@@ -650,6 +769,9 @@ Receive → Validate source → Verify signature → Validate schema
 | `/ceo-dashboard/*` | CEO | CEO | verifyIdToken + role CEO | Server + Realtime | ❌ noindex | no-store |
 | `/owner-dashboard/*` | OWNER | Owner | verifyIdToken + role OWNER + tenant | Server + Realtime | ❌ noindex | no-store |
 | `/staff-dashboard/*` | STAFF | Staff | verifyIdToken + role STAFF | Server + Realtime | ❌ noindex | no-store |
+> **AMENDEMEN 2026-09-27 — D-08.** Baris `/download/[token]` di bawah
+> postponed — lihat catatan amendemen di Bab 3.A.
+
 | `/download/[token]` | Public (token) | Minimal | Validate token 7d + single-use | DB via Server Action | ❌ noindex | no-store |
 | `/api/*` | N/A | N/A | Route handler | Server | ❌ | no-cache |
 | `/api/webhooks/*` | Public (signature) | N/A | verify signature | Server | ❌ | no-cache |
@@ -805,6 +927,40 @@ stateDiagram-v2
 - **Jangan mengindeks**: `/dashboard`, `/api`, `/private`, `/download/[token]`.
 
 ### 8.2 Keamanan (Zero Trust + Defense in Depth + Least Privilege)
+
+> **AMENDEMEN 2026-09-27 — D-14, `docs/ADR-007-firebase-claim-seeding.md`.**
+> Ini menutup **satu outage produksi yang sedang terjadi**, bukan risiko
+> hipotetis.
+>
+> Login memverifikasi `app_role` dari custom claim lalu membandingkannya dengan
+> baris `users`; ketidakcocokan ditolak. `setUserClaims` punya **tepat satu call
+> site** di seluruh repo — pembuatan staff. **Tidak ada jalur yang menulis
+> claim untuk OWNER atau CEO.**
+>
+> Diuji langsung terhadap data live pada 2026-09-27 (read-only):
+>
+> ```
+> CEO   uid hVzGPzQZ  app_role = "CEO"     -> bisa login
+> OWNER uid Hrl14noH  app_role = (missing) -> CLAIMS_INVALID, login DITOLAK
+> ```
+>
+> Akun Owner yang ada **tidak bisa masuk**. CEO bisa karena claim-nya sudah
+> ditanam manual di luar repo.
+>
+> Koreksi: audit memperkirakan `CLAIMS_STALE`; yang terjadi
+> **`CLAIMS_INVALID`** — claim-nya hilang, bukan tidak cocok. Kode galatnya
+> berbeda karena ia muncul sebelum baris DB dibaca, jadi dari log saja orang
+> tidak bisa membedakan "belum ditanam" dari "sudah basi".
+>
+> **Syarat baru untuk §8.2:**
+> 1. Seeding claim adalah **skrip repo yang idempoten**
+>    (`scripts/seed-firebase-claims.mjs`), bukan langkah manual, dan **wajib
+>    berjalan di pipeline deploy** sebelum server menerima traffic.
+> 2. `CLAIMS_STALE` dan `CLAIMS_INVALID` **tetap hard failure**. Yang
+>    diperbaiki adalah sumber datanya, bukan relaksasinya.
+> 3. Baris `users` adalah satu-satunya sumber kebenaran claim.
+> 4. Onboarding Owner memanggil skrip/fungsi yang sama — **bukan**
+>    `setUserClaims` inline.
 - CSRF: Next.js built-in + `SameSite=Lax` cookies.
 - XSS sanitization: DOMPurify + Zod schema validation.
 - Validasi server-side WAJIB (Server Actions + Zod).
@@ -1439,9 +1595,9 @@ export const kioskThemes = pgTable("kiosk_themes", {
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
   boothId: uuid("booth_id").references(() => booths.id, { onDelete: "cascade" }),
   logoUrl: text("logo_url"),
-  primaryColor: varchar("primary_color", { length: 9 }).notNull().default("#FFDD00"),
-  accentColor: varchar("accent_color", { length: 9 }).notNull().default("#8B5CF6"),
-  backgroundColor: varchar("background_color", { length: 9 }).notNull().default("#FFFEF5"),
+  primaryColor: varchar("primary_color", { length: 9 }).notNull().default("#5294FF"),
+  accentColor: varchar("accent_color", { length: 9 }).notNull().default("#1D4ED8"),
+  backgroundColor: varchar("background_color", { length: 9 }).notNull().default("#DCEBFE"),
   fontFamily: varchar("font_family", { length: 80 }).notNull().default("Space Grotesk"),
   welcomeText: text("welcome_text"),
   ctaText: varchar("cta_text", { length: 120 }).default("SENTUH UNTUK MULAI ✨"),
@@ -1964,7 +2120,7 @@ Cost drivers: DB, Storage, Bandwidth, Image processing, Realtime connections, Cl
 *Tujuan: Setup project skeleton, design system, CI/CD, konfigurasi Supabase + Firebase + Cloudflare + Sentry. Belum ada fitur bisnis.*
 
 - [ ] **Task 0.1 (Repo & Tooling)**: Init monorepo (`apps/web` Next.js 15, `apps/desktop` Tauri v2, `packages/db` Drizzle schema, `packages/ui` shared components). Setup TypeScript strict, ESLint, Prettier, Husky pre-commit, commitlint.
-- [ ] **Task 0.2 (Design System Foundations)**: Setup Tailwind v4 + CSS variable token warna (yellow `#FFDD00`, violet `#8B5CF6`, pink `#FF1F8F`, ink `#141414`, warm white `#FFFEF5`). Install `neobrutalism-components`, `shadcn/ui`, `lucide-react`, `framer-motion`, `recharts`, `react-hook-form`, `zod`, `react-dropzone`, `react-colorful`. Build base components: Button, Card, Input, Dialog, Table, Badge, Tabs, Alert, Select, Progress, Slider, Tooltip, DropdownMenu, Accordion.
+- [ ] **Task 0.2 (Design System Foundations)**: Setup Tailwind v4 + CSS variable token warna (ramp biru `#5294FF`/`#1D4ED8`/`#2563EB`/`#93C5FD`/`#DCEBFE`, surface `#FFFFFF`, ink `#141414`) — menggantikan palet PRD yang dicabut D-01. Install `neobrutalism-components`, `shadcn/ui`, `lucide-react`, `framer-motion`, `recharts`, `react-hook-form`, `zod`, `react-dropzone`, `react-colorful`. Build base components: Button, Card, Input, Dialog, Table, Badge, Tabs, Alert, Select, Progress, Slider, Tooltip, DropdownMenu, Accordion.
 - [ ] **Task 0.3 (Font & Layout Primitives)**: Load Space Grotesk + Inter + JetBrains Mono. Setup root layout, theme provider, toast provider, motion wrapper.
 - [ ] **Task 0.4 (Supabase Setup)**: Create project Supabase, enable Realtime, RLS, Storage bucket policy draft (`frames`, `branding`, `attract`, `soft-copies`, `reports`, `logs`), pg_cron enabled.
 - [ ] **Task 0.5 (Firebase Setup)**: Firebase project, Email/Password auth enabled, Admin SDK credential generated, custom claims schema documented.
@@ -1980,7 +2136,7 @@ Cost drivers: DB, Storage, Bandwidth, Image processing, Realtime connections, Cl
 ### Fase 1: Public Website + Auth + Tenant + Subscription Engine
 *Tujuan: Landing page publik, login Firebase, provisioning tenant (Super Admin), subscription engine B2B (Pakasir), Super Admin Dashboard dasar, Feature Entitlement System.*
 
-- [ ] **Task 1.1 (Landing Page)**: Wire `/`, `/tentang`, `/fitur`, `/harga`, `/kamera`, `/kontak`, `/docs/troubleshooting`, `/unduh-aplikasi`. Layout public (Header + Footer 4px border). Hero neobrutalism + stagger text + gradient sengaja. Section fitur, showcase frame (dummy), 3 paket harga, marquee logo tenant, testimoni, FAQ accordion, CTA "Konsultasi Gratis" (WhatsApp). Footer sitemap + legal. SEO metadata + OG + JSON-LD (`Organization`, `Product`, `FAQPage`) + sitemap + robots.
+- [ ] **Task 1.1 (Landing Page)**: Wire `/`, `/tentang`, `/fitur`, `/harga`, `/kamera`, `/kontak`, `/docs/troubleshooting`, `/unduh-aplikasi`. Layout public (Header + Footer 4px border). Hero neobrutalism + stagger text. ~~gradient sengaja~~ **DICABUT 2026-09-26**: hero sekarang satu warna solid `#5294FF`, tanpa gradient. Section fitur, showcase frame (dummy), 3 paket harga, marquee logo tenant, testimoni, FAQ accordion, CTA "Konsultasi Gratis" (WhatsApp). Footer sitemap + legal. SEO metadata + OG + JSON-LD (`Organization`, `Product`, `FAQPage`) + sitemap + robots.
 - [ ] **Task 1.2 (Auth Pages & Flow)**: `/login` (form Email & Password neobrutalism, mode toggle untuk Staff PIN), `/unauthorized`. Firebase Client SDK login → verify server via `firebase-admin`. Middleware `middleware.ts` (edge) redirect by custom claim + subscription check. Session cookie secure HttpOnly SameSite=Lax.
 - [ ] **Task 1.3 (Super Admin Dashboard Skeleton)**: Layout `/ceo-dashboard` + sidebar + header. Route placeholder yang benar-benar punya konten dummy (bukan "sedang dikembangkan"): `dashboard`, `tenants`, `subscriptions`, `plans`, `devices`, `broadcast`, `activity-log`, `promos`, `settings`, `system-health`, `security`.
 - [ ] **Task 1.4 (Tenant Provisioning Wizard)**: `/ceo-dashboard/tenants` (tabel 20 tenant dummy dengan filter), `/ceo-dashboard/tenants/new` (wizard 3 langkah: Client Details → Plan & Duration → Review & Invite), `/ceo-dashboard/tenants/[id]` (detail + suspend/ban/reset/downgrade/restore dengan confirmation + reason). Server Action `createTenant` (Firebase Admin SDK + insertion `users`, `tenants`, `b2b_subscriptions`, `booths` default) + Resend invite email.
@@ -2000,6 +2156,8 @@ Cost drivers: DB, Storage, Bandwidth, Image processing, Realtime connections, Cl
 ### Fase 2: Owner Dashboard Lengkap (UI First, Data Dummy + Binding Partial)
 *Tujuan: Seluruh dashboard Owner lengkap secara UI, sebagian sudah terhubung dengan DB (outlets, machines, packages). Frame Studio, Templates, Kiosk Theme, Promo, Payment, Staff, Analytics, Reports, Subscription UI complete.*
 
+**Status audit (2026-09-26):** Checklist berikut adalah scope, bukan bukti penerimaan. `demo` berarti ilustratif, bukan integrasi produksi; `deferred` berarti backend/kontrak belum tersedia; `verified` memerlukan bukti tes. Belum ada acceptance fase 2 terverifikasi. Route Owner yang jatuh ke catch-all masih menampilkan `Segera hadir`.
+
 - [ ] **Task 2.1 (Owner Dashboard Layout)**: Sidebar + header dengan plan badge, quota indicator, notif bell. Route groups: `dashboard`, `outlets`, `machines`, `devices`, `frame-studio`, `templates`, `packages`, `kiosk-theme`, `promos`, `payment-settings`, `staff`, `customers`, `transactions`, `finance`, `analytics`, `reports`, `subscription`, `notifications`, `settings`.
 - [ ] **Task 2.2 (Outlets CRUD)**: `/owner-dashboard/outlets` + `[id]` detail — Server Actions CRUD `outlets`, validation Zod, tenant-scoped.
 - [ ] **Task 2.3 (Machine Manager)**: `/owner-dashboard/machines` daftar booth realtime + `[boothId]` detail (harga per booth, paper count, maintenance mode, PIN Lock toggle). Server Action `booths.update`. Tambah `Add New Device` → generate pairing code + QR preview (draft API `/api/booth/pair-session`).
@@ -2011,16 +2169,47 @@ Cost drivers: DB, Storage, Bandwidth, Image processing, Realtime connections, Cl
 - [ ] **Task 2.9 (Promo & Voucher)**: `/owner-dashboard/promos` — CRUD voucher, batch generate (max 500, CSV download), tracking redemption. Server Action `promos.*` + `redeemPromo` (atomic).
 - [ ] **Task 2.10 (Payment Gateway Config)**: `/owner-dashboard/payment-settings` — pilih provider, input API key + secret masked, sandbox/production, primary/backup, test connection. Server Action enkripsi AES-256-GCM + `b2c_payment_configs` upsert.
 - [ ] **Task 2.11 (Staff Management)**: `/owner-dashboard/staff` — CRUD staff + invite Firebase Admin + deactivate. Kuota staff dari Entitlement.
-- [ ] **Task 2.12 (Customer CRM)**: `/owner-dashboard/customers` — tabel customer unik + total foto/spent/last visit, masking email untuk staff.
+- [ ] **Task 2.12 (Customer CRM)**: **Plan missing; not verified.** Page belum ada dan catch-all menampilkan `Segera hadir`. Scope: customer unik + total foto/spent/last visit, masking email untuk staff. Belum ditemukan plan/task record; tabel `customers` bukan bukti implementasi CRM.
 - [ ] **Task 2.13 (Transactions)**: `/owner-dashboard/transactions` — tabel 100+ transaksi dummy + filter status/method/date/booth + bulk ZIP + export CSV.
 - [ ] **Task 2.14 (Finance & Analytics)**: `/owner-dashboard/finance` + `/owner-dashboard/analytics` — Recharts line + pie + funnel + retention. Dummy data terstruktur.
-- [ ] **Task 2.15 (Reports)**: `/owner-dashboard/reports` — jadwal report + export PDF/CSV.
-- [ ] **Task 2.16 (Subscription Owner)**: `/owner-dashboard/subscription` — status Pakasir B2B, tanggal expired, tombol perpanjang, histori invoice, upgrade/downgrade, add-on. Checkout flow (draft).
+- [ ] **Task 2.15 (Reports)**: **Demo implemented; production acceptance deferred.** Route dan plan tersedia. Preview/CSV/PDF print memakai data sintetis; jadwal hanya state lokal, tidak tersimpan/terkirim. Acceptance/ekspor belum terverifikasi. Email terjadwal produksi memerlukan persistence, cron, Resend, query data, dan verifikasi delivery.
+- [ ] **Task 2.16 (Subscription Owner)**: **Read-only binding present; checkout deferred; acceptance unverified.** Route membaca subscription tenant dari DB; plan menetapkan renewal/upgrade/downgrade/add-on sebagai draft tanpa mutasi. Belum ada bukti tes akses, histori, atau checkout.
 - [ ] **Task 2.17 (Notifications Owner + Settings)**: `/owner-dashboard/notifications` + `/owner-dashboard/settings` + `/owner-dashboard/support`.
-- [ ] **Task 2.18 (Staff Dashboard)**: `/staff-dashboard/*` — read-only monitoring, tombol destructive disabled.
-- [ ] **Task 2.19 (Database Migrations - Owner)**: Migrations untuk `outlets`, `booths`, `devices`, `pairing_tokens`, `device_calibrations`, `frames`, `frame_versions`, `booth_frames`, `templates`, `packages`, `kiosk_themes`, `kiosk_theme_versions`, `promos`, `promo_redemptions`, `b2c_payment_configs`, `transactions`, `paper_logs`, `customers`, `download_tokens`, `sessions`, `webhook_events`, `webhook_failures`, `device_logs`, `camera_compatibility`. RLS semua.
+- [ ] **Task 2.18 (Staff Dashboard)**: **Plan missing; not implemented/verified.** `/staff-dashboard/*` route tidak ada; plan task 2.11 menempatkan Staff Dashboard di luar scope. Read-only monitoring dan disable destructive action belum dibuktikan.
+- [ ] **Task 2.19 (Database Migrations - Owner)**: **DDL/RLS artifacts exist; migration acceptance unverified.** Baseline `0000` berisi tabel Owner; `0001` dan `0005_phase_2_owner_rls.sql` berisi RLS/policy, migration tersebut tercatat di journal. `0005_owner_promo_code_scope.sql` tidak memiliki entry journal terpisah, sehingga jalur migrasi perlu direkonsiliasi. Belum ada bukti fresh-install, upgrade, catalog, atau test dua tenant. DB/migration tidak dijalankan dalam audit.
 
-**Acceptance Fase 2**: Owner bisa navigasi seluruh dashboard, CRUD outlets/packages/frames/promos/staff, lihat analytics dummy. RLS tenant isolation tested (attempt cross-tenant akses = 404).
+**Acceptance Fase 2 (belum verified):** Owner bisa navigasi seluruh bagian dashboard yang ada di Fase 2, CRUD outlets/packages/frames/promos/staff, lihat analytics demo; RLS tenant isolation tested (attempt cross-tenant akses = 404). Ini kriteria, bukan status selesai. CRM dan Staff Dashboard tidak ada; section yang masih jatuh ke catch-all `Segera hadir` belum memenuhi navigasi/fitur. Rekam environment, tes, dan hasil sebelum menandai selesai.
+
+> **AMENDEMEN 2026-09-27 — D-05, `docs/ADR-014-demo-surfaces-stay-labelled-demos.md`.**
+> "lihat analytics demo" **tidak boleh dihitung sebagai surfaces yang
+> selesai.** `/finance`, `/analytics`, `/reports`, dan `/customers`
+> menampilkan data yang **tidak berasal dari database**: angka rupiah tetap,
+> "Contoh Outlet A/B/C", seri 30 hari prosedural, dan epoch
+> `Date.UTC(2026, 8, 26)` hardcode.
+>
+> Mock-nya berlabel dan itu **aset** — banner pengungkapan wajib
+> dipertahankan. Yang menjadi masalah: mock menempati 4 dari 20 slot nav
+> Owner, dan screenshot `/finance` di luar banner tidak bisa dibedakan dari
+> yang asli.
+>
+> Keputusan: tetap demo berlabel, tapi **dipindah dari nav produksi** ke
+> pengelompokan "Pratinjau". Dan `finance`/`analytics` yang nyata **terblokir
+> di belakang D-07** — `insert(transactions)` muncul **nol kali** di
+> aplikasi, jadi tidak ada apa pun untuk dijumlahkan.
+
+> **AMENDEMEN 2026-09-27 — D-09, `docs/ADR-016-planned-routes-and-phase-acceptance.md`.**
+> Teks asli: *"Owner bisa navigasi **seluruh** dashboard."* Itu tidak bisa
+> berlaku bersama Bab 3.C, yang menjadwalkan enam rute
+> `/owner-dashboard/devices/[boothId]/diagnostics/*` di **Fase 3** — sesudah
+> Fase 2. Kedua pernyataan itu tidak bisa sama-sama benar.
+>
+> Enam rute itu **tetap Fase 3**; teks acceptance di atas yang dikoreksi.
+> Device Console bukan bagian Fase 2 dan tidak akan pernah menjadi bagiannya.
+>
+> **Status faktual per 2026-09-27** (runtime pass, `AUDIT/14`): tidak ada
+> folder `devices/[boothId]` sama sekali. RLS tenant isolation **belum**
+> teruji dan **gagal** di lapis database — lihat `AUDIT/14` §2. Kriteria
+> "cross-tenant akses = 404" saat ini hanya terpenuhi di service layer.
 
 ---
 

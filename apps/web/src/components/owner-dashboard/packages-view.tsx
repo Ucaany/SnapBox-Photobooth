@@ -88,7 +88,7 @@ export function PackagesView({
   return (
     <div className="space-y-8">
       <header>
-        <p className="text-muted-foreground text-sm font-medium tracking-[0.18em] uppercase">
+        <p className="text-sm font-medium tracking-[0.18em] text-muted-foreground uppercase">
           Penjualan
         </p>
         <h1 className="text-3xl font-bold">Paket</h1>
@@ -127,7 +127,7 @@ export function PackagesView({
                         Rp {Number(row.price).toLocaleString('id-ID')} ·{' '}
                         {row.boothName ?? 'Semua booth'}
                       </p>
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-sm text-muted-foreground">
                         {row.poseCount} pose · {row.printCount} cetak ·{' '}
                         {row.retakeLimit < 0 ? 'Retake tanpa batas' : `${row.retakeLimit} retake`} ·{' '}
                         {row.printSize} · GIF {row.includeGif ? 'ya' : 'tidak'}

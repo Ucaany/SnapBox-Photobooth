@@ -50,7 +50,7 @@ export function PaymentSettingsView({ configs }: { configs: PaymentConfigRecord[
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold">Payment gateway</h1>
-        <p className="text-muted-foreground mt-2">Kelola gateway pembayaran B2C tenant.</p>
+        <p className="mt-2 text-muted-foreground">Kelola gateway pembayaran B2C tenant.</p>
       </div>
       <p role="status" aria-live="polite" className="min-h-5 font-semibold">
         {message}
