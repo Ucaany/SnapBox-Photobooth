@@ -17,19 +17,19 @@ import { FAQ } from '@/content/public';
 export function FaqAccordion({ className }: { readonly className?: string }) {
   return (
     <Accordion
-      className={cn('w-full border-2 border-[#141414] bg-[#FFFEF5]', className)}
+      className={cn('w-full border-2 border-brand-ink bg-brand-surface', className)}
       defaultValue={[]}
     >
       {FAQ.map((entry) => (
         <AccordionItem
           key={entry.question}
           value={entry.question}
-          className="rounded-none border-0 border-b-2 border-[#141414] shadow-none last:border-b-0"
+          className="rounded-none border-0 border-b-2 border-brand-ink shadow-none last:border-b-0"
         >
-          <AccordionTrigger className="bg-[#FFFEF5] text-base font-heading text-[#141414] data-panel-open:bg-[#FFDD00]">
+          <AccordionTrigger className="bg-brand-surface text-base font-heading text-brand-ink data-panel-open:bg-brand-primary">
             {entry.question}
           </AccordionTrigger>
-          <AccordionContent className="bg-[#F5F0DC] text-[#141414]">
+          <AccordionContent className="bg-brand-mist text-brand-ink">
             <p className="text-sm leading-relaxed">{entry.answer}</p>
           </AccordionContent>
         </AccordionItem>

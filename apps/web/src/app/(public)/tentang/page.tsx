@@ -59,7 +59,7 @@ function VisionIcon() {
 export default function TentangPage() {
   return (
     <>
-      <section className="public-section border-b-4 border-[#141414] bg-[#FFDD00]">
+      <section className="public-section border-b-4 border-brand-ink bg-brand-primary">
         <div className="public-container">
           <p className="font-mono text-xs tracking-[0.3em] uppercase">Tentang Kami</p>
           <h1 className="mt-4 max-w-4xl text-4xl leading-[0.98] font-bold font-heading tracking-tight uppercase md:text-6xl">
@@ -128,7 +128,7 @@ export default function TentangPage() {
       </section>
 
       <section
-        className="public-section border-y-4 border-[#141414] bg-[#FFFEF5]"
+        className="public-section border-y-4 border-brand-ink bg-brand-surface"
         aria-labelledby="tentang-visi"
       >
         <div className="public-container">
@@ -141,7 +141,7 @@ export default function TentangPage() {
 
           <div className="mt-8 grid gap-6 lg:grid-cols-2">
             <article className="public-card public-hard-shadow flex flex-col gap-4 rounded-base p-6 md:p-8">
-              <span className="inline-flex w-fit items-center gap-2 rounded-base border-2 border-[#141414] bg-[#FFDD00] px-3 py-1 font-mono text-[11px] tracking-widest uppercase">
+              <span className="inline-flex w-fit items-center gap-2 rounded-base border-2 border-brand-ink bg-brand-primary px-3 py-1 font-mono text-[11px] tracking-widest uppercase">
                 <VisionIcon />
                 Visi
               </span>
@@ -151,8 +151,8 @@ export default function TentangPage() {
               <p className="text-xs font-base">Kutipan visi resmi dari dokumen PRD SnapBox.</p>
             </article>
 
-            <article className="flex flex-col gap-4 rounded-base border-2 border-dashed border-[#141414] bg-[#F5F0DC] p-6 md:p-8">
-              <span className="inline-flex w-fit items-center gap-2 rounded-base border-2 border-dashed border-[#141414] bg-[#FFFEF5] px-3 py-1 font-mono text-[11px] tracking-widest uppercase">
+            <article className="flex flex-col gap-4 rounded-base border-2 border-dashed border-brand-ink bg-brand-mist p-6 md:p-8">
+              <span className="inline-flex w-fit items-center gap-2 rounded-base border-2 border-dashed border-brand-ink bg-brand-surface px-3 py-1 font-mono text-[11px] tracking-widest uppercase">
                 Misi
               </span>
               <p className="text-xl font-bold font-heading tracking-tight uppercase">[REAL DATA]</p>
@@ -177,13 +177,13 @@ export default function TentangPage() {
             Lima prinsip yang dipegang SnapBox dalam membangun dan mengoperasikan platform.
           </p>
 
-          <ol className="mt-8 grid gap-0 border-2 border-[#141414] md:grid-cols-2">
+          <ol className="mt-8 grid gap-0 border-2 border-brand-ink md:grid-cols-2">
             {HERO.valuePillars.map((pillar, index) => (
               <li
                 key={pillar.name}
-                className="flex gap-4 border-b-2 border-[#141414] p-5 last:border-b-0 md:p-6 md:odd:border-r-2 md:[&:nth-last-child(-n+2)]:border-b-0"
+                className="flex gap-4 border-b-2 border-brand-ink p-5 last:border-b-0 md:p-6 md:odd:border-r-2 md:[&:nth-last-child(-n+2)]:border-b-0"
               >
-                <span className="font-mono text-sm text-[#8B5CF6]">
+                <span className="font-mono text-sm text-brand-primary-strong">
                   {String(index + 1).padStart(2, '0')}
                 </span>
                 <div>
@@ -199,7 +199,7 @@ export default function TentangPage() {
       </section>
 
       <section
-        className="public-section border-t-4 border-[#141414] bg-[#141414] text-[#FFFEF5]"
+        className="public-section border-t-4 border-brand-ink bg-brand-ink text-brand-surface"
         aria-labelledby="tentang-data"
       >
         <div className="public-container">
@@ -209,7 +209,7 @@ export default function TentangPage() {
           >
             Tim dan angka
           </h2>
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed font-base text-[#F5F0DC]">
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed font-base text-brand-mist">
             SnapBox tidak menampilkan profil tim maupun statistik sebelum datanya terverifikasi.
             Tidak ada angka, nama, atau foto yang direkayasa di halaman ini.
           </p>
@@ -244,13 +244,13 @@ export default function TentangPage() {
           <div className="flex flex-wrap gap-3">
             <Link
               href="/fitur"
-              className="public-press inline-flex h-11 items-center rounded-base border-2 border-[#141414] bg-[#FFDD00] px-5 text-sm font-bold font-heading tracking-tight uppercase shadow-[4px_4px_0_0_#141414]"
+              className="public-press inline-flex h-11 items-center rounded-base border-2 border-brand-ink bg-brand-primary px-5 text-sm font-bold font-heading tracking-tight uppercase shadow-[4px_4px_0_0_var(--color-border)]"
             >
               Lihat Fitur
             </Link>
             <Link
               href="/kontak"
-              className="public-press inline-flex h-11 items-center rounded-base border-2 border-[#141414] bg-[#FFFEF5] px-5 text-sm font-bold font-heading tracking-tight uppercase shadow-[4px_4px_0_0_#141414]"
+              className="public-press inline-flex h-11 items-center rounded-base border-2 border-brand-ink bg-brand-surface px-5 text-sm font-bold font-heading tracking-tight uppercase shadow-[4px_4px_0_0_var(--color-border)]"
             >
               Kunjungi Halaman Kontak
             </Link>

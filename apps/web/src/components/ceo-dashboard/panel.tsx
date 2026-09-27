@@ -28,7 +28,7 @@ export function DataBadge({ className }: { className?: string }) {
 const TONES = {
   netral: 'bg-secondary-background text-foreground',
   baik: 'bg-[#16a34a] text-white',
-  waspada: 'bg-[#F59E0B] text-[#141414]',
+  waspada: 'bg-[#F59E0B] text-brand-ink',
   bahaya: 'bg-[#DC2626] text-white',
   info: 'bg-main text-main-foreground',
 } as const;

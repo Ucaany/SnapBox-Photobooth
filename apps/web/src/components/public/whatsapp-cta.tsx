@@ -57,7 +57,7 @@ export function WhatsappCta({
         disabled
         aria-disabled="true"
         className={cn(
-          'border-2 border-dashed border-[#141414] bg-[#F5F0DC] font-heading text-[#141414] opacity-80',
+          'border-2 border-dashed border-brand-ink bg-brand-mist font-heading text-brand-ink opacity-80',
           className,
         )}
       >
@@ -71,7 +71,7 @@ export function WhatsappCta({
       size={size}
       variant={variant}
       className={cn(
-        'public-press border-2 border-[#141414] bg-[#FFDD00] font-heading text-[#141414] shadow-[4px_4px_0_0_#141414] hover:shadow-[4px_4px_0_0_#141414]',
+        'public-press border-2 border-brand-ink bg-brand-primary font-heading text-brand-ink shadow-[4px_4px_0_0_var(--color-border)] hover:shadow-[4px_4px_0_0_var(--color-border)]',
         className,
       )}
       render={

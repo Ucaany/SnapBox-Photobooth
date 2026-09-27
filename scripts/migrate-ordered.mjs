@@ -70,13 +70,12 @@ const phase = join(workspace, 'supabase/migrations');
 try {
   await cp(join(root, 'supabase/config.toml'), join(workspace, 'supabase/config.toml'));
   await cp(source, phase, { recursive: true });
-  await Promise.all(last.map((f) => rm(join(phase, f))));
   await run(
     'supabase',
     ['db', 'push', '--workdir', workspace, '--include-all', '--yes', ...args],
     'Supabase 000000-00400',
   );
-  await run('pnpm', ['--filter', '@snapbox/db', 'migrate'], 'Drizzle 0000-0004');
+  await run('pnpm', ['--filter', '@snapbox/db', 'migrate'], 'Drizzle 0000-0006');
   await cp(source, phase, { recursive: true });
   await run(
     'supabase',

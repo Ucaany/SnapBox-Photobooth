@@ -68,16 +68,27 @@ export const KIOSK_ATTRACT_LABELS: Record<(typeof ATTRACT_MODE_TYPES)[number], s
 };
 
 /**
- * Palet awal editor. Merah primary #D40000 dipilih karena tombol CTA berteks
- * latar terang lolos 4.5:1, sementara kuning brand SnapBox tetap tersedia di
- * picker untuk dipakai dengan teks gelap. Karena `onPrimaryColor`/`onAccentColor`
- * tidak punya kolom di `kiosk_themes`, warna teks diturunkan, bukan disimpan:
- * kontras diverifikasi terhadap `DARK_TEXT` dan `LIGHT_TEXT`.
+ * Palet awal editor.
+ *
+ * D-01 (AUDIT/11, 2026-09-26) mencabut default lama merah/violet/cream dan
+ * menetapkan satu ramp biru untuk seluruh permukaan. Nilai di bawah disalin dari
+ * `BRAND.palette` (`apps/web/src/content/public.ts`).
+ *
+ * NILAI TIDAK DI-IMPOR dari `content/public` dengan sengaja: berkas kontrak ini
+ * dikonsumsi `kiosk-theme-view.tsx` yang ber-`'use client'`, jadi mengimpornya
+ * akan menarik seluruh copy marketing ke bundel klien. `scripts/check-brand-palette.mjs`
+ * yang menjaga kedua angka ini tetap sama dengan `BRAND.palette`, jadi salinan
+ * tidak bisa melenceng diam-diam. Ubah di `public.ts`, lalu `pnpm brand:sync`.
+ *
+ * `onPrimaryColor`/`onAccentColor` tidak punya kolom di `kiosk_themes`, jadi
+ * warna teks diturunkan, bukan disimpan: kontras diverifikasi terhadap
+ * `DARK_TEXT` dan `LIGHT_TEXT`. `primaryColor` #5294FF dengan teks gelap
+ * bernilai 6.3:1, jadi `pickReadableText` memilih `KIOSK_DARK_TEXT`.
  */
 export const KIOSK_BASE_COLORS = {
-  primaryColor: '#D40000',
-  accentColor: '#4C1D95',
-  backgroundColor: '#FFFEF5',
+  primaryColor: '#5294FF',
+  accentColor: '#1D4ED8',
+  backgroundColor: '#DCEBFE',
 } as const;
 
 /** Warna teks diturunkan agar kontras terjamin tanpa kolom tambahan. */
@@ -95,7 +106,7 @@ export function pickReadableText(background: string): string {
 export const kioskHexSchema = z
   .string()
   .trim()
-  .regex(/^#[\da-fA-F]{6}$/, 'Gunakan warna hex 6 digit, mis. #FFDD00.');
+  .regex(/^#[\da-fA-F]{6}$/, 'Gunakan warna hex 6 digit, mis. #5294FF.');
 
 const optionalText = (max: number) =>
   z.preprocess((value) => {

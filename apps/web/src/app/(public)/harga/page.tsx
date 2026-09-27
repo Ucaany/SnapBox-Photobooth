@@ -19,9 +19,9 @@ export const metadata: Metadata = buildPublicMetadata('/harga');
 export default function HargaPage() {
   return (
     <>
-      <section className="public-section border-b-4 border-[#141414]">
+      <section className="public-section border-b-4 border-brand-ink">
         <div className="public-container">
-          <p className="font-mono text-xs tracking-[0.2em] text-[#141414]/70 uppercase">Harga</p>
+          <p className="font-mono text-xs tracking-[0.2em] text-brand-ink/70 uppercase">Harga</p>
           <h1 className="mt-3 max-w-3xl text-4xl leading-tight font-bold font-heading tracking-tight md:text-5xl">
             Pilih paket sesuai skala booth Anda
           </h1>
@@ -57,7 +57,7 @@ export default function HargaPage() {
                 <p className="public-pending w-fit rounded-base px-2 py-1">Harga: [REAL PRICE]</p>
                 <Link
                   href={PRICING.consultationCtaHref}
-                  className="mt-auto inline-flex min-h-11 items-center justify-center border-2 border-[#141414] bg-[#FFFEF5] px-4 text-sm font-bold font-heading tracking-wide uppercase underline-offset-4 hover:bg-[#FFDD00]"
+                  className="mt-auto inline-flex min-h-11 items-center justify-center border-2 border-brand-ink bg-brand-surface px-4 text-sm font-bold font-heading tracking-wide uppercase underline-offset-4 hover:bg-brand-primary"
                 >
                   {plan.ctaLabel}
                 </Link>
@@ -68,7 +68,7 @@ export default function HargaPage() {
       </section>
 
       <section
-        className="public-section border-y-4 border-[#141414]"
+        className="public-section border-y-4 border-brand-ink"
         aria-labelledby="banding-heading"
       >
         <div className="public-container">
@@ -113,7 +113,7 @@ export default function HargaPage() {
       </section>
 
       <section
-        className="public-section border-t-4 border-[#141414]"
+        className="public-section border-t-4 border-brand-ink"
         aria-labelledby="konsultasi-heading"
       >
         <div className="public-container flex flex-col items-start gap-4">

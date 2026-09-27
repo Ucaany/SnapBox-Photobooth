@@ -52,15 +52,15 @@ function MockupPlaceholder({
   return (
     <figure
       className={[
-        'flex min-h-44 flex-col items-center justify-center gap-2 rounded-base border-2 border-dashed border-[#141414] bg-[#F5F0DC] p-6 text-center',
+        'flex min-h-44 flex-col items-center justify-center gap-2 rounded-base border-2 border-dashed border-brand-ink bg-brand-mist p-6 text-center',
         className ?? '',
       ].join(' ')}
       aria-label={`Placeholder mockup: ${label}`}
     >
       <span aria-hidden="true" className="flex items-center gap-1.5">
-        <span className="size-2 rotate-45 border-2 border-[#141414] bg-[#FFDD00]" />
-        <span className="size-2 rounded-full border-2 border-[#141414] bg-[#8B5CF6]" />
-        <span className="size-2 border-2 border-[#141414] bg-[#FF1F8F]" />
+        <span className="size-2 rotate-45 border-2 border-brand-ink bg-brand-primary" />
+        <span className="size-2 rounded-full border-2 border-brand-ink bg-brand-primary-mid" />
+        <span className="size-2 border-2 border-brand-ink bg-brand-primary-strong" />
       </span>
       <figcaption className="font-mono text-xs tracking-[0.2em] uppercase">{label}</figcaption>
       <span className="public-pending rounded-base px-2 py-1">[REAL DATA]</span>
@@ -87,12 +87,12 @@ function MachineManager() {
   const feature = featureAt(0);
   return (
     <section
-      className="public-section border-b-2 border-[#141414]"
+      className="public-section border-b-2 border-brand-ink"
       aria-labelledby="fitur-machine-manager"
     >
       <div className="public-container grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-center">
         <div>
-          <p className="font-mono text-xs tracking-[0.3em] text-[#8B5CF6] uppercase">
+          <p className="font-mono text-xs tracking-[0.3em] text-brand-primary-strong uppercase">
             {MODULE_LABELS[0]} / 06
           </p>
           <h2
@@ -104,13 +104,13 @@ function MachineManager() {
           <div className="mt-4 max-w-xl">
             <ModuleDescription value={feature.description} />
           </div>
-          <dl className="mt-6 grid grid-cols-2 gap-3 border-t-2 border-[#141414] pt-4 font-mono text-[11px] tracking-widest uppercase">
+          <dl className="mt-6 grid grid-cols-2 gap-3 border-t-2 border-brand-ink pt-4 font-mono text-[11px] tracking-widest uppercase">
             <div>
-              <dt className="text-[#8B5CF6]">Kontrol</dt>
+              <dt className="text-brand-primary-strong">Kontrol</dt>
               <dd className="mt-1 tracking-normal normal-case">[REAL DATA]</dd>
             </div>
             <div>
-              <dt className="text-[#8B5CF6]">Cakupan</dt>
+              <dt className="text-brand-primary-strong">Cakupan</dt>
               <dd className="mt-1 tracking-normal normal-case">[REAL DATA]</dd>
             </div>
           </dl>
@@ -125,7 +125,7 @@ function FrameStudio() {
   const feature = featureAt(1);
   return (
     <section
-      className="public-section border-b-2 border-[#141414] bg-[#FFDD00]"
+      className="public-section border-b-2 border-brand-ink bg-brand-primary"
       aria-labelledby="fitur-frame-studio"
     >
       <div className="public-container">
@@ -141,9 +141,9 @@ function FrameStudio() {
         <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
           <MockupPlaceholder
             label={feature.mockupLabel}
-            className="public-hard-shadow bg-[#FFFEF5]"
+            className="public-hard-shadow bg-brand-surface"
           />
-          <div className="flex flex-col justify-center gap-4 rounded-base border-2 border-[#141414] bg-[#FFFEF5] p-6">
+          <div className="flex flex-col justify-center gap-4 rounded-base border-2 border-brand-ink bg-brand-surface p-6">
             <ModuleDescription value={feature.description} />
           </div>
         </div>
@@ -156,14 +156,14 @@ function ChromaKey() {
   const feature = featureAt(2);
   return (
     <section
-      className="public-section border-b-2 border-[#141414] bg-[#FFFEF5]"
+      className="public-section border-b-2 border-brand-ink bg-brand-surface"
       aria-labelledby="fitur-chroma-key"
     >
       <div className="public-container">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
           <div className="public-card flex flex-col justify-between gap-6 rounded-base p-6 md:p-8">
             <div>
-              <p className="font-mono text-xs tracking-[0.3em] text-[#FF1F8F] uppercase">
+              <p className="font-mono text-xs tracking-[0.3em] text-brand-primary-strong uppercase">
                 {MODULE_LABELS[2]} / 06
               </p>
               <h2
@@ -176,12 +176,15 @@ function ChromaKey() {
             <ModuleDescription value={feature.description} />
           </div>
           <div className="flex flex-col gap-4">
-            <MockupPlaceholder label={feature.mockupLabel} className="min-h-64 bg-[#8B5CF6]/10" />
+            <MockupPlaceholder
+              label={feature.mockupLabel}
+              className="min-h-64 bg-brand-primary/10"
+            />
             <ul className="grid gap-2 font-mono text-[11px] tracking-widest uppercase">
-              <li className="rounded-base border-2 border-dashed border-[#141414] px-3 py-2">
+              <li className="rounded-base border-2 border-dashed border-brand-ink px-3 py-2">
                 Latar terang: [REAL DATA]
               </li>
-              <li className="rounded-base border-2 border-dashed border-[#141414] px-3 py-2">
+              <li className="rounded-base border-2 border-dashed border-brand-ink px-3 py-2">
                 Latar kroma: [REAL DATA]
               </li>
             </ul>
@@ -196,11 +199,11 @@ function PromoEngine() {
   const feature = featureAt(3);
   return (
     <section
-      className="public-section border-b-2 border-[#141414]"
+      className="public-section border-b-2 border-brand-ink"
       aria-labelledby="fitur-promo-engine"
     >
       <div className="public-container">
-        <div className="mx-auto max-w-3xl border-l-8 border-[#FF1F8F] pl-6 md:pl-10">
+        <div className="mx-auto max-w-3xl border-l-8 border-brand-primary-strong pl-6 md:pl-10">
           <p className="font-mono text-xs tracking-[0.3em] uppercase">{MODULE_LABELS[3]} / 06</p>
           <h2
             id="fitur-promo-engine"
@@ -228,7 +231,7 @@ function KioskCustomizer() {
   const steps: readonly string[] = ['Tema', 'Alur sesi', 'Layar kiosk', '[REAL DATA]'];
   return (
     <section
-      className="public-section border-b-2 border-[#141414] bg-[#141414] text-[#FFFEF5]"
+      className="public-section border-b-2 border-brand-ink bg-brand-ink text-brand-surface"
       aria-labelledby="fitur-kiosk-customizer"
     >
       <div className="public-container">
@@ -239,7 +242,7 @@ function KioskCustomizer() {
           >
             {feature.name}
           </h2>
-          <p className="font-mono text-xs tracking-[0.3em] text-[#FFDD00] uppercase">
+          <p className="font-mono text-xs tracking-[0.3em] text-brand-tint uppercase">
             {MODULE_LABELS[4]} / 06
           </p>
         </div>
@@ -248,16 +251,16 @@ function KioskCustomizer() {
           {steps.map((step, index) => (
             <li
               key={step}
-              className="flex flex-1 items-start gap-4 border-2 border-[#FFFEF5] p-5 md:border-r-0 md:last:border-r-2"
+              className="flex flex-1 items-start gap-4 border-2 border-brand-surface p-5 md:border-r-0 md:last:border-r-2"
             >
-              <span className="font-mono text-lg text-[#FFDD00]">
+              <span className="font-mono text-lg text-brand-tint">
                 {String(index + 1).padStart(2, '0')}
               </span>
               <div>
                 <h3 className="text-base font-bold font-heading tracking-tight uppercase">
                   {step}
                 </h3>
-                <p className="mt-1 font-mono text-[11px] tracking-widest text-[#F5F0DC] uppercase">
+                <p className="mt-1 font-mono text-[11px] tracking-widest text-brand-mist uppercase">
                   Konfigurasi: [REAL DATA]
                 </p>
               </div>
@@ -271,7 +274,7 @@ function KioskCustomizer() {
         <div className="mt-6">
           <MockupPlaceholder
             label={feature.mockupLabel}
-            className="public-hard-shadow border-[#FFFEF5] bg-transparent text-[#FFFEF5]"
+            className="public-hard-shadow border-brand-surface bg-transparent text-brand-surface"
           />
         </div>
       </div>
@@ -304,7 +307,7 @@ function Analytics() {
             {tiles.map((tile) => (
               <div
                 key={tile}
-                className="flex flex-col justify-between gap-6 rounded-base border-2 border-[#141414] bg-[#FFFEF5] p-4"
+                className="flex flex-col justify-between gap-6 rounded-base border-2 border-brand-ink bg-brand-surface p-4"
               >
                 <span className="font-mono text-[11px] tracking-widest uppercase">{tile}</span>
                 <span className="text-lg font-bold font-heading uppercase">[REAL DATA]</span>
@@ -324,7 +327,7 @@ function Analytics() {
 export default function FiturPage() {
   return (
     <>
-      <section className="public-section border-b-4 border-[#141414] bg-[#FFFEF5]">
+      <section className="public-section border-b-4 border-brand-ink bg-brand-surface">
         <div className="public-container">
           <p className="font-mono text-xs tracking-[0.3em] uppercase">Fitur</p>
           <h1 className="mt-4 max-w-4xl text-4xl leading-[0.98] font-bold font-heading tracking-tight uppercase md:text-6xl">
@@ -346,7 +349,7 @@ export default function FiturPage() {
       <KioskCustomizer />
       <Analytics />
 
-      <section className="public-section border-t-4 border-[#141414] bg-[#FF1F8F] text-[#FFFEF5]">
+      <section className="public-section border-t-4 border-brand-ink bg-brand-primary-strong text-brand-surface">
         <div className="public-container flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div>
             <h2 className="text-2xl font-bold font-heading tracking-tight uppercase md:text-3xl">
@@ -360,13 +363,13 @@ export default function FiturPage() {
           <div className="flex flex-wrap gap-3">
             <Link
               href="/docs/troubleshooting"
-              className="public-press inline-flex h-11 items-center rounded-base border-2 border-[#141414] bg-[#FFDD00] px-5 text-sm font-bold font-heading tracking-tight text-[#141414] uppercase shadow-[4px_4px_0_0_#141414]"
+              className="public-press inline-flex h-11 items-center rounded-base border-2 border-brand-ink bg-brand-primary px-5 text-sm font-bold font-heading tracking-tight text-brand-ink uppercase shadow-[4px_4px_0_0_var(--color-border)]"
             >
               Troubleshooting Kamera
             </Link>
             <Link
               href="/kontak"
-              className="public-press inline-flex h-11 items-center rounded-base border-2 border-[#141414] bg-[#FFFEF5] px-5 text-sm font-bold font-heading tracking-tight text-[#141414] uppercase shadow-[4px_4px_0_0_#141414]"
+              className="public-press inline-flex h-11 items-center rounded-base border-2 border-brand-ink bg-brand-surface px-5 text-sm font-bold font-heading tracking-tight text-brand-ink uppercase shadow-[4px_4px_0_0_var(--color-border)]"
             >
               Konsultasi Gratis
             </Link>

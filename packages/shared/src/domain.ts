@@ -130,15 +130,18 @@ export const voucherCodeSchema = z
   .regex(/^[A-Za-z0-9]+$/, 'Kode voucher hanya boleh huruf dan angka.')
   .transform((value) => value.toUpperCase());
 
-/** Warna hex 6 digit, contoh `#FFDD00`. */
+/** Warna hex 6 digit, contoh `#5294FF`. */
 export const hexColorSchema = z
   .string()
-  .regex(/^#[0-9A-Fa-f]{6}$/, 'Warna harus format hex 6 digit, contoh #FFDD00.');
+  .regex(/^#[0-9A-Fa-f]{6}$/, 'Warna harus format hex 6 digit, contoh #5294FF.');
 
 /** Nilai rupiah non-negatif, dikirim sebagai string agar presisi desimal aman. */
 export const moneySchema = z
   .string()
-  .regex(/^\d+(\.\d{1,2})?$/, 'Nilai uang harus berupa angka desimal, contoh "35000" atau "63750.50".');
+  .regex(
+    /^\d+(\.\d{1,2})?$/,
+    'Nilai uang harus berupa angka desimal, contoh "35000" atau "63750.50".',
+  );
 
 /** Persentase 0 sampai 100. */
 export const percentageSchema = z.number().min(0).max(100);

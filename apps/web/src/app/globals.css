@@ -41,6 +41,16 @@
 @source '../../../../packages/ui/src';
 
 :root {
+  /* BEGIN BRAND (generated) */
+  --brand-primary: #5294ff; /* = --main */
+  --brand-primary-strong: #1d4ed8;
+  --brand-primary-mid: #2563eb;
+  --brand-tint: #93c5fd;
+  --brand-mist: #dcebfe; /* = --background */
+  --brand-surface: #ffffff; /* = --secondary-background */
+  --brand-ink: #141414;
+  /* END BRAND (generated) */
+
   --border-radius: 5px;
   --box-shadow-x: 4px;
   --box-shadow-y: 4px;
@@ -73,6 +83,16 @@
 }
 
 @theme inline {
+  /* BEGIN BRAND THEME (generated) */
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-primary-strong: var(--brand-primary-strong);
+  --color-brand-primary-mid: var(--brand-primary-mid);
+  --color-brand-tint: var(--brand-tint);
+  --color-brand-mist: var(--brand-mist);
+  --color-brand-surface: var(--brand-surface);
+  --color-brand-ink: var(--brand-ink);
+  /* END BRAND THEME (generated) */
+
   /* Keluarga font PRD Bab 4: heading, body, teknis. */
   --font-display: var(--font-space-grotesk, 'Space Grotesk'), ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-inter, 'Inter'), ui-sans-serif, system-ui, sans-serif;
@@ -372,13 +392,17 @@ body::-webkit-scrollbar-thumb,
  * berdasarkan opener blok tersebut, sehingga selektor `public-*` di luar blok
  * itu tidak ikut dibandingkan dan guard tetap hijau.
  *
- * Semua kelas wajib berawalan `public-`. Gradient hero dari identitas PRD
- * (kuning -> violet -> pink) sengaja hanya dipakai di sini.
+ * Semua kelas wajib berawalan `public-`. Warna di sini memakai custom property
+ * `--brand-*`, yang nilainya disalin dari `BRAND.palette`
+ * (`apps/web/src/content/public.ts`) oleh `scripts/check-brand-palette.mjs`.
+ * Tidak ada gradient di scope ini: hero memakai satu warna solid
+ * (`--brand-primary`) dan `.public-vision-text` menjadi teks solid
+ * `--brand-ink`. Lihat `docs/ADR-005-blue-palette-no-gradients.md`.
  */
 .public-shell {
   overflow-x: clip;
-  background-color: #fffef5;
-  color: #141414;
+  background-color: var(--brand-surface);
+  color: var(--brand-ink);
   width: 100%;
 }
 
@@ -409,53 +433,64 @@ body::-webkit-scrollbar-thumb,
   position: relative;
   overflow: hidden;
   isolation: isolate;
-  background: linear-gradient(135deg, #ffdd00 0%, #8b5cf6 52%, #ff1f8f 100%);
-  border-bottom: 4px solid #141414;
+  background: var(--brand-primary);
+  border-bottom: 4px solid var(--brand-ink);
 }
 
-@media (min-width: 768px) {
-  .public-hero {
-    background: linear-gradient(120deg, #ffdd00 0%, #8b5cf6 55%, #ff1f8f 100%);
-  }
-}
+/*
+ * Dulu `.public-hero` punya dua gradient (135deg di mobile, 120deg di >=768px)
+ * sehingga butuh override per breakpoint. Sekarang hero satu warna solid, jadi
+ * breakpoint itu tidak lagi punya sesuatu untuk di-override dan blok `@media`
+ * dihapus. Kalau suatu saat hero butuh perbedaan antar breakpoint, itu
+ * perbedaan layout, bukan warna, dan tidak boleh diselubungi gradient.
+ */
 
-.public-gradient-text {
-  background-image: linear-gradient(92deg, #141414 0%, #8b5cf6 48%, #ff1f8f 100%);
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
+/*
+ * Teks visi hero. Semula `background-clip: text` dengan gradient ungu -> pink
+ * dan `color: transparent`. Gradient itu dicabut oleh D-01, dan
+ * `color: transparent` TIDAK boleh dipertahankan: tanpa `background-image` itu
+ * membuat kalimat hero tidak terlihat sama sekali.
+ *
+ * WARNA HARUS `--brand-ink`, bukan `--brand-primary-strong`. Latar hero adalah
+ * `--brand-primary` #5294FF dengan luminansi 0.303, jadi teks harus luminansi
+ * <= 0.0284 agar mencapai 4.5:1. Hanya hampir-hitam yang memenuhi: tinta 6.3:1,
+ * putih 2.97:1, `--brand-primary-strong` 2.25:1 (GAGAL). Diverifikasi di DOM
+ * bukan di kertas, karena hasil hitungan tangan pernah meleset di sini.
+ * `--brand-primary-strong` hanya boleh jadi teks di permukaan putih atau mist.
+ */
+.public-vision-text {
+  color: var(--brand-ink);
 }
 
 .public-hard-shadow {
-  box-shadow: 6px 6px 0 0 #141414;
+  box-shadow: 6px 6px 0 0 var(--brand-ink);
   transition:
     box-shadow 150ms ease,
     transform 150ms ease;
 }
 
 .public-hard-shadow:hover {
-  box-shadow: 6px 6px 0 0 #141414;
+  box-shadow: 6px 6px 0 0 var(--brand-ink);
 }
 
 .public-hard-shadow:active {
-  box-shadow: 2px 2px 0 0 #141414;
+  box-shadow: 2px 2px 0 0 var(--brand-ink);
   transform: translate(2px, 2px);
 }
 
 .public-hard-shadow-sm {
-  box-shadow: 4px 4px 0 0 #141414;
+  box-shadow: 4px 4px 0 0 var(--brand-ink);
 }
 
 .public-card {
-  border: 2px solid #141414;
-  background-color: #fffef5;
+  border: 2px solid var(--brand-ink);
+  background-color: var(--brand-surface);
 }
 
 .public-pending {
-  border: 2px dashed #141414;
-  background-color: #f5f0dc;
-  color: #141414;
+  border: 2px dashed var(--brand-ink);
+  background-color: var(--brand-mist);
+  color: var(--brand-ink);
   font-family: var(--font-mono);
   font-size: 0.75rem;
   letter-spacing: 0.04em;
@@ -463,13 +498,13 @@ body::-webkit-scrollbar-thumb,
 }
 
 .public-footer {
-  border-top: 4px solid #141414;
-  background-color: #fffef5;
-  color: #141414;
+  border-top: 4px solid var(--brand-ink);
+  background-color: var(--brand-surface);
+  color: var(--brand-ink);
 }
 
 .public-shell :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
-  outline: 3px solid #141414;
+  outline: 3px solid var(--brand-ink);
   outline-offset: 2px;
   border-radius: 2px;
 }
@@ -497,7 +532,7 @@ body::-webkit-scrollbar-thumb,
 }
 
 .public-press:active {
-  box-shadow: 2px 2px 0 0 #141414;
+  box-shadow: 2px 2px 0 0 var(--brand-ink);
   transform: translate(2px, 2px);
 }
 
@@ -507,7 +542,7 @@ body::-webkit-scrollbar-thumb,
   }
 
   .public-hard-shadow {
-    box-shadow: 4px 4px 0 0 #141414;
+    box-shadow: 4px 4px 0 0 var(--brand-ink);
   }
 
   .public-section {
@@ -548,8 +583,8 @@ body::-webkit-scrollbar-thumb,
   grid-template-columns: minmax(0, 1fr) minmax(260px, 0.55fr);
   min-height: 100svh;
   overflow-x: clip;
-  background: #fffef5;
-  color: #141414;
+  background: var(--brand-surface);
+  color: var(--brand-ink);
 }
 
 @media (max-width: 860px) {
@@ -600,7 +635,7 @@ body::-webkit-scrollbar-thumb,
 .auth-switch {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  border: 2px solid #141414;
+  border: 2px solid var(--brand-ink);
   border-radius: 5px;
   overflow: hidden;
 }
@@ -608,18 +643,18 @@ body::-webkit-scrollbar-thumb,
 .auth-switch button {
   min-height: 44px;
   border: 0;
-  background: #fffef5;
+  background: var(--brand-surface);
   color: inherit;
   font: inherit;
   cursor: pointer;
 }
 
 .auth-switch button + button {
-  border-left: 2px solid #141414;
+  border-left: 2px solid var(--brand-ink);
 }
 
 .auth-switch button[aria-pressed='true'] {
-  background: #ffdd00;
+  background: var(--brand-primary);
   font-weight: 700;
 }
 
@@ -630,7 +665,7 @@ body::-webkit-scrollbar-thumb,
 
 .auth-status {
   margin: 0;
-  border: 2px dashed #141414;
+  border: 2px dashed var(--brand-ink);
   border-radius: 5px;
   padding: 0.75rem;
   font-family: var(--font-mono);
@@ -640,7 +675,7 @@ body::-webkit-scrollbar-thumb,
 
 .auth-error {
   margin: 0;
-  border: 2px solid #141414;
+  border: 2px solid var(--brand-ink);
   border-radius: 5px;
   background: #ffb4b4;
   padding: 0.75rem;
@@ -652,8 +687,8 @@ body::-webkit-scrollbar-thumb,
   flex-direction: column;
   justify-content: flex-end;
   gap: 0.75rem;
-  border-left: 4px solid #141414;
-  background: #8b5cf6;
+  border-left: 4px solid var(--brand-ink);
+  background: var(--brand-primary);
   padding: 3rem;
 }
 
@@ -684,7 +719,7 @@ body::-webkit-scrollbar-thumb,
 
   .auth-note {
     min-height: 220px;
-    border-top: 4px solid #141414;
+    border-top: 4px solid var(--brand-ink);
     border-left: 0;
     padding: 2rem 1rem;
   }
@@ -792,7 +827,10 @@ body::-webkit-scrollbar-thumb,
   flex-shrink: 0;
   border: 2px solid var(--border);
   border-radius: 2px;
-  background-color: #ff1f8f;
+  /* Semula pink PRD di atas linker `--main` (biru). Pink dicabut D-01, dan
+   * isian `--brand-primary` akan hilang karena latar link-nya biru juga, jadi
+   * penanda memakai tinta. 6.3:1. */
+  background-color: var(--brand-ink);
 }
 
 .ceo-brand-text {
@@ -1093,7 +1131,8 @@ body::-webkit-scrollbar-thumb,
   flex: none;
   border: 2px solid var(--border);
   border-radius: 2px;
-  background: #ff1f8f;
+  /* Sama dengan `.ceo-brand-mark`: tinta, bukan warna brand kedua. */
+  background: var(--brand-ink);
 }
 .owner-brand-text {
   display: flex;
@@ -1660,7 +1699,10 @@ body::-webkit-scrollbar-thumb,
 }
 
 .ceo-bar-sub {
-  background-color: #8b5cf6;
+  /* Violet PRD dicabut D-01. Batang "sub" harus tetap bisa dibedakan dari
+   * batang "tenant" (`--main`), jadi satu langkah lebih tua di ramp biru,
+   * bukan warna kedua. */
+  background-color: var(--brand-primary-strong);
 }
 
 .ceo-chart-label {
@@ -1701,7 +1743,7 @@ body::-webkit-scrollbar-thumb,
 }
 
 .ceo-legend-sub {
-  background-color: #8b5cf6;
+  background-color: var(--brand-primary-strong);
 }
 
 /* ---------------------------------------------------------------- alerts */

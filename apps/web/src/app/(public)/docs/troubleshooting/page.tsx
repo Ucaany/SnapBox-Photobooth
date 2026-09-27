@@ -46,7 +46,7 @@ export default function TroubleshootingPage() {
           {TROUBLESHOOTING_STEPS.map((step) => (
             <li key={step.step} className="public-card rounded-base p-5">
               <div className="flex flex-wrap items-center gap-3">
-                <span className="inline-flex size-9 items-center justify-center rounded-base border-2 border-[#141414] bg-[#FFDD00] text-sm font-bold font-heading">
+                <span className="inline-flex size-9 items-center justify-center rounded-base border-2 border-brand-ink bg-brand-primary text-sm font-bold font-heading">
                   {step.step}
                 </span>
                 <p className="font-mono text-xs tracking-widest uppercase">Langkah {step.step}</p>
@@ -96,7 +96,7 @@ export default function TroubleshootingPage() {
         <div className="mt-5 flex flex-wrap items-center gap-4">
           <Link
             href="/kamera"
-            className="public-press public-hard-shadow-sm inline-flex h-11 items-center rounded-base border-2 border-[#141414] bg-[#FFFEF5] px-5 text-sm font-bold font-heading text-[#141414]"
+            className="public-press public-hard-shadow-sm inline-flex h-11 items-center rounded-base border-2 border-brand-ink bg-brand-surface px-5 text-sm font-bold font-heading text-brand-ink"
           >
             Dukungan kamera
           </Link>

@@ -1,14 +1,25 @@
 /*
  * Token visual kiosk.
  *
- * Sumber nilai sama dengan web (PRD Bab 4). Disalin sebagai CSS variable biasa
- * karena frontend kiosk memakai Vite, bukan pipeline Tailwind. Tema per-tenant
- * dari `kiosk_themes` akan menimpa variable ini saat runtime (Fase 5).
+ * Nilai default disalin dari `BRAND.palette` (`apps/web/src/content/public.ts`)
+ * sesuai keputusan D-01 (AUDIT/11, 2026-09-26): satu ramp biru, tanpa gradient.
+ * Disalin sebagai CSS variable biasa karena frontend kiosk memakai Vite, bukan
+ * pipeline Tailwind. Tema per-tenant dari `kiosk_themes` akan menimpa variable
+ * ini saat runtime (Fase 5).
+ *
+ * Nilai di sini HARUS sama dengan `KIOSK_BASE_COLORS`
+ * (`apps/web/src/lib/owner-dashboard/kiosk-theme-contract.ts`) dan default kolom
+ * `kiosk_themes` di `packages/db/migrations/0006_kiosk_theme_blue_defaults.sql`;
+ * ketiganya adalah palet kiosk yang sama pada tiga lapisan, dan
+ * `scripts/check-brand-palette.mjs` memindai berkas ini supaya tidak melenceng.
+ *
+ * Kontras: `.kiosk-badge` memakai teks `--kiosk-ink` di atas
+ * `--kiosk-primary`, 6.17:1, lolos WCAG AA (PRD Bab 4).
  */
 :root {
-  --kiosk-primary: #ffdd00;
-  --kiosk-accent: #8b5cf6;
-  --kiosk-background: #fffef5;
+  --kiosk-primary: #5294ff;
+  --kiosk-accent: #1d4ed8;
+  --kiosk-background: #dcebfe;
   --kiosk-ink: #141414;
 
   color-scheme: light;

@@ -60,7 +60,7 @@ export function PublicHeaderMenu({ items, loginSlot, ctaSlot }: PublicHeaderMenu
         aria-controls={PANEL_ID}
         aria-label={open ? 'Tutup menu navigasi' : 'Buka menu navigasi'}
         onClick={() => setOpen((value) => !value)}
-        className="inline-flex size-11 items-center justify-center rounded-base border-2 border-[#141414] bg-[#FFDD00] text-[#141414] shadow-[3px_3px_0_0_#141414]"
+        className="inline-flex size-11 items-center justify-center rounded-base border-2 border-brand-ink bg-brand-primary text-brand-ink shadow-[3px_3px_0_0_var(--color-border)]"
       >
         <svg
           aria-hidden="true"
@@ -78,7 +78,7 @@ export function PublicHeaderMenu({ items, loginSlot, ctaSlot }: PublicHeaderMenu
       <div
         id={PANEL_ID}
         hidden={!open}
-        className="absolute inset-x-0 top-16 border-b-4 border-[#141414] bg-[#FFFEF5] p-4 shadow-[0_6px_0_0_#141414]"
+        className="absolute inset-x-0 top-16 border-b-4 border-brand-ink bg-brand-surface p-4 shadow-[0_6px_0_0_var(--color-border)]"
       >
         <nav aria-label="Navigasi mobile">
           <ul className="flex flex-col gap-2">
@@ -86,7 +86,7 @@ export function PublicHeaderMenu({ items, loginSlot, ctaSlot }: PublicHeaderMenu
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  className="inline-flex min-h-11 w-full items-center rounded-base border-2 border-transparent px-3 text-base font-heading text-[#141414] hover:border-[#141414] hover:bg-[#FFDD00]"
+                  className="inline-flex min-h-11 w-full items-center rounded-base border-2 border-transparent px-3 text-base font-heading text-brand-ink hover:border-brand-ink hover:bg-brand-primary"
                 >
                   {item.label}
                 </Link>
@@ -95,7 +95,7 @@ export function PublicHeaderMenu({ items, loginSlot, ctaSlot }: PublicHeaderMenu
           </ul>
         </nav>
 
-        <div className="mt-4 flex flex-col gap-3 border-t-2 border-dashed border-[#141414] pt-4">
+        <div className="mt-4 flex flex-col gap-3 border-t-2 border-dashed border-brand-ink pt-4">
           {loginSlot}
           {ctaSlot}
         </div>

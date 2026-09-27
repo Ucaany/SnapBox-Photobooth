@@ -67,7 +67,10 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#FFDD00',
+  // Warna brand biru (`BRAND.palette.primary`). Semula kuning PRD, warisan
+  // Task 0.3 yang tidak pernah cocok dengan palet CSS dan tidak lagi cocok
+  // dengan palet produk setelah D-01 (AUDIT/11, 2026-09-26).
+  themeColor: '#5294FF',
 };
 
 /**

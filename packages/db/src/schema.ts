@@ -449,9 +449,22 @@ export const kioskThemes = pgTable('kiosk_themes', {
     .references(() => tenants.id, { onDelete: 'cascade' }),
   boothId: uuid('booth_id').references(() => booths.id, { onDelete: 'cascade' }),
   logoUrl: text('logo_url'),
-  primaryColor: varchar('primary_color', { length: 9 }).notNull().default('#FFDD00'),
-  accentColor: varchar('accent_color', { length: 9 }).notNull().default('#8B5CF6'),
-  backgroundColor: varchar('background_color', { length: 9 }).notNull().default('#FFFEF5'),
+  // Default palet brand biru (D-01, AUDIT/11 2026-09-26). Semula kuning/violet/
+  // warm-white PRD, dan tidak cocok dengan `KIOSK_BASE_COLORS` di
+  // `apps/web/src/lib/owner-dashboard/kiosk-theme-contract.ts` yang saat itu
+  // masih merah/violet: tiga palet berbeda untuk satu tabel. Nilai hex di sini
+  // SENGAJA literal, bukan impor, karena `packages/db` tidak boleh bergantung
+  // ke `apps/web`; `scripts/check-brand-palette.mjs` yang menjaga keduanya tetap
+  // sama dengan `BRAND.palette`.
+  //
+  // PENTING: mengubah `.default()` di sini belum mengubah database yang sudah
+  // dideploy. Migrasi `ALTER TABLE ... SET DEFAULT` harus dibuat lewat
+  // `pnpm --filter @snapbox/db generate`, dan itu disengaja ditunda ke fase
+  // migrasi karena `scripts/migrate-ordered.mjs` sedang pins `Drizzle 0000-0005`.
+  // Lihat `docs/ADR-005-blue-palette-no-gradients.md` bagian "Yang belum".
+  primaryColor: varchar('primary_color', { length: 9 }).notNull().default('#5294FF'),
+  accentColor: varchar('accent_color', { length: 9 }).notNull().default('#1D4ED8'),
+  backgroundColor: varchar('background_color', { length: 9 }).notNull().default('#DCEBFE'),
   fontFamily: varchar('font_family', { length: 80 }).notNull().default('Space Grotesk'),
   welcomeText: text('welcome_text'),
   ctaText: varchar('cta_text', { length: 120 }).default('SENTUH UNTUK MULAI ✨'),

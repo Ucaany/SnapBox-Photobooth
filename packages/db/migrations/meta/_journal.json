@@ -36,6 +36,20 @@
       "when": 1790332690000,
       "tag": "0004_promo_code_case_insensitive",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790483809134,
+      "tag": "0005_phase_2_owner_rls",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790483809135,
+      "tag": "0006_kiosk_theme_blue_defaults",
+      "breakpoints": true
     }
   ]
 }

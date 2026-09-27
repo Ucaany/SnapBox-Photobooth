@@ -36,13 +36,44 @@ export type PublicNavItem = {
   readonly label: string;
 };
 
+/**
+ * Tangga warna brand. Semuanya biru.
+ *
+ * KEPUTUSAN: AUDIT/11 D-01 (dijawab 2026-09-26) memilih opsi B "ADR-002 biru
+ * menang" dengan syarat tambahan "tidak ada gradient". Palet PRD kuning/violet/
+ * pink dan default editor kiosk merah/violet/cream keduanya dicabut. Angka
+ * lamanya tercatat di `docs/ADR-005-blue-palette-no-gradients.md`; sengaja
+ * tidak ditulis di sini supaya `scripts/check-brand-palette.mjs` bisa gagal
+ * kalau ada hex yang sudah dicabut muncul lagi di mana pun.
+ *
+ * Dikelola lewat skrip, jangan disunting manual:Ketujuh warna di bawah
+ * disalin ke blok `:root` dan `@theme inline` pada
+ * `packages/ui/src/styles.css` dan `apps/web/src/app/globals.css` oleh
+ * `scripts/check-brand-palette.mjs`. Ubah nilai di sini, lalu
+ * `pnpm brand:sync`. Blok hasil generate itu tidak boleh disunting tangan:
+ * `pnpm check:brand` membandingkannya dengan nilai di bawah, dan
+ * `pnpm check:token-sync` membandingkan kedua berkas CSS.
+ *
+ * Angka: `primary` sengaja sama dengan `--main` (hsl 217 100% 66%) dan `mist`
+ * sama dengan `--background` (hsl 214 95% 93%) supaya palet dashboard dan
+ * palet marketing benar-benar satu ramp, bukan dua ramp yang kebetulan biru.
+ */
 export type BrandPalette = {
-  readonly yellow: string;
-  readonly violet: string;
-  readonly pink: string;
-  readonly warmWhite: string;
-  readonly cream: string;
+  /** Isian utama: tombol, badge, aksen besar. Teks gelap di atasnya 6.3:1. */
+  readonly primary: string;
+  /** Biru tua untuk TEKS di atas permukaan terang (6.7:1 di putih). */
+  readonly primaryStrong: string;
+  /** Biru sedang, pengisi antara `primary` dan `strong`. */
+  readonly primaryMid: string;
+  /** Biru pucat: isian dekoratif, pembatas, dan teks di atas latar gelap. */
+  readonly tint: string;
+  /** Permukaan pucat: blok Features, jalur mentransparansi. */
+  readonly mist: string;
+  /** Permukaan kartu dan shell. */
+  readonly surface: string;
+  /** Tinta dan garistegang neobrutalism. Bukan warna brand. */
   readonly ink: string;
+  /** Semantik status, bukan warna brand. */
   readonly success: string;
   readonly danger: string;
   readonly warning: string;
@@ -234,27 +265,33 @@ export const PUBLIC_NAV: {
 };
 
 /**
- * Palet marketing SnapBox dari PRD. Konstanta ini terpisah dari token ADR-002
- * `@snapbox/ui` dan tidak menimpa token mana pun.
+ * Palet brand SnapBox.
+ *
+ * `palette` adalah sumber kebenaran tunggal untuk seluruh warna brand di repo
+ * ini. `docs/ADR-005-blue-palette-no-gradients.md` mencatat alasannya dan
+ * `scripts/check-brand-palette.mjs` menjaganya.
+ *
+ * `border` dan `shadow` sengaja belum ada. AUDIT/11 D-01 butir 3 meninggalkan
+ * lebar border dan offset hard-shadow sebagai BELUM SEPUTUS, dan tebakan yang
+ * salah yang tertanam di blok token lebih buruk daripada tidak ada token:
+ * yang salah terlihat sudah diputuskan. Tanyakan ke pemilik, lalu tambahkan
+ * di sini pada commit yang sama dengan perubahan deklarasi border dan shadow.
  */
 export const BRAND: {
   readonly palette: BrandPalette;
-  readonly shadow: string;
-  readonly shadowPressed: string;
 } = {
   palette: {
-    yellow: '#FFDD00',
-    violet: '#8B5CF6',
-    pink: '#FF1F8F',
-    warmWhite: '#FFFEF5',
-    cream: '#F5F0DC',
+    primary: '#5294FF',
+    primaryStrong: '#1D4ED8',
+    primaryMid: '#2563EB',
+    tint: '#93C5FD',
+    mist: '#DCEBFE',
+    surface: '#FFFFFF',
     ink: '#141414',
     success: '#16A34A',
     danger: '#DC2626',
     warning: '#F59E0B',
   },
-  shadow: '6px 6px 0 0 #141414',
-  shadowPressed: '2px 2px 0 0 #141414',
 };
 
 /**

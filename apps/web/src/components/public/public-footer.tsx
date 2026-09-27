@@ -56,7 +56,7 @@ export function PublicFooter() {
           </div>
         </div>
 
-        <div className="mt-10 flex flex-col gap-3 border-t-2 border-dashed border-[#141414] pt-6 md:flex-row md:items-center md:justify-between">
+        <div className="mt-10 flex flex-col gap-3 border-t-2 border-dashed border-brand-ink pt-6 md:flex-row md:items-center md:justify-between">
           <p className="text-xs">
             &copy; {year} {SITE.name}. Seluruh hak dilindungi.
           </p>

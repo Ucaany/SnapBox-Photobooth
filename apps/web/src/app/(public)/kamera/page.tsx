@@ -20,9 +20,9 @@ export const metadata: Metadata = buildPublicMetadata('/kamera');
 export default function KameraPage() {
   return (
     <>
-      <section className="public-section border-b-4 border-[#141414]">
+      <section className="public-section border-b-4 border-brand-ink">
         <div className="public-container">
-          <p className="font-mono text-xs tracking-[0.2em] text-[#141414]/70 uppercase">
+          <p className="font-mono text-xs tracking-[0.2em] text-brand-ink/70 uppercase">
             Dukungan Kamera
           </p>
           <h1 className="mt-3 max-w-3xl text-4xl leading-tight font-bold font-heading tracking-tight md:text-5xl">
@@ -57,7 +57,7 @@ export default function KameraPage() {
       </section>
 
       <section
-        className="public-section border-y-4 border-[#141414]"
+        className="public-section border-y-4 border-brand-ink"
         aria-labelledby="brand-heading"
       >
         <div className="public-container">
@@ -102,7 +102,7 @@ export default function KameraPage() {
           </p>
           <Link
             href="/docs/troubleshooting"
-            className="public-hard-shadow-sm inline-flex min-h-11 items-center border-2 border-[#141414] bg-[#FFDD00] px-5 text-sm font-bold font-heading tracking-wide uppercase underline-offset-4"
+            className="public-hard-shadow-sm inline-flex min-h-11 items-center border-2 border-brand-ink bg-brand-primary px-5 text-sm font-bold font-heading tracking-wide uppercase underline-offset-4"
           >
             Buka panduan troubleshooting
           </Link>

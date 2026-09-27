@@ -17,12 +17,12 @@ function LogoMark() {
   return (
     <Link
       href="/"
-      className="public-press inline-flex items-center gap-2 rounded-base border-2 border-[#141414] bg-[#FFDD00] px-3 py-2 text-sm font-bold font-heading tracking-tight text-[#141414] uppercase shadow-[4px_4px_0_0_#141414]"
+      className="public-press inline-flex items-center gap-2 rounded-base border-2 border-brand-ink bg-brand-primary px-3 py-2 text-sm font-bold font-heading tracking-tight text-brand-ink uppercase shadow-[4px_4px_0_0_var(--color-border)]"
       aria-label="SnapBox Photobooth, kembali ke beranda"
     >
       <span
         aria-hidden="true"
-        className="inline-block size-3 rounded-[2px] border-2 border-[#141414] bg-[#FF1F8F]"
+        className="inline-block size-3 rounded-[2px] border-2 border-brand-ink bg-brand-primary-strong"
       />
       SnapBox
     </Link>
@@ -36,10 +36,10 @@ function DisabledLogin() {
       disabled
       aria-disabled="true"
       title="Login tersedia setelah rute autentikasi dirilis"
-      className="inline-flex h-11 cursor-not-allowed items-center gap-2 rounded-base border-2 border-dashed border-[#141414] bg-[#F5F0DC] px-4 text-sm font-heading text-[#141414] opacity-80"
+      className="inline-flex h-11 cursor-not-allowed items-center gap-2 rounded-base border-2 border-dashed border-brand-ink bg-brand-mist px-4 text-sm font-heading text-brand-ink opacity-80"
     >
       Login
-      <span className="border-l-2 border-[#141414] pl-2 font-mono text-[10px] tracking-widest uppercase">
+      <span className="border-l-2 border-brand-ink pl-2 font-mono text-[10px] tracking-widest uppercase">
         Belum tersedia
       </span>
     </button>
@@ -48,7 +48,7 @@ function DisabledLogin() {
 
 export function PublicHeader() {
   return (
-    <header className="public-header sticky top-0 z-40 border-b-4 border-[#141414] bg-[#FFFEF5]">
+    <header className="public-header sticky top-0 z-40 border-b-4 border-brand-ink bg-brand-surface">
       <div className="public-container flex h-16 items-center justify-between gap-4">
         <LogoMark />
 
@@ -58,7 +58,7 @@ export function PublicHeader() {
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  className="inline-flex h-11 items-center rounded-base px-3 text-sm font-base text-[#141414] transition-colors hover:bg-[#FFDD00]"
+                  className="inline-flex h-11 items-center rounded-base px-3 text-sm font-base text-brand-ink transition-colors hover:bg-brand-primary"
                 >
                   {item.label}
                 </Link>

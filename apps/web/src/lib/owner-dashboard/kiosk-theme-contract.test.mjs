@@ -25,7 +25,11 @@ test('contrast ratio menghitung pasangan putih/hitam sebagai 21:1', () => {
 test('pickReadableText selalu memilih teks dengan kontras terbaik', () => {
   assert.equal(pickReadableText('#FFFFFF'), KIOSK_DARK_TEXT);
   assert.equal(pickReadableText('#000000'), KIOSK_LIGHT_TEXT);
-  assert.equal(pickReadableText(KIOSK_BASE_COLORS.primaryColor), KIOSK_LIGHT_TEXT);
+  // D-01 (2026-09-26) mengganti default merah lama dengan biru brand #5294FF,
+  // dan itu membalik pilihan teks di primary: di merah tua teks putih menang,
+  // di biru terang teks gelap yang menang (6.3:1 lawan 2.6:1). `accentColor`
+  // #1D4ED8 tetap cukup gelap untuk teks putih.
+  assert.equal(pickReadableText(KIOSK_BASE_COLORS.primaryColor), KIOSK_DARK_TEXT);
   assert.equal(pickReadableText(KIOSK_BASE_COLORS.accentColor), KIOSK_LIGHT_TEXT);
 });
 
@@ -54,7 +58,7 @@ test('pasangan warna kontras rendah dilaporkan sebagai error field', () => {
 test('input schema menolak hex tidak valid, CTA kosong, dan font asing', () => {
   assert.equal(kioskThemeDraftSchema.safeParse(valid()).success, true);
   assert.equal(
-    kioskThemeDraftSchema.safeParse({ ...valid(), primaryColor: 'FFDD00' }).success,
+    kioskThemeDraftSchema.safeParse({ ...valid(), primaryColor: '5294FF' }).success,
     false,
   );
   assert.equal(kioskThemeDraftSchema.safeParse({ ...valid(), ctaText: '   ' }).success, false);

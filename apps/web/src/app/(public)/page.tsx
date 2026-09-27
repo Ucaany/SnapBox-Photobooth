@@ -40,20 +40,20 @@ const PILLAR_INDEX = ['01', '02', '03', '04', '05'] as const;
 
 function DemoFrame({ label }: { readonly label: string }) {
   return (
-    <figure className="public-card public-hard-shadow flex aspect-[4/3] flex-col justify-between bg-[#FFFEF5] p-4">
+    <figure className="public-card public-hard-shadow flex aspect-[4/3] flex-col justify-between bg-brand-surface p-4">
       <div className="flex items-center justify-between">
-        <span className="font-mono text-[10px] tracking-widest text-[#141414] uppercase">
+        <span className="font-mono text-[10px] tracking-widest text-brand-ink uppercase">
           {label}
         </span>
         <span className="public-pending px-2 py-1">[REAL DATA]</span>
       </div>
       <div
         aria-hidden="true"
-        className="flex flex-1 items-center justify-center border-2 border-dashed border-[#141414] bg-[#F5F0DC]"
+        className="flex flex-1 items-center justify-center border-2 border-dashed border-brand-ink bg-brand-mist"
       >
-        <span className="size-10 border-2 border-[#141414] bg-[#8B5CF6]" />
+        <span className="size-10 border-2 border-brand-ink bg-brand-primary" />
       </div>
-      <figcaption className="font-mono text-[10px] tracking-widest text-[#141414] uppercase">
+      <figcaption className="font-mono text-[10px] tracking-widest text-brand-ink uppercase">
         Preview pending
       </figcaption>
     </figure>
@@ -66,7 +66,7 @@ function Hero() {
       <div className="public-container grid gap-8 py-10 md:grid-cols-[1.1fr_0.9fr] md:items-center md:gap-12 md:py-14 lg:py-16">
         <PublicStagger className="flex flex-col gap-5">
           <PublicStaggerItem>
-            <Badge variant="neutral" className="border-[#141414] bg-[#141414] text-[#FFFEF5]">
+            <Badge variant="neutral" className="border-brand-ink bg-brand-ink text-brand-surface">
               <span className="font-mono text-[10px] tracking-widest uppercase">
                 Infrastructure + operating system
               </span>
@@ -76,20 +76,20 @@ function Hero() {
           <PublicStaggerItem>
             <h1
               id="hero-heading"
-              className="text-4xl leading-[1.05] font-heading text-[#141414] md:text-5xl lg:text-6xl"
+              className="text-4xl leading-[1.05] font-heading text-brand-ink md:text-5xl lg:text-6xl"
             >
               {HERO.product}
             </h1>
           </PublicStaggerItem>
 
           <PublicStaggerItem>
-            <p className="public-gradient-text max-w-[46ch] text-lg leading-snug font-heading md:text-xl">
+            <p className="public-vision-text max-w-[46ch] text-lg leading-snug font-heading md:text-xl">
               {HERO.vision}
             </p>
           </PublicStaggerItem>
 
           <PublicStaggerItem>
-            <p className="max-w-[60ch] text-sm leading-relaxed text-[#141414] md:text-base">
+            <p className="max-w-[60ch] text-sm leading-relaxed text-brand-ink md:text-base">
               {HERO.subCopy}
             </p>
           </PublicStaggerItem>
@@ -99,7 +99,7 @@ function Hero() {
             <Button
               variant="neutral"
               size="lg"
-              className="border-[#141414] bg-[#FFFEF5] text-[#141414] shadow-[4px_4px_0_0_#141414]"
+              className="border-brand-ink bg-brand-surface text-brand-ink shadow-[4px_4px_0_0_var(--color-border)]"
               nativeButton={false}
               render={<Link href={HERO.secondaryCtaHref} />}
             >
@@ -117,11 +117,11 @@ function Hero() {
               key={pillar.name}
               className="public-card public-hard-shadow-sm flex flex-col gap-1 p-3"
             >
-              <span className="font-mono text-[10px] tracking-widest text-[#8B5CF6] uppercase">
+              <span className="font-mono text-[10px] tracking-widest text-brand-primary-strong uppercase">
                 {PILLAR_INDEX[index] ?? ''}
               </span>
-              <span className="text-sm font-heading text-[#141414]">{pillar.name}</span>
-              <span className="text-xs leading-snug text-[#141414]">{pillar.description}</span>
+              <span className="text-sm font-heading text-brand-ink">{pillar.name}</span>
+              <span className="text-xs leading-snug text-brand-ink">{pillar.description}</span>
             </PublicStaggerItem>
           ))}
         </PublicStagger>
@@ -134,38 +134,38 @@ function FeatureBoard() {
   return (
     <section className="public-section" aria-labelledby="features-heading">
       <div className="public-container flex flex-col gap-10">
-        <PublicFadeIn className="flex flex-col gap-3 border-b-4 border-[#141414] pb-6 md:flex-row md:items-end md:justify-between">
+        <PublicFadeIn className="flex flex-col gap-3 border-b-4 border-brand-ink pb-6 md:flex-row md:items-end md:justify-between">
           <div className="flex flex-col gap-2">
-            <span className="font-mono text-[10px] tracking-widest text-[#8B5CF6] uppercase">
+            <span className="font-mono text-[10px] tracking-widest text-brand-primary-strong uppercase">
               Enam modul
             </span>
-            <h2 id="features-heading" className="text-3xl font-heading text-[#141414] md:text-4xl">
+            <h2 id="features-heading" className="text-3xl font-heading text-brand-ink md:text-4xl">
               Modul operasional SnapBox
             </h2>
           </div>
-          <p className="max-w-[42ch] text-sm text-[#141414]">
+          <p className="max-w-[42ch] text-sm text-brand-ink">
             Deskripsi pemasaran setiap modul sedang disiapkan. Nama modul di bawah adalah modul
             resmi dari rencana produk SnapBox.
           </p>
         </PublicFadeIn>
 
-        <PublicFadeIn className="grid grid-cols-1 gap-px border-2 border-[#141414] bg-[#141414] md:grid-cols-3">
+        <PublicFadeIn className="grid grid-cols-1 gap-px border-2 border-brand-ink bg-brand-ink md:grid-cols-3">
           {FEATURES.map((feature, index) => (
-            <article key={feature.name} className="flex flex-col gap-3 bg-[#FFFEF5] p-5">
+            <article key={feature.name} className="flex flex-col gap-3 bg-brand-surface p-5">
               <div className="flex items-baseline justify-between gap-3">
-                <h3 className="text-lg font-heading text-[#141414]">{feature.name}</h3>
-                <span className="font-mono text-[10px] tracking-widest text-[#141414] uppercase">
+                <h3 className="text-lg font-heading text-brand-ink">{feature.name}</h3>
+                <span className="font-mono text-[10px] tracking-widest text-brand-ink uppercase">
                   {PILLAR_INDEX[index] ?? ''}
                 </span>
               </div>
               <span className="public-pending px-2 py-1">{feature.description}</span>
               <div
                 aria-hidden="true"
-                className="mt-auto flex h-16 items-end gap-1 border-2 border-dashed border-[#141414] bg-[#F5F0DC] p-2"
+                className="mt-auto flex h-16 items-end gap-1 border-2 border-dashed border-brand-ink bg-brand-mist p-2"
               >
-                <span className="h-full w-2 bg-[#FFDD00]" />
-                <span className="h-2/3 w-2 bg-[#8B5CF6]" />
-                <span className="h-1/3 w-2 bg-[#FF1F8F]" />
+                <span className="h-full w-2 bg-brand-primary" />
+                <span className="h-2/3 w-2 bg-brand-primary-mid" />
+                <span className="h-1/3 w-2 bg-brand-primary-strong" />
               </div>
             </article>
           ))}
@@ -176,7 +176,7 @@ function FeatureBoard() {
             <Button
               variant="reverse"
               size="lg"
-              className="border-[#141414] bg-[#FFDD00] text-[#141414]"
+              className="border-brand-ink bg-brand-primary text-brand-ink"
               nativeButton={false}
               render={<Link href="/fitur" />}
             >
@@ -187,10 +187,10 @@ function FeatureBoard() {
           <div className="grid gap-8 md:grid-cols-[1.4fr_1fr] md:items-start">
             <DemoFrame label={FEATURES.at(0)?.mockupLabel ?? 'Demo frame'} />
             <div className="flex flex-col gap-4">
-              <h3 className="text-xl font-heading text-[#141414]">
+              <h3 className="text-xl font-heading text-brand-ink">
                 Tampilan kiosk sedang disiapkan
               </h3>
-              <p className="text-sm leading-relaxed text-[#141414]">
+              <p className="text-sm leading-relaxed text-brand-ink">
                 Blok Demo frame di samping adalah penanda placeholder. Belum ada tangkapan layar
                 produk resmi, jadi tidak ada gambar yang dipresentasikan sebagai hasil nyata.
               </p>
@@ -206,42 +206,42 @@ function FeatureBoard() {
 function PricingSection() {
   return (
     <section
-      className="public-section border-y-4 border-[#141414] bg-[#F5F0DC]"
+      className="public-section border-y-4 border-brand-ink bg-brand-mist"
       aria-labelledby="pricing-heading"
     >
       <div className="public-container flex flex-col gap-10">
         <div className="flex flex-col gap-3">
-          <span className="font-mono text-[10px] tracking-widest text-[#FF1F8F] uppercase">
+          <span className="font-mono text-[10px] tracking-widest text-brand-primary-strong uppercase">
             Paket
           </span>
-          <h2 id="pricing-heading" className="text-3xl font-heading text-[#141414] md:text-4xl">
+          <h2 id="pricing-heading" className="text-3xl font-heading text-brand-ink md:text-4xl">
             Tiga paket untuk skala berbeda
           </h2>
-          <p className="max-w-[60ch] text-sm text-[#141414]">{PRICING.note}</p>
+          <p className="max-w-[60ch] text-sm text-brand-ink">{PRICING.note}</p>
         </div>
 
         <PublicStagger className="grid gap-4 md:grid-cols-3">
           {PRICING.plans.map((plan) => (
             <PublicStaggerItem key={plan.name} className="flex">
-              <Card className="public-card public-hard-shadow flex w-full flex-col rounded-none border-2 border-[#141414] shadow-none">
-                <CardHeader className="border-b-2 border-[#141414]">
-                  <CardTitle className="text-xl font-heading text-[#141414]">{plan.name}</CardTitle>
-                  <CardDescription className="font-mono text-xs tracking-widest text-[#141414] uppercase">
+              <Card className="public-card public-hard-shadow flex w-full flex-col rounded-none border-2 border-brand-ink shadow-none">
+                <CardHeader className="border-b-2 border-brand-ink">
+                  <CardTitle className="text-xl font-heading text-brand-ink">{plan.name}</CardTitle>
+                  <CardDescription className="font-mono text-xs tracking-widest text-brand-ink uppercase">
                     {plan.price}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-1 flex-col gap-3 pt-4">
                   <span className="public-pending w-fit px-2 py-1">[REAL PRICE]</span>
-                  <p className="text-sm text-[#141414]">{plan.priceNote}</p>
+                  <p className="text-sm text-brand-ink">{plan.priceNote}</p>
                 </CardContent>
-                <CardFooter className="mt-4 border-t-2 border-dashed border-[#141414] pt-4">
+                <CardFooter className="mt-4 border-t-2 border-dashed border-brand-ink pt-4">
                   <Button
                     type="button"
                     variant="neutral"
                     size="sm"
                     disabled
                     aria-disabled="true"
-                    className="w-full border-dashed border-[#141414] bg-[#FFFEF5] text-[#141414] opacity-80"
+                    className="w-full border-dashed border-brand-ink bg-brand-surface text-brand-ink opacity-80"
                   >
                     {plan.ctaLabel}
                   </Button>
@@ -251,8 +251,8 @@ function PricingSection() {
           ))}
         </PublicStagger>
 
-        <PublicFadeIn className="flex flex-col gap-4 border-2 border-[#141414] bg-[#FFFEF5] p-5 md:flex-row md:items-center md:justify-between">
-          <p className="max-w-[52ch] text-sm text-[#141414]">
+        <PublicFadeIn className="flex flex-col gap-4 border-2 border-brand-ink bg-brand-surface p-5 md:flex-row md:items-center md:justify-between">
+          <p className="max-w-[52ch] text-sm text-brand-ink">
             Checkout mandiri belum tersedia. Harga final dan detail paket dikonfirmasi lewat
             konsultasi dengan tim SnapBox.
           </p>
@@ -270,13 +270,13 @@ function TenantBoard() {
     <section className="public-section" aria-labelledby="tenants-heading">
       <div className="public-container flex flex-col gap-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 id="tenants-heading" className="text-2xl font-heading text-[#141414]">
+          <h2 id="tenants-heading" className="text-2xl font-heading text-brand-ink">
             Tenant SnapBox
           </h2>
           <span className="public-pending px-2 py-1">{TENANTS.label}</span>
         </div>
 
-        <div className="public-marquee border-y-2 border-[#141414] py-4">
+        <div className="public-marquee border-y-2 border-brand-ink py-4">
           <ul
             className="public-marquee-track list-none p-0"
             aria-label="Slot logo tenant, menunggu logo resmi"
@@ -284,7 +284,7 @@ function TenantBoard() {
             {TENANT_SLOTS.map((slot) => (
               <li
                 key={slot}
-                className="flex h-16 w-40 shrink-0 items-center justify-center border-2 border-dashed border-[#141414] bg-[#F5F0DC] font-mono text-[10px] tracking-widest text-[#141414] uppercase"
+                className="flex h-16 w-40 shrink-0 items-center justify-center border-2 border-dashed border-brand-ink bg-brand-mist font-mono text-[10px] tracking-widest text-brand-ink uppercase"
               >
                 Logo slot {slot}
               </li>
@@ -292,7 +292,7 @@ function TenantBoard() {
           </ul>
         </div>
 
-        <p className="font-mono text-[10px] tracking-widest text-[#141414] uppercase">
+        <p className="font-mono text-[10px] tracking-widest text-brand-ink uppercase">
           Slot logo placeholder. Nama dan logo tenant belum diverifikasi.
         </p>
       </div>
@@ -303,20 +303,25 @@ function TenantBoard() {
 function TestimonialsPending() {
   return (
     <section
-      className="public-section border-y-4 border-[#141414] bg-[#141414]"
+      className="public-section border-y-4 border-brand-ink bg-brand-ink"
       aria-labelledby="testimonials-heading"
     >
       <div className="public-container flex flex-col gap-4">
-        <span className="font-mono text-[10px] tracking-widest text-[#FFDD00] uppercase">
+        <span className="font-mono text-[10px] tracking-widest text-brand-tint uppercase">
           Status
         </span>
-        <h2 id="testimonials-heading" className="text-2xl font-heading text-[#FFFEF5] md:text-3xl">
+        <h2
+          id="testimonials-heading"
+          className="text-2xl font-heading text-brand-surface md:text-3xl"
+        >
           Testimoni pelanggan
         </h2>
-        <p className="max-w-[60ch] text-sm leading-relaxed text-[#FFFEF5]">{TESTIMONIALS.body}</p>
+        <p className="max-w-[60ch] text-sm leading-relaxed text-brand-surface">
+          {TESTIMONIALS.body}
+        </p>
         <div className="flex flex-wrap items-center gap-3">
           <span className="public-pending px-2 py-1">{TESTIMONIALS.label}</span>
-          <span className="font-mono text-[10px] tracking-widest text-[#FFFEF5] uppercase">
+          <span className="font-mono text-[10px] tracking-widest text-brand-surface uppercase">
             Tanpa kutipan dan tanpa nama fiktif
           </span>
         </div>
@@ -330,13 +335,13 @@ function FaqSection() {
     <section className="public-section" aria-labelledby="faq-heading">
       <div className="public-container grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
         <PublicFadeIn className="flex flex-col gap-3">
-          <span className="font-mono text-[10px] tracking-widest text-[#8B5CF6] uppercase">
+          <span className="font-mono text-[10px] tracking-widest text-brand-primary-strong uppercase">
             FAQ
           </span>
-          <h2 id="faq-heading" className="text-3xl font-heading text-[#141414]">
+          <h2 id="faq-heading" className="text-3xl font-heading text-brand-ink">
             Pertanyaan yang sering diajukan
           </h2>
-          <p className="text-sm text-[#141414]">
+          <p className="text-sm text-brand-ink">
             Jawaban di bawah hanya memuat fakta yang sudah terkonfirmasi di dokumen produk.
           </p>
         </PublicFadeIn>
@@ -350,12 +355,12 @@ function FinalCta() {
   return (
     <section className="public-section" aria-labelledby="final-cta-heading">
       <div className="public-container">
-        <PublicFadeIn className="public-hard-shadow flex flex-col gap-6 border-2 border-[#141414] bg-[#FFDD00] p-6 md:flex-row md:items-center md:justify-between md:p-8">
+        <PublicFadeIn className="public-hard-shadow flex flex-col gap-6 border-2 border-brand-ink bg-brand-primary p-6 md:flex-row md:items-center md:justify-between md:p-8">
           <div className="flex flex-col gap-2">
-            <h2 id="final-cta-heading" className="text-2xl font-heading text-[#141414] md:text-3xl">
+            <h2 id="final-cta-heading" className="text-2xl font-heading text-brand-ink md:text-3xl">
               Konsultasikan kebutuhan photobooth Anda
             </h2>
-            <p className="max-w-[52ch] text-sm text-[#141414]">{SITE.description}</p>
+            <p className="max-w-[52ch] text-sm text-brand-ink">{SITE.description}</p>
           </div>
           <WhatsappCta label={HERO.primaryCtaLabel} size="lg" />
         </PublicFadeIn>

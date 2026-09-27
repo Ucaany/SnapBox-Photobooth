@@ -24,6 +24,8 @@
     "migrate:ordered": "node scripts/migrate-ordered.mjs",
     "prepare": "husky",
     "check:token-sync": "node scripts/check-token-sync.mjs",
+    "brand:sync": "node scripts/check-brand-palette.mjs --write",
+    "check:brand": "node scripts/check-brand-palette.mjs",
     "check:firebase-project-id": "node scripts/check-firebase-project-id.mjs",
     "check:claims-sync": "node scripts/check-claims-sync.mjs",
     "check:infra-drafts": "node scripts/check-infra-drafts.mjs",

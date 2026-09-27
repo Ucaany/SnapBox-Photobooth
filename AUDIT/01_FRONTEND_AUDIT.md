@@ -1,0 +1,972 @@
+# 01 — Frontend Audit
+
+**Source:** `.kilo/plans/1790436768946-snapbox-forensic-audit.md` §3 (PHASE 1 — Frontend reality: the five structural truths)
+**Status of this document:** audit result. No source file was modified.
+**Evidence basis:** static code reading only. See `00_EXECUTIVE_SUMMARY.md` §1 (Audit limitations) before trusting any status.
+
+---
+
+## Finding template
+
+Every finding below uses the fixed per-finding template:
+
+| Field                       | Meaning                                                               |
+| --------------------------- | --------------------------------------------------------------------- |
+| **Finding**                 | Short title and severity                                              |
+| **Evidence**                | `file:line` citations. Nothing is asserted from file or folder names. |
+| **Actual**                  | What the code does                                                    |
+| **Expected**                | What the PRD or the codebase's own stated rule requires               |
+| **Impact**                  | Consequence if shipped as-is                                          |
+| **Severity**                | P0–P4                                                                 |
+| **Affected files**          | Primary source files                                                  |
+| **Affected routes**         | Routes a user can reach                                               |
+| **Related API**             | Endpoint, server action, or table involved                            |
+| **Status**                  | `CONFIRMED (static)` unless explicitly `UNVERIFIED`                   |
+| **Recommended next action** | **Direction only — never code**                                       |
+
+Status vocabulary used in this report:
+`CONFIRMED (static)` · `UNVERIFIED` (needs execution) · `CONFLICT` (PRD/ADR disagreement) · `POSITIVE`
+
+---
+
+## Summary index
+
+| ID      | Severity                            | Title                                                                                                                                   | Status                                 |
+| ------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| FE-001  | P0                                  | The app ships three incompatible colour identities                                                                                      | CONFLICT / ADR REQUIRED                |
+| FE-002  | P0                                  | `text-muted-foreground` and `text-destructive` are undefined Tailwind tokens, silently dropped                                          | CONFIRMED (static)                     |
+| FE-003  | P0 (`.ceo-panel`) / P1 (owner trio) | Four class families are used but never defined; 63 further CSS rules are dead                                                           | CONFIRMED (static)                     |
+| FE-003b | P1                                  | `check-token-sync.mjs` guards 13% of `globals.css`                                                                                      | CONFIRMED (static)                     |
+| FE-003c | P1                                  | Hand-written CSS scopes are unlayered and silently outrank Tailwind utilities                                                           | CONFIRMED (static) / partly UNVERIFIED |
+| FE-003d | P1                                  | `/gallery` is public, unauthenticated, unlinked — and justifies 64% of the design system                                                | CONFIRMED (static)                     |
+| FE-003e | P2                                  | `global-error.tsx` is off-system and probably unstyled                                                                                  | CONFIRMED (static) / partly UNVERIFIED |
+| FE-004  | P1                                  | Settings + Support are the only two views with no `error`/field-level state; `support` depends on an env var absent from `.env.example` | CONFIRMED (static)                     |
+| FE-005  | P1                                  | `/owner-dashboard/notifications` is silently always empty (argument-order bug)                                                          | CONFIRMED (static)                     |
+| FE-006  | P1                                  | Dashboard root is a 3-number stub; `finance`, `analytics`, `reports` are hardcoded mocks; `customers` is a static stub                  | CONFIRMED (static)                     |
+| FE-007  | P1                                  | `robots.txt` does not block the dashboards (PRD §8.1 requires it)                                                                       | CONFIRMED (static)                     |
+| FE-008  | P1                                  | The public site has no link to `/login`, although the route exists and works                                                            | CONFIRMED (static)                     |
+| FE-009  | P2                                  | Dark mode is a dead control                                                                                                             | CONFIRMED (static)                     |
+| FE-010  | P2                                  | `themeColor: '#FFDD00'` in `layout.tsx:70` contradicts the blue dashboard background                                                    | CONFIRMED (static)                     |
+| FE-011  | P2                                  | Zero `loading.tsx` / `error.tsx` / `not-found.tsx` in the entire `app/` tree                                                            | CONFIRMED (static)                     |
+| FE-012  | P2                                  | `/owner-dashboard/outlets` deactivation is irreversible from the UI                                                                     | CONFIRMED (static)                     |
+| FE-013  | P2                                  | Dead, misleading, and self-defeating controls                                                                                           | CONFIRMED (static)                     |
+| FE-014  | P2                                  | Design-system drift: two incompatible Tailwind vocabularies in one directory                                                            | CONFIRMED (static)                     |
+| FE-015  | P2                                  | Kiosk Theme editor hardcodes its own neobrutalism values                                                                                | CONFIRMED (static)                     |
+| FE-016  | P2                                  | Anti-slop: the primitives are genuinely neobrutalist; the failure is consistency, and only 4 pages are templated                        | CONFIRMED (static)                     |
+| FE-017  | P2                                  | Responsive: the sidebar is correct; one unwrapped table and three fixed-column grids are the real gaps                                  | PARTLY UNVERIFIED                      |
+| FE-018  | P2                                  | Accessibility: strong foundations, seven concrete gaps                                                                                  | UNVERIFIED (no tooling)                |
+| FE-019  | P1                                  | CEO dashboard is a self-declared mock for 2 of 13 routes, and its registry admits it                                                    | CONFIRMED (static)                     |
+| FE-020  | P2                                  | One dead session path (Staff PIN can never succeed)                                                                                     | CONFIRMED (static)                     |
+| FE-021  | P2                                  | Frontend↔API contract mismatches (FE-021a…FE-021i)                                                                                      | CONFIRMED (static)                     |
+| FE-022  | P2                                  | Realtime (frontend side) is a 5-second poll triggered by nothing                                                                        | CONFIRMED (static)                     |
+
+These findings explain the reported "berantakan / tidak konsisten" and are the highest-value findings in the whole audit.
+
+---
+
+## FE-001 — P0 — The app ships **three incompatible colour identities**
+
+**Finding.** P0 (design system). The product has three separate colour systems in three separate places, with no shared token source and no decision recorded.
+
+**Evidence.**
+
+- `apps/web/src/app/globals.css:43-73` — dashboards defined as **blue** (`--main: hsl(217 100% 66%)` ≈ `#5294ff`, `--background: hsl(214 95% 93%)`).
+- `apps/web/src/app/globals.css:378-676` — hardcodes the SnapBox PRD palette for marketing/auth: `#ffdd00 #8b5cf6 #ff1f8f #fffef5 #f5f0dc #141414`.
+- `kiosk-theme-contract.ts:77-81` — adds a **third** default set `#D40000 / #4C1D95 / #FFFEF5`.
+- `globals.css:55,60`, `globals.css:380,381,412`, `kiosk-theme-contract.ts:78-80`.
+- 20+ inline `bg-[#FFDD00]` / `border-[#141414]` in `components/public/*` and `public-header.tsx:20,25,39,51,61`.
+- `docs/ADR-002-neobrutalism-tokens.md` records the blue decision _as a deliberate owner choice_ and states "PRD Bab 4 sekarang usang untuk bagian token, warna, border, dan shadow".
+
+**Actual.** Three identities ship simultaneously: blue dashboards (`globals.css:43-73`), PRD yellow/violet/pink marketing + auth (`globals.css:378-676` plus 20+ inline hexes), and red/violet kiosk editor defaults (`kiosk-theme-contract.ts:77-81`).
+
+**Expected.** One palette. PRD §4 mandates exactly the yellow/violet/pink set.
+
+**Impact.** A visitor goes yellow-on-cream marketing → blue dashboard → red/violet kiosk editor. No brand coherence, no shared tokens, 3 sets of hardcoded hexes.
+
+**Related.** ADR-002 is now **half-true**: it correctly records the blue dashboard decision, but marketing/auth shipped with PRD colours anyway, so its "PRD Bab 4 sekarang usang" claim no longer holds for the whole product.
+
+**Severity.** P0 (design system). **PRD CONFLICT / ADR REQUIRED** (see PC-01 in `09_PRD_IMPLEMENTATION_MATRIX.md`).
+
+**Affected files.** `apps/web/src/app/globals.css`, `apps/web/src/app/(public)/components/public/*`, `public-header.tsx`, `lib/kiosk/kiosk-theme-contract.ts`, `docs/ADR-002-neobrutalism-tokens.md`.
+
+**Affected routes.** `/`, `/tentang`, `/fitur`, `/harga`, `/login`, all `/owner-dashboard/**`, `/ceo-dashboard/**`, `/owner-dashboard/kiosk-theme`.
+
+**Related API.** None (static styling layer).
+
+**Status.** CONFLICT / ADR REQUIRED.
+
+**Recommended next action (direction only).** One decision — rebrand to PRD palette, or formalise blue as the new brand and rewrite PRD §4 + ADR-002 + marketing tokens. Do not proceed until chosen.
+
+---
+
+## FE-002 — P0 — `text-muted-foreground` and `text-destructive` are **undefined Tailwind tokens, silently dropped**
+
+**Finding.** P0. Two semantic colour utilities are used across the Owner dashboard but are not defined in the Tailwind v4 theme, so Tailwind emits nothing for them — with no error and no warning.
+
+**Evidence.**
+
+- `globals.css:81-94` — `@theme inline` defines exactly 13 colours: `main, background, secondary-background, foreground, main-foreground, border, overlay, ring, chart-1..5`. There is **no** `muted-foreground` and **no** `destructive`.
+- `packages/ui/src/styles.css:70-83` — identical 13-token list.
+- Usages — `text-muted-foreground` **59× in 15 files**, `text-destructive` **6× in 2 files**:
+  `machines-view.tsx:109,113,132,246,314` · `machine-detail-view.tsx:169,270,359,375,452` · `kiosk-theme-view.tsx:175,190,198,215,259,300` (+`text-muted-foreground` ×12) · `templates-view.tsx:103-377` · `frame-studio-view.tsx:133-337` · `transactions-view.tsx:69,87` · `reports-view.tsx:59-143` · `outlets-view.tsx:55,59,96` · `staff-view.tsx:47,51,92` · `packages-view.tsx:91,95,130` · `devices-view.tsx:43,47` · `subscription-view.tsx:46,50,117,170,186` · `notifications-view.tsx:36,40` · `payment-settings-view.tsx:53` · `finance-analytics-view.tsx:355,376` · `outlet-detail-view.tsx:10`.
+
+**Actual.** `@theme inline` defines exactly 13 colours. There is no `muted-foreground` and no `destructive`, yet owner view components use `text-muted-foreground` 59× in 15 files and `text-destructive` 6× in 2 files.
+
+**Expected.** Both semantic tokens defined, or classes replaced by defined ones.
+
+**Impact.** Tailwind v4 emits nothing for a utility whose theme variable is undefined — **no error, no warning**. Every "secondary/eyebrow/hint" line renders at inherited pure black: the entire Owner dashboard has **no typographic hierarchy**. Every field error and validation message renders as normal text: **error states are visually invisible** on Frame Studio, Kiosk Theme, Templates. This is the mechanical cause of "dashboard berantakan".
+
+**Severity.** P0.
+
+**Affected files.** `apps/web/src/app/globals.css`, `packages/ui/src/styles.css`, 15 owner view components (see evidence list).
+
+**Affected routes.** All `/owner-dashboard/**` routes with tables or forms; specifically `/owner-dashboard/frame-studio`, `/owner-dashboard/kiosk-theme`, `/owner-dashboard/templates`.
+
+**Related API.** None (rendering layer). Compounds every validation surface fed by the 55 server actions.
+
+**Status.** CONFIRMED (static).
+
+**Recommended next action (direction only).** Decide the semantic token set, define it once, and add a guard that fails CI on any `text-/bg-/border-` utility referencing an undefined colour token.
+
+---
+
+## FE-003 — P0 — **Four class families are used but never defined**, and 63 further CSS rules are dead
+
+**Finding.** P0. This is the second silent-failure class after FE-002: `className` values that resolve to nothing. Twenty-two distinct class references across 9 files have no matching CSS rule, and 63 more rules in `globals.css` have zero usages.
+
+**Evidence — the four undefined families:**
+
+| Undefined class                                   | Used    | Where                                                                                                                                                                                                                                     | Rendering result                                                                                                                                                                                                     |
+| ------------------------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.ceo-panel`                                      | **13×** | `tenants/[id]/page.tsx:90,103,121,132,173,193`; `tenants/new/tenant-provisioning-wizard.tsx:183,210`; `tenants/[id]/tenant-detail-actions.tsx:216`; `subscriptions-client.tsx:135`; `promos-editor.tsx:197`; `views/tenants-view.tsx:110` | 6 live Super-Admin pages render major sections as bare unstyled `<section>`. The intended rule **`.ceo-panel-static` exists (`globals.css:2019-2025`) and is used 0 times**                                          |
+| `.ceo-kicker`                                     | 2×      | `tenants/[id]/page.tsx:77`; `tenant-provisioning-wizard.tsx:184`                                                                                                                                                                          | undefined (`.ceo-header-kicker` at `globals.css:865` exists)                                                                                                                                                         |
+| `.ceo-icon`                                       | 1×      | `ceo-header.tsx:48`                                                                                                                                                                                                                       | undefined — icon sizing lost                                                                                                                                                                                         |
+| `.ceo-tenant-actions`                             | 1×      | `tenant-detail-actions.tsx:216`                                                                                                                                                                                                           | undefined                                                                                                                                                                                                            |
+| `.owner-section`, `.owner-eyebrow`, `.owner-form` | 6×      | `settings-view.tsx:27,28,30`; `support-view.tsx:26,27,30`                                                                                                                                                                                 | **browser-default HTML** — bare `<input>`/`<select>`/`<textarea>`/`<button>` with **zero Tailwind classes and zero `@snapbox/ui`**: no border, no shadow, no radius, no brand, no 44px tap target, **no focus ring** |
+
+Repo-wide, the `owner-*` set that _is_ defined is `owner-{shell,main,sidebar*,brand*,header*,plan-badge,quota,notification,account*,menu*,intro,outlet-*}`; the `ceo-*` set is defined for `ceo-{shell,main,header*,panel-static,table-wrap,metrics,plans,plan-*,dialog,steps,compare*,cron*,queue*,setting-*,inline-toggle,promo-*,kicker?}` — but **not** `ceo-panel`, `ceo-kicker`, `ceo-icon`, `ceo-tenant-actions`.
+
+**Additionally dead:** 44 lines of `.owner-outlet-*` CSS (`globals.css:1372-1455`, **0 usages** — including `.owner-outlet-table-scroll`, the exact `overflow-x:auto` rule the one unwrapped table in FE-017 needs) and 19 `.ceo-*` rules (`ceo-compare*`, `ceo-cron*`, `ceo-plan*`, `ceo-queue*`, `ceo-setting-{caret,list,note,trigger}`, `ceo-inline-toggle`, `ceo-plans`).
+
+**Actual.** Four class families are referenced 22 times and defined zero times; 63 further rules are defined and used zero times. The `.ceo-panel-static` rule that was written for exactly this purpose sits unused 2 000 lines away.
+
+**Expected.** Every class a component references resolves to a rule; every rule has at least one consumer, or is deleted.
+
+**Impact.** Six Super-Admin pages — **including the tenant-PII detail page** — render their major sections as unstyled `<section>`s. Two Owner pages render browser-default form controls inside a styled shell, with no focus ring at all. A future reader has no way to tell which `.ceo-*`/`.owner-*` classes are live.
+
+**Severity.** P0 for `.ceo-panel` (6 pages, one of them PII-bearing); P1 for the owner trio.
+
+**Affected files.** `globals.css`, `ceo-dashboard/tenants/[id]/page.tsx`, `tenant-provisioning-wizard.tsx`, `tenant-detail-actions.tsx`, `subscriptions-client.tsx`, `promos-editor.tsx`, `views/tenants-view.tsx`, `ceo-header.tsx`, `settings-view.tsx`, `support-view.tsx`.
+
+**Affected routes.** `/ceo-dashboard/tenants`, `/ceo-dashboard/tenants/[id]`, `/ceo-dashboard/tenants/new`, `/ceo-dashboard/subscriptions`, `/ceo-dashboard/promos`, `/owner-dashboard/settings`, `/owner-dashboard/support`.
+
+**Related API.** None (styling layer). Affects every CEO loader-backed page: `listTenants`, `getTenantDetail`, `listPlanOptions`, `listSubscriptions`, `listPromos`.
+
+**Status.** CONFIRMED (static).
+
+**Recommended next action (direction only).** Add a CI guard that every `className` matching `\.(ceo|owner|public|auth)-[a-z-]+` has a matching CSS rule. That closes the whole class of bugs, not just these 22 instances. Then decide, per family, whether to define the rule or re-express the call site.
+
+---
+
+## FE-003b — P1 — `check-token-sync.mjs` guards **13% of `globals.css`**
+
+**Finding.** P1. The only CI guard that compares `globals.css` against the UI package covers ~13% of the file, and every dead-class bug in FE-002 and FE-003 lives inside the unguarded remainder.
+
+**Evidence.**
+
+- The guard compares only `:root`, `@theme inline`, `@layer base`, `@utility`, `@layer components` (`scripts/check-token-sync.mjs`) between `globals.css` and `packages/ui/src/styles.css`.
+- Lines **378-2681** — `.public-*`, `.auth-*`, `.ceo-*`, `.owner-*`, `.ceo-promo-*` — are **2 300+ lines, ~87% of the file, entirely unguarded**. Self-documented at `globals.css:368-373`.
+- The guard itself **passes** and is correct within its scope. The defect is its scope.
+
+**Actual.** A working guard pointed at the wrong 13%.
+
+**Expected.** A guard whose scope matches the file's risk profile — or the unguarded region wrapped so it cannot drift silently.
+
+**Impact.** Every bug class in FE-002 and FE-003 is invisible to CI, and no new one will ever be caught. This is the root-cause amplifier behind both.
+
+**Severity.** P1.
+
+**Affected files.** `scripts/check-token-sync.mjs`, `apps/web/src/app/globals.css`, `.github/workflows/ci.yml`.
+
+**Affected routes.** None directly; it is the guard for all of them.
+
+**Related API.** `pnpm check:token-sync` (CI step "7 repo guards").
+
+**Status.** CONFIRMED (static).
+
+**Recommended next action (direction only).** Extend the guard past the token block, or move the hand-written lines into an explicit layer that the guard can see. See FE-003c for the layering half of the decision.
+
+---
+
+## FE-003c — P1 — The hand-written CSS scopes are **unlayered**, so they silently outrank Tailwind utilities
+
+**Finding.** P1. `globals.css:378+` writes `.public-*` / `.auth-*` / `.ceo-*` / `.owner-*` outside any `@layer`. Unlayered declarations beat Tailwind's `utilities` layer at equal specificity. Two collisions are **already live**.
+
+**Evidence.**
+
+- `(public)/layout.tsx:14` renders `class="public-shell … bg-background"`; `.public-shell{background-color:#fffef5}` (`globals.css:380`) wins, so `bg-background` is dead. The public shell is cream, not the blue `--background`. It works — by accident.
+- `ceo-sidebar.tsx:45` renders `<SidebarInset className="ceo-shell">`; `SidebarInset`'s own `bg-secondary-background` (`sidebar.tsx:297`) is silently overridden by `.ceo-shell{background-color:var(--background)}` (`globals.css:723`).
+- Risk: adding any `@layer` to `globals.css` would flip every one of these at once, with no diff to review.
+
+**Actual.** Hand-written per-area CSS is unlayered and therefore outranks the utility layer; the surviving `bg-*` utilities on those two shells are already dead.
+
+**Expected.** A deliberate, documented precedence order between the hand-written scopes and Tailwind utilities.
+
+**Impact.** Two live dead classes now; an unknowable number of latent ones, because "which rule wins" is decided by file position rather than by stated intent.
+
+**Severity.** P1.
+
+**Affected files.** `apps/web/src/app/globals.css`, `(public)/layout.tsx`, `ceo-sidebar.tsx`, `packages/ui/src/components/sidebar.tsx`.
+
+**Affected routes.** All public routes (`.public-shell`), all `/ceo-dashboard/**` (`.ceo-shell`).
+
+**Related API.** None.
+
+**Status.** CONFIRMED (static) for the two collisions; **UNVERIFIED** for the unenumerated remainder (AUDIT-LIM-01 — no computed-style inspection was possible).
+
+**Recommended next action (direction only).** Put the hand-written scopes into an explicit layer with a deliberate precedence over `utilities`, and record the decision in an ADR. Enumerate the existing collisions first — they will change when the layer is added.
+
+---
+
+## FE-003d — P1 — `/gallery` is **public, unauthenticated, and unlinked** — and it justifies 64% of the design system
+
+**Finding.** P1. An internal component catalog is reachable by any anonymous visitor, and it is the primary consumer of the UI library.
+
+**Evidence.**
+
+- `middleware.ts:43-49` matcher is `['/ceo-dashboard/:path*','/owner-dashboard/:path*','/staff-dashboard/:path*','/dashboard/:path*','/login']` — **`/gallery` is not matched ⇒ no auth, no role check**. `robots.ts:15` blocks it, `sitemap.ts:41` omits it, `gallery/page.tsx:12-17` sets `noindex` — but **all four are advisory to crawlers, not access control**.
+- `grep '/gallery'` outside `app/gallery/` returns **3 hits, all comments**. Zero `<Link>`, zero nav entry, zero button. Any anonymous visitor who types `/gallery` gets the full internal catalog.
+- It renders **41 of the 64 UI primitives** — `packages/ui/src/components/` is 65 files, only **20 are used in product UI (31%)**, 41 are used **only inside `/gallery`**, 3 are used nowhere. Only 31% of the design system's surface carries real product UI.
+- It ships `@tanstack/react-table`, `react-day-picker`, `recharts`, `react-hook-form`, `zod` as **lazily-loaded but publicly downloadable chunks** (`gallery-heavy-data.tsx:1-17`, `primitives-section.tsx:134`), and displays 20 dummy tenant names + 3 dummy device IDs from `example-data.ts`.
+- **ADR-002:42-43, 57-60 is stale on this** — it claims `/` is the gallery and that `/` is noindex. Reality: `/gallery`, and `/` is the indexable marketing landing.
+
+**Actual.** A noindex, robots-blocked, unlinked, unauthenticated page is the main consumer of the component library and of five heavy client dependencies.
+
+**Expected.** An internal catalog should be gated by auth or by environment. The ADR's claim about which route hosts it should be true.
+
+**Impact.** Full disclosure of the internal component surface, the component inventory, and the demo data model to anonymous visitors; and the library's real adoption (20 of 64 primitives) is invisible to anyone reading the repository.
+
+**Severity.** P1.
+
+**Affected files.** `middleware.ts:43-49`, `app/gallery/**` (5 files), `gallery-heavy-data.tsx`, `primitives-section.tsx`, `example-data.ts`, `robots.ts`, `sitemap.ts`, `packages/ui/src/components/**`, `docs/ADR-002-neobrutalism-tokens.md:42-43,57-60`.
+
+**Affected routes.** `/gallery`.
+
+**Related API.** None.
+
+**Status.** CONFIRMED (static).
+
+**Recommended next action (direction only).** Gate `/gallery` behind non-production or a `notFound()`; that single decision also scopes how much of `packages/ui` is actually needed. Then correct ADR-002's gallery-location claim (PC-13).
+
+---
+
+## FE-003e — P2 — `global-error.tsx` is **off-system and probably unstyled**
+
+**Finding.** P2. The app's last-resort error page is the only page that does not use its own design system, and it may not even load the stylesheet.
+
+**Evidence.**
+
+- `global-error.tsx:32` renders a bare `<html lang="id-ID">`, which **replaces `layout.tsx`**, so the `next/font` variables (`spaceGrotesk.variable` etc., `layout.tsx:88`) are never applied. `font-[family-name:var(--font-display)]` (`:33`) therefore falls back to `ui-sans-serif`.
+- Whether `globals.css` survives this boundary is **UNVERIFIED** (needs a build) — if it does not, `bg-background` / `border-border` / `bg-main` (`:33,45`) are dead too.
+- The button (`:42-48`) is a bare `<button className="border-2 border-border bg-main px-4 py-2 …">` — **no `rounded-base`, no `shadow-shadow`, no `min-h-11`**, not the `Button` primitive.
+- Shape is also off-system: `flex min-h-screen flex-col items-center justify-center gap-4 p-8 text-center` (`:34`) — centered-everything, the single most templated layout in the repo.
+
+**Actual.** An off-system page that replaces the root layout, uses no primitive, and depends on CSS that may not apply.
+
+**Expected.** The error boundary renders in the same design system as the rest of the app, with fonts explicitly re-applied.
+
+**Impact.** Every unhandled error — including any of the 19+ data routes with no `error.tsx` (FE-011) — lands on a page with the wrong font, a possibly dead stylesheet, and a sub-44px button.
+
+**Severity.** P2.
+
+**Affected files.** `app/global-error.tsx`, `app/layout.tsx:19-38,88`.
+
+**Affected routes.** None directly; it is the boundary for all of them.
+
+**Related API.** None.
+
+**Status.** CONFIRMED (static) for the structure; **UNVERIFIED** for stylesheet survival across the boundary (AUDIT-LIM-01).
+
+**Recommended next action (direction only).** Re-apply the font variables explicitly and use the `Button` primitive with `rounded-base` + `shadow-shadow` + `min-h-11`. Confirm stylesheet survival with a build before assuming the tokens resolve.
+
+---
+
+## FE-004 — P1 — `/owner-dashboard/settings` and `/owner-dashboard/support` are also the only two views with **no `error`/no field-level state**, and `support` is the only page whose success depends on an env var absent from `.env.example`
+
+**Finding.** P1 / P2. State handling and configuration-surface gap on the two views already flagged in FE-003.
+
+**Evidence.** `resend.ts:121` reads `process.env.SUPPORT_EMAIL` directly (not via `thirdPartyEnvSchema`); `.env.example` has no such key. The form then fails at runtime with "belum dikonfigurasi" — and `check:env-example` cannot catch it because the guard only covers schema-declared vars.
+
+**Actual.** Two views have no `error` and no field-level state. `support` reads `process.env.SUPPORT_EMAIL` directly, bypassing the env schema, and the var is not declared in `.env.example`.
+
+**Expected.** Uniform state handling across all views; every `process.env` read goes through a declared schema and appears in `.env.example`.
+
+**Impact.** A user submitting the support form gets a runtime failure with no configuration-level guard to prevent it.
+
+**Severity.** P2 (recorded as P1 heading because it is bundled with the FE-003 pages).
+
+**Affected files.** `settings-view.tsx`, `support-view.tsx`, `lib/email/resend.ts:121`, `.env.example`, `scripts/check-env-example.mjs`.
+
+**Affected routes.** `/owner-dashboard/settings`, `/owner-dashboard/support`.
+
+**Related API.** `submitOwnerSupport` (server action, `support/actions.ts:7`).
+
+**Status.** CONFIRMED (static).
+
+**Recommended next action (direction only).** Move `SUPPORT_EMAIL` into the declared env schema and `.env.example`; bring both views onto the same state contract as the other 19 views.
+
+---
+
+## FE-005 — P1 — `/owner-dashboard/notifications` is **silently always empty** (argument-order bug)
+
+**Finding.** P1. A swapped argument list at the call site makes every owner-addressed notification invisible, and the empty state makes the failure indistinguishable from "no data".
+
+**Evidence.**
+
+- Signature is `listOwnerNotifications(userId, tenantId)` (`notifications-server.ts:5`); call site passes `(auth.tenantId, auth.session.userId)` (`notifications/page.tsx:15`). Arguments are swapped.
+- `notifications-view.tsx:47-48` — empty state `"Belum ada notifikasi baru."`
+- `owner-header.tsx:52-58` — plain `<Link>`, no unread count, no dropdown.
+- Compounding: `notifications-server.ts:19-25` and `notifications/actions.ts:17-27` both AND together a redundant third `or(userId = me, tenantId = mine)` group that **nullifies** the intended `userId IS NULL` (tenant-broadcast) clause — so broadcast notifications can never be listed or marked read, by design or bug.
+- **No test covers it**; `owner-account-contract.test.mjs:10` asserts against dead `owner-account-server.ts`.
+
+**Actual.** The WHERE becomes `user_id = <tenantId> OR tenant_id = <userId>`. Every owner-addressed notification is filtered out; only rows with both columns NULL survive. The PRD-mandated bell badge/dropdown is not built either.
+
+**Expected.** Rows addressed to the owner appear.
+
+**Impact.** The page is silently always empty. The PRD-mandated bell badge/dropdown does not exist, so a notification is never surfaced anywhere in the UI.
+
+**Severity.** P1.
+
+**Affected files.** `notifications-server.ts`, `notifications/page.tsx`, `notifications-view.tsx`, `notifications/actions.ts`, `owner-header.tsx`, `owner-account-contract.test.mjs:10`.
+
+**Affected routes.** `/owner-dashboard/notifications`; the Owner header on every `/owner-dashboard/**` route.
+
+**Related API.** `listOwnerNotifications` (server loader), `markOwnerNotificationRead` (server action). Tables: `notifications`.
+
+**Status.** CONFIRMED (static).
+
+**Recommended next action (direction only).** Fix call-site/signature, then decide whether tenant-broadcast semantics is wanted, and add a test that seeds a tenant notification.
+
+---
+
+## FE-006 — P1 — `/owner-dashboard` root is a **3-number stub**; `finance`, `analytics`, `reports` are **hardcoded mocks**; `customers` is a **static stub**
+
+**Finding.** P1 (data integrity) for finance/analytics/reports; P1 for the hollow dashboard root; P2 for customers. Four of twenty Owner nav slots show fabricated or absent data.
+
+**Evidence.**
+
+- `page.tsx:13-29` renders `ownerName`, `planName`, `deviceUsage`, `deviceQuota` only. **No** revenue-today, paper-stock alert, 7-day chart, booth online/offline summary, or quick actions (PRD §3.C).
+- `finance/page.tsx` and `analytics/page.tsx` are **8-line files passing no data prop**; `finance-analytics-view.tsx:19-29` imports `finance-analytics-demo.ts`:
+  - `FINANCE_SUMMARY` (Rp 1 840 000 / 12 460 000 / 48 920 000)
+  - `OUTLET_BREAKDOWN` ("Contoh Outlet A/B/C")
+  - `REVENUE_30_DAYS` (procedural `1_120_000 + ((day*173_000 + (day%4)*91_000) % 1_420_000)`)
+  - `PAYMENT_METHODS`, `CONVERSION_FUNNEL`, `WEEKLY_RETENTION`.
+- `reports/page.tsx` + `reports-view.tsx:6-35` synthesise rows from `DAILY_ROWS` with hardcoded epoch `Date.UTC(2026, 8, 26)`; CSV/PDF/schedule are client-only; schedule toggles `useState` with no persistence.
+- `customers/page.tsx:5-14` calls **no data function at all**.
+- Disclosure banners do exist: `finance-analytics-view.tsx:360-369`, `reports-view.tsx:66-72,200`.
+
+**Actual.** Four routes behind real nav slots render either four scalars, procedural numbers, or nothing.
+
+**Expected.** DB-backed metrics (PRD §3.C).
+
+**Impact.** An Owner sees fabricated Rp 48.9 M "monthly revenue" for a tenant with zero transactions. Disclosure banners exist — so these are **honest mocks**, but they occupy 4 of 20 Owner nav slots and will be read as real numbers in screenshots/demos.
+
+**Severity.** P1 (data integrity) for finance/analytics/reports; P1 for the hollow dashboard root; P2 for customers.
+
+**Affected files.** `app/(owner-dashboard)/owner-dashboard/page.tsx`, `finance/page.tsx`, `analytics/page.tsx`, `reports/page.tsx`, `reports-view.tsx`, `customers/page.tsx`, `finance-analytics-view.tsx`, `finance-analytics-demo.ts`.
+
+**Affected routes.** `/owner-dashboard`, `/owner-dashboard/finance`, `/owner-dashboard/analytics`, `/owner-dashboard/reports`, `/owner-dashboard/customers`.
+
+**Related API.** None. No data function exists for any of the four. A real implementation would need a `finance-analytics-server.ts` over `transactions`.
+
+**Status.** CONFIRMED (static).
+
+**Recommended next action (direction only).** Decide demo-vs-real per route. If real, they need a `finance-analytics-server.ts` over `transactions`; if demo, they must not sit behind a nav slot that implies live business data.
+
+---
+
+## FE-007 — P1 — `robots.txt` does **not** block the dashboards (PRD §8.1 requires it)
+
+**Finding.** P2. Incomplete robots coverage, mitigated by per-layout noindex.
+
+**Evidence.** `robots.ts:13-22` disallows `/api/`, `/gallery`, `/dashboard`, `/admin`, `/owner`, `/outlet`, `/download/`, `/auth/`. `/ceo-dashboard` is **not** listed; `/owner-dashboard` is only covered incidentally by the `/owner` prefix.
+
+**Actual.** `/ceo-dashboard` is not disallowed at all. `/owner-dashboard` is covered only by prefix coincidence.
+
+**Expected.** PRD §8.1 requires the dashboards be blocked.
+
+**Impact.** Crawlers are explicitly invited into `/ceo-dashboard`; `/owner-dashboard` depends on a prefix match rather than an intent.
+
+**Mitigation.** Per-layout `robots: {index:false}` exists for both dashboards.
+
+**Severity.** P2.
+
+**Affected files.** `apps/web/src/app/robots.ts`, `ceo-dashboard/layout.tsx`, `owner-dashboard/layout.tsx`.
+
+**Affected routes.** `/ceo-dashboard/**`, `/owner-dashboard/**`.
+
+**Related API.** None.
+
+**Status.** CONFIRMED (static).
+
+**Recommended next action (direction only).** Block `/ceo-dashboard`, `/owner-dashboard`, `/staff-dashboard` explicitly rather than relying on prefix coincidence.
+
+---
+
+## FE-008 — P1 — The **public site has no link to `/login`**, although the route exists and works
+
+**Finding.** P1 — the highest-visibility UX defect in the product. A fully implemented login route is unreachable from every public page.
+
+**Evidence.** `public-header.tsx:32-47,71,77` renders a `DisabledLogin` button labelled `"Belum tersedia"` with `title="Login tersedia setelah rute autentikasi dirilis"`. `/login` and `/api/auth/session` are fully implemented (`app/(auth)/login/page.tsx`, `components/auth/login-form.tsx`, 289 LOC).
+
+**Actual.** A disabled control labelled "Belum tersedia" replaces the login link. The comment above it ("sampai rute auth/dashboard benar-benar ada") is now false.
+
+**Expected.** A working `/login` link in the public header, footer, and mobile menu.
+
+**Impact.** No visitor can reach login from any public page. Pure conversion blocker, caused by a stale assumption.
+
+**Severity.** P1.
+
+**Affected files.** `public-header.tsx`, public footer component, `app/(auth)/login/page.tsx`, `components/auth/login-form.tsx`.
+
+**Affected routes.** Every route in the `(public)` group; `/login` itself is orphaned.
+
+**Related API.** `POST /api/auth/session`, `POST /api/auth/staff-pin`.
+
+**Status.** CONFIRMED (static).
+
+**Recommended next action (direction only).** Replace the disabled control with a real `/login` link in header + footer + mobile menu.
+
+---
+
+## FE-009 — P2 — Dark mode is a **dead control**
+
+**Finding.** P2. The theme toggle writes attributes that no stylesheet reacts to.
+
+**Evidence.** `theme-provider.tsx` + `themeInitScript` set `data-theme="dark"` and `style.colorScheme='dark'`, but **no** `[data-theme='dark']` / `.dark` / `prefers-color-scheme` rule exists anywhere in `globals.css` (grep: 0 matches). `ThemeToggle` is rendered **only** in `ceo-header.tsx:71` — the Owner header has none.
+
+**Actual.** Toggling changes nothing except native scrollbar/form colours → a _partial_ dark rendering.
+
+**Expected.** Either a full dark token set or no toggle.
+
+**Impact.** A user action appears to do something and produces a broken partial theme.
+
+**Severity.** P2.
+
+**Affected files.** `theme-provider.tsx`, `themeInitScript`, `ceo-header.tsx:71`, `apps/web/src/app/globals.css`.
+
+**Affected routes.** `/ceo-dashboard/**` (toggle present); `/owner-dashboard/**` (no toggle at all).
+
+**Related API.** None.
+
+**Status.** CONFIRMED (static).
+
+**Recommended next action (direction only).** Either implement dark tokens or remove `ThemeToggle`.
+
+---
+
+## FE-010 — P2 — `themeColor: '#FFDD00'` in `layout.tsx:70` contradicts the blue dashboard background
+
+**Finding.** P3. Browser chrome colour is the PRD yellow while every dashboard page is blue.
+
+**Evidence.** `layout.tsx:70`. Already flagged as WARISAN in ADR-002 and still unfixed.
+
+**Actual.** `themeColor` is PRD yellow; dashboards are blue.
+
+**Expected.** One decided palette (see FE-001 / PC-01).
+
+**Severity.** P3.
+
+**Affected files.** `apps/web/src/app/layout.tsx`.
+
+**Affected routes.** All routes (document-level metadata).
+
+**Related API.** None.
+
+**Status.** CONFIRMED (static).
+
+**Recommended next action (direction only).** Fix `themeColor` to match the decided palette.
+
+---
+
+## FE-011 — P2 — Zero `loading.tsx` / `error.tsx` / `not-found.tsx` in the entire `app/` tree
+
+**Finding.** P1 per PRD §11 Definition of Done, which explicitly requires loading/empty/skeleton state for a feature to count as done.
+
+**Evidence.** Only `app/global-error.tsx` exists. No route uses `<Suspense>`, so **all 19+ data routes have no loading UI**; a DB throw escalates to full-page `global-error.tsx`, which replaces the whole layout. `finance-analytics-view.tsx` and `reports-view.tsx` have no empty state at all.
+
+**Actual.** Zero route-level loading, error, or not-found boundaries; no `<Suspense>` anywhere.
+
+**Expected.** Per-segment boundaries, per PRD §11 Definition of Done.
+
+**Impact.** Every data route blocks on a full-page navigation with no feedback, and any DB error destroys the entire layout instead of the failing segment.
+
+**Severity.** P1 (PRD §11 DoD), filed as P2 heading.
+
+**Affected files.** `apps/web/src/app/**` (absence of files), `app/global-error.tsx`, `finance-analytics-view.tsx`, `reports-view.tsx`.
+
+**Affected routes.** All 19+ data routes under `/owner-dashboard/**` and `/ceo-dashboard/**`.
+
+**Related API.** All 55 server actions and all loaders.
+
+**Status.** CONFIRMED (static).
+
+**Recommended next action (direction only).** Add `loading.tsx` + `error.tsx` per dashboard segment and a `not-found.tsx`; wrap data fetches in `<Suspense>` so no route falls through to `global-error.tsx`.
+
+---
+
+## FE-012 — P2 — `/owner-dashboard/outlets` deactivation is **irreversible from the UI**
+
+**Finding.** P1. A destructive action has no inverse path.
+
+**Evidence.** `outlets/page.tsx:14` calls `listOwnerOutlets(tenantId)` with `includeInactive` defaulting to `false`; `outlet-server.ts:58` filters `eq(outlets.isActive, true)`. `outlets-view.tsx:28,70-77` then offers a "Tampilkan nonaktif" filter over rows that never contain inactive outlets. `OutletsView` seeds `useState(outlets)` once (`:22`) with no prop sync.
+
+**Actual.** Inactive outlets are filtered out server-side; the UI filter that would reveal them operates on rows that never contain them.
+
+**Expected.** A deactivated entity remains visible and can be reactivated.
+
+**Impact.** An Owner who deactivates an outlet can never re-activate it. Contrast `staff-view.tsx:28` / `packages-view.tsx:37`, which have no `isActive` predicate and work.
+
+**Severity.** P1.
+
+**Affected files.** `outlets/page.tsx`, `outlet-server.ts`, `outlets-view.tsx`, `outlets/actions.ts` (`setOutletActive` exists and is unreachable).
+
+**Affected routes.** `/owner-dashboard/outlets`, `/owner-dashboard/outlets/[id]`.
+
+**Related API.** `listOwnerOutlets` (loader), `setOutletActive` (server action, `outlets/actions.ts:66`). Table: `outlets.is_active`.
+
+**Status.** CONFIRMED (static).
+
+**Recommended next action (direction only).** Make `outlets` show inactive rows (pass `includeInactive` through, or drop the dead filter).
+
+---
+
+## FE-013 — P2 — Dead, misleading, and self-defeating controls
+
+**Finding.** P2. An inventory of controls that are unreachable, lie about what they do, defeat their own purpose, or are exported without callers.
+
+| Control                                             | Evidence                                                                                                                                           | Note                                                                                                                                                                                 |
+| --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `[...segments]` "Segera hadir"                      | `[...segments]/page.tsx:55`                                                                                                                        | **Currently unreachable** dead code (all 19 nav slugs have real pages) but the 18-entry denylist duplicates `OWNER_NAV_ITEMS`; drift already proven by `.orig` lacking `'customers'` |
+| 3 of 4 Subscription CTAs                            | `subscription-view.tsx:100,146,174` `disabled`                                                                                                     | honest labelling                                                                                                                                                                     |
+| `updatePromo`, `batchGeneratePromos`, `redeemPromo` | `promos/actions.ts:50,99,135`                                                                                                                      | exported actions with **zero callers** — the only path to 500-code batch generation and the only writer to `promo_redemptions`                                                       |
+| "Hapus" = soft disable                              | `promos/actions.ts:85-98` sets `isActive:false`                                                                                                    | misleading label                                                                                                                                                                     |
+| `getOwnerSettings`                                  | `settings/actions.ts:28`                                                                                                                           | a **read** exported from `'use server'` → network-callable action                                                                                                                    |
+| `canConfigure` / `canUseBackup`                     | `payment-settings/page.tsx:10`                                                                                                                     | computed then **discarded**; no saved-config list, no delete, `useState` seeded once                                                                                                 |
+| `outlet-detail-view.tsx:1`                          | no `'use client'`                                                                                                                                  | 100% read-only despite `updateOutlet`/`setOutletActive` existing                                                                                                                     |
+| `loadOwnerKioskTheme`                               | `kiosk-theme-server.ts:59,66`                                                                                                                      | **INSERT during a GET render** (advisory-locked every load)                                                                                                                          |
+| Double pairing mint                                 | `machines-view.tsx:68-77,85-94`                                                                                                                    | server action issues+discards a token, then `POST /api/booth/pair-session` issues again and invalidates the first                                                                    |
+| 6× `window.location.reload()`                       | `outlets-view.tsx:36`, `staff-view.tsx:36`, `packages-view.tsx:62`, `promos-view.tsx:45`, `templates-view.tsx:58`, `frame-studio-view.tsx:110,125` | full reload instead of `router.refresh()`                                                                                                                                            |
+| 6× `useState(props)` seeded once                    | `outlets/packages/templates/promos/staff/notifications-view.tsx`                                                                                   | stale lists after `revalidatePath`                                                                                                                                                   |
+| `machineActionErrorCodes`                           | `machine-contract.ts:83-84`                                                                                                                        | duplicate `'LIMIT_REACHED'`                                                                                                                                                          |
+
+**Actual.** Twelve distinct control-level defects across seven Owner views and the contract layer.
+
+**Expected.** Every visible control performs the action its label promises; every exported server action has a caller or is removed.
+
+**Impact.** Users click controls that reload the whole page, see lists that are stale, hit "Hapus" expecting deletion and get a soft disable, and can regenerate pairing sessions that are discarded on arrival.
+
+**Severity.** P2 (P1 for the pairing double-mint and the "Hapus" mislabel).
+
+**Affected files.** `[...segments]/page.tsx`, `subscription-view.tsx`, `promos/actions.ts`, `promos-view.tsx`, `settings/actions.ts`, `payment-settings/page.tsx`, `outlet-detail-view.tsx`, `kiosk-theme-server.ts`, `machines-view.tsx`, `outlets-view.tsx`, `staff-view.tsx`, `packages-view.tsx`, `templates-view.tsx`, `frame-studio-view.tsx`, `notifications-view.tsx`, `machine-contract.ts`.
+
+**Affected routes.** `/owner-dashboard/subscription`, `/owner-dashboard/promos`, `/owner-dashboard/payment-settings`, `/owner-dashboard/outlets/[id]`, `/owner-dashboard/kiosk-theme`, `/owner-dashboard/machines`, `/owner-dashboard/outlets`, `/owner-dashboard/staff`, `/owner-dashboard/packages`, `/owner-dashboard/templates`, `/owner-dashboard/frame-studio`, `/owner-dashboard/notifications`.
+
+**Related API.** `POST /api/booth/pair-session`; server actions `updatePromo`, `batchGenerate`, `redeemPromo`, `getOwnerSettings`, `setOutletActive`, `updateOutlet`, `regeneratePairingSession`, `deletePromo`, `togglePromo`. Table: `promo_redemptions`.
+
+> Naming note: the owner `promos/actions.ts` exports are `updatePromo` (`:71`), `batchGenerate` (`:99`), and `redeemPromo` (`:135`) at HEAD. The plan's citation `promos/actions.ts:50,99,135` and the name `batchGeneratePromos` are approximate; the finding is unchanged.
+
+**Status.** CONFIRMED (static).
+
+**Recommended next action (direction only).** Per-item: delete or implement each dead action; relabel "Hapus" as "Nonaktifkan"; stop exporting reads from `'use server'`; replace `window.location.reload()` with `router.refresh()`; sync `useState(props)` after server updates; remove the INSERT-on-GET in `loadOwnerKioskTheme`; emit a pairing token exactly once per user action.
+
+---
+
+## FE-014 — P2 — Design-system drift: **two incompatible Tailwind vocabularies** in one directory
+
+**Finding.** P2 — DESIGN SYSTEM DRIFT.
+
+**Evidence.**
+
+- Vocabulary A `border-foreground` + `shadow-[4px_4px_0_0_currentColor]`: `staff-view.tsx:161`, `packages-view.tsx:286`, `outlets-view.tsx:166`, `promos-view.tsx:193`, `transactions-view.tsx:21,54`, `reports-view.tsx:167`.
+- Vocabulary B `border-border` + `shadow-[6px_6px_0_0_var(--color-border)]`: `templates-view.tsx:29`, `kiosk-theme-view.tsx:30`, `machines-view.tsx:128`, `machine-detail-view.tsx:13-14`.
+- Vocabulary C: `focus-visible:outline-violet-600` (`transactions-view.tsx:21`), `focus-visible:outline-ring` (`templates-view.tsx:29`), `bg-primary` + `shadow-[3px_3px_0_0_currentColor]` (`finance-analytics-view.tsx:61`).
+- 5 arbitrary hexes in one file: `transactions-view.tsx:71,77,86,91,92` (`#F5F0DC #FFDD00 #FFFEF5`).
+- Raw palette colours: `reports-view.tsx:67` amber-500/50/950, `kiosk-theme-view.tsx:450-453` `border-black` + `#1A1A1A`, `frame-studio-view.tsx:230` `accent-black`.
+- `STATUS_CLASS` duplicated 3× (`machines-view.tsx:36-41`, `machine-detail-view.tsx:154-157`, `machines-view.tsx:118`).
+- Input class duplicated 3× with divergent border token (`packages-view.tsx:86`, `templates-view.tsx:26`, `kiosk-theme-view.tsx:27`).
+- Empty states: `border-2 border-dashed` **with no colour** in 6 files vs `border-dashed border-border` in 7 files.
+- 7 of 21 views hand-roll `<button>`; 6 of 21 use `@snapbox/ui` primitives.
+
+**Actual.** Three distinct border/shadow vocabularies, three focus-ring tokens, hardcoded hexes, triplicated status maps, triplicated input classes with divergent border tokens, and two incompatible empty-state treatments.
+
+**Expected.** One vocabulary for border token, shadow offset, focus ring, status colour, and empty state.
+
+**Impact.** A theme change requires per-file edits and will be missed. Two views using the same component name can render with different borders and shadows.
+
+**Severity.** P2 → DESIGN SYSTEM DRIFT.
+
+**Affected files.** 12+ owner view components (enumerated above).
+
+**Affected routes.** `/owner-dashboard/staff`, `/packages`, `/outlets`, `/promos`, `/transactions`, `/reports`, `/templates`, `/kiosk-theme`, `/machines`, `/machines/[boothId]`, `/finance`, `/analytics`.
+
+**Related API.** None (rendering layer).
+
+**Status.** CONFIRMED (static).
+
+**Recommended next action (direction only).** Converge the vocabularies, focus-ring tokens, arbitrary hexes, duplicated status-class maps, and divergent dashed empty states. Introduce one status-colour map. Decide whether `@snapbox/ui` primitives or hand-rolled `<button>` is the standard.
+
+---
+
+## FE-015 — P2 — Kiosk Theme editor hardcodes its own neobrutalism values
+
+**Finding.** P2. The theme editor does not use the theme tokens it is editing.
+
+**Evidence.** `kiosk-theme-view.tsx:450-453` uses `border-black` + `shadow-[4px_4px_0_0_#1A1A1A]`; the live preview does not use `--border`/`--shadow`. The contrast gate itself is real and server-enforced (`kiosk-theme-contract.ts:88-92`, `kiosk-theme/actions.ts`).
+
+**Actual.** The editor hardcodes its own neobrutalism values instead of consuming the design tokens.
+
+**Expected.** The editor previews the tokens the app actually ships.
+
+**Impact.** The editor can look correct while the published theme renders differently.
+
+**Severity.** P2.
+
+**Affected files.** `kiosk-theme-view.tsx`, `kiosk-theme-contract.ts`.
+
+**Affected routes.** `/owner-dashboard/kiosk-theme`.
+
+**Related API.** `saveKioskTheme`, `publishKioskTheme`, `restoreKioskThemeVersion` (server actions). Table: `kiosk_themes`, `kiosk_theme_versions`.
+
+**Status.** CONFIRMED (static).
+
+**Recommended next action (direction only).** Drive the editor preview from the same tokens the published theme consumes.
+
+---
+
+## FE-016 — P2 — Anti-slop: the **primitives are genuinely neobrutalist**; the failure is _consistency_, and only 4 pages are templated
+
+**Finding.** P2. There is no slop problem in the component library. There is a consistency problem across the pages, and a small number of genuinely templated pages.
+
+**Evidence — verified compliant, do NOT "fix" these:**
+
+- 0 `rounded-lg/md/xl/2xl/sm` in `apps/web/src` (83 × `rounded-base` = the 5px token, 4 deliberate `rounded-full/none`). 0 `shadow-sm/md/lg/inner`. 0 `text-gray-500`. 0 `bg-gradient-to-*` in TSX. 0 `backdrop-blur` / `backdrop-filter`. 0 blob shapes. 0 giant decorative icons (all inline SVG are `size-4`/`size-5`/`size-6`).
+- **Neomorphism is absent** — no `shadow-inner`, no soft/blur shadow, no inset highlight. Correct.
+- **Borders: 100% thick.** `border-2` 237× + `border-4` 21× in `apps/web`; `border-2` 81× in `packages/ui`. **Zero bare 1px `border`** across 1 026 border declarations.
+- **Press physics is intentional:** `hover:translate-x-boxShadowX/Y hover:shadow-none` on 3 button variants (`button.tsx:18,21,23`); `.public-hard-shadow:active` → `2px 2px` (`globals.css:441-444`); `.ceo-plan-foot button[aria-pressed=true]` → `translate(4px,4px)` + `shadow:none` (`:2006-2012`).
+- **Content integrity: excellent.** Zero fabricated prices, logos, testimonials, team profiles, or camera-model counts. `[REAL DATA]` / `Coming soon` / fully-disabled controls are used throughout as a deliberate anti-fabrication policy (`content/public.ts:8-13`). This is a genuine strength and must be preserved.
+- `/fitur` and `/tentang` are **genuinely non-repeating** — 6 distinct module layouts, alternating section backgrounds, deliberate `[&:nth-last-child(-n+2)]` hairline surgery (`tentang/page.tsx:184`).
+
+**Genuinely templated — document these, do not generalize:**
+
+| Page                                                                                                                                                                                                                                                          | Rating        | Evidence                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/`                                                                                                                                                                                                                                                           | **GENERIC**   | 7 stacked full-width sections sharing one skeleton (mono eyebrow → h2 → para → box) at `133-150, 206-221, 268-277, 303-322, 328-341, 349-361`. Two `md:grid-cols-3` rows (`:152, :223`). The "Enam modul" grid (`:152-172`) is a **3-up card row with a fake 3-bar chart decoration per card** (`:164-169`) — textbook filler. 6 × `public-pending` badges + 6 dashed logo-slot boxes + 3 dashed mini-chart placeholders. 49 `#141414` classes in this one file. _Mitigation:_ the pending labels are the honest anti-fabrication policy. |
+| `/harga`                                                                                                                                                                                                                                                      | SLOPPY (mild) | Hero → 3-up plans (`:47`) → comparison section **structurally present but content-empty** (`:86-93`) → add-on section **also empty** (`:109-111`) → CTA. Two sections of nothing.                                                                                                                                                                                                                                                                                                                                                         |
+| `/kamera`                                                                                                                                                                                                                                                     | SLOPPY (mild) | 4 identical brand cards, `sm:grid-cols-2 lg:grid-cols-4` (`:78-87`) — a repeated card row for 4 words. Registry section is a single empty dashed box (`:48-55`).                                                                                                                                                                                                                                                                                                                                                                          |
+| `/docs/troubleshooting`                                                                                                                                                                                                                                       | SLOPPY (mild) | 6 identical step cards in a 1-col stack (`:45-76`), each = yellow number chip + mono label + `public-pending` pill + h3 + 2 pending `dd`s. **100% pending content.**                                                                                                                                                                                                                                                                                                                                                                      |
+| `/unduh-aplikasi`                                                                                                                                                                                                                                             | SLOPPY (mild) | 2 identical platform cards (`:44-66`), 2 identical info cards (`:74-90`), then a **disabled button labelled "Buka Konsol Perangkat (Web)" pointing at a route that does not exist** (`:93-105`). `md:grid-cols-2` twice.                                                                                                                                                                                                                                                                                                                  |
+| `reports-view.tsx`                                                                                                                                                                                                                                            | SLOPPY        | `border-amber-500 bg-amber-50 text-amber-950` (`:67`) — **the single most shadcn-looking snippet in the repo**. `bg-yellow-400 hover:bg-yellow-300` (`:167`). Two `<h1>` in one tree (`:62`, `:202`).                                                                                                                                                                                                                                                                                                                                     |
+| `global-error.tsx`                                                                                                                                                                                                                                            | SLOPPY        | `flex min-h-screen flex-col items-center justify-center gap-4 p-8 text-center` (`:34`) — centered-everything, bare `<button>`. See FE-003e.                                                                                                                                                                                                                                                                                                                                                                                               |
+| `/ceo-dashboard/tenants/[id]`                                                                                                                                                                                                                                 | **BROKEN**    | 6 × undefined `.ceo-panel` (FE-003) + a raw `<table>` with no overflow wrapper (`:138`). `.ceo-panel-static` exists and is used 0×.                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `kiosk-theme-view.tsx`                                                                                                                                                                                                                                        | GENERIC       | `font-black` ×2 of only 3 in the repo (`:119, :427`), `border-black` ×4 (`:450,452,453,463`), `shadow-[4px_4px_0_0_#1A1A1A]` — a **third shadow colour literal** (`:452`). 8 dead `text-muted-foreground`. 15 raw controls. 3 × `sm:grid-cols-3`.                                                                                                                                                                                                                                                                                         |
+| 15 Owner views (`packages-`, `staff-`, `outlets-`, `templates-`, `frame-studio-`, `promos-`, `devices-`, `machines-`, `transactions-`, `notifications-`, `outlet-detail-`, `machine-detail-`, `payment-settings-`, `subscription-`, `finance-analytics-view`) | GENERIC       | All 15 share: `border-2 border-foreground` with **no radius token**, arbitrary `shadow-[…currentColor]` instead of `shadow-shadow`, `tracking-[0.18em]`, raw Tailwind palette. Six of them **mix `@snapbox/ui` with raw controls on the same screen** — two visual languages per page.                                                                                                                                                                                                                                                    |
+| `ceo-sidebar` / `ceo-header` / `panel` / `view-switch` / `owner-sidebar` / `owner-header` / `plans` / `system-health` / `security`                                                                                                                            | CLEAN         | Token-driven, dense by design (`globals.css:718`). `Panel` centralizes `DataBadge` so the "data contoh" label **cannot be forgotten** (`panel.tsx:10-11, 133`) — a real design-system guard. `StatusBadge` is never colour-only (`:38-41`).                                                                                                                                                                                                                                                                                               |
+
+**Actual.** 4 public pages + 7 owner views + 2 CEO screens are templated. 16 of 21 owner views use a non-token design language. **0 of 21 owner views use the `rounded-base` radius token.**
+
+**Expected.** One design language per surface, expressed in tokens and primitives, with page composition chosen per content rather than by default.
+
+**Impact.** The product reads as inconsistent exactly where the PRD promised coherence. The pages that _are_ clean prove the standard is achievable — it is a coverage problem, not a language problem.
+
+**Severity.** P2 → `DESIGN SYSTEM DRIFT`.
+
+**Affected files.** `app/(public)/page.tsx`, `harga/page.tsx`, `kamera/page.tsx`, `docs/troubleshooting/page.tsx`, `unduh-aplikasi/page.tsx`, `reports-view.tsx`, `global-error.tsx`, `ceo-dashboard/tenants/[id]/page.tsx`, `kiosk-theme-view.tsx`, plus the 15 owner views named above.
+
+**Affected routes.** `/`, `/harga`, `/kamera`, `/docs/troubleshooting`, `/unduh-aplikasi`, `/ceo-dashboard/tenants/[id]`, `/owner-dashboard/**` (15 views), and any route whose DB error escalates to `global-error.tsx`.
+
+**Related API.** None (rendering layer).
+
+**Status.** CONFIRMED (static).
+
+**Recommended next action (direction only).** Choose the design language per surface area, then converge (FE-014, §3B). Preserve the anti-fabrication policy and the pending labels — they are correct, not slop.
+
+---
+
+## FE-017 — P2 — Responsive: **the sidebar is correct**; one unwrapped table and three fixed-column grids are the real gaps
+
+**Finding.** P2. An earlier concern that the sidebar was fixed-width is **corrected**: it is not. The real responsive defects are narrow and specific.
+
+**Evidence — CORRECTION:**
+
+- The sidebar is **not** fixed-width. `use-mobile.ts:6` sets `MOBILE_BREAKPOINT = 768`; `sidebar.tsx:171-195` renders a **`Sheet` drawer** below 768px with `sr-only` `SheetTitle`/`SheetDescription`; the desktop branch is `hidden md:block` (`:199`) with `--sidebar-width: 16rem` (`:21`) collapsing to `3rem` (`:23`). Both dashboards use `<Sidebar collapsible="icon">` + `SidebarRail`. `Cmd/Ctrl+B` keyboard toggle (`:88-98`). **No `<1024px` breakage.**
+- Tables: 11 raw `<table>` in `apps/web`; 12 `overflow-x-auto`; **10 of 11 wrapped**; the `Table` primitive auto-wraps in `overflow-auto` (`table.tsx:7`).
+
+**Evidence — the real gaps:**
+
+- **The one unwrapped table:** `ceo-dashboard/tenants/[id]/page.tsx:137-138` — a bare `<table>` inside `.ceo-table-wrap`, which **has no `overflow` rule** (`globals.css:1836-1841` defines only `min-width: 0`). 5 columns of rupiah/dates overflow below 768px. The dead `.owner-outlet-table-scroll` rule (`globals.css:1421-1425`) is the exact fix that already exists, unused.
+- Three **fixed 3-column grids with no collapse**: `.ceo-plans` (3× until 900px, `globals.css:1920-1924`), `.ceo-promo-grid` (3× until 720px, `:2656-2660`), `kiosk-theme-view` `sm:grid-cols-3` ×3. At 390px these are three-across with no fallback.
+- Two hamburger buttons coexist at **768-1023px** (header `owner-header.tsx:32-40` + rail `owner-sidebar.tsx:64-67`), both toggling the same state, because `md:hidden` is used **0 times** repo-wide — the pattern was inverted instead.
+- Minor: `useIsMobile` returns `false` on first paint (`use-mobile.ts:18,30`), so below 768px there is a brief invisible-sidebar gap. `.ceo-metrics` (`globals.css:1519-1520`) lacks the `min-width: 0` that `.owner-main` (`:1050`) and `.ceo-main` (`:733`) both declare.
+
+**Actual.** The responsive architecture is sound; one 5-column table has no scroll container, three 3-column grids have no collapse below 640px, and one breakpoint band renders two competing menu buttons.
+
+**Expected.** No horizontal overflow at 375px; one menu affordance per breakpoint.
+
+**Impact.** One CEO page scrolls sideways on a phone; three grids crush; a 768-1023px user sees two hamburger buttons controlling the same state.
+
+**Severity.** P2.
+
+**Affected files.** `ceo-dashboard/tenants/[id]/page.tsx:137-138`, `globals.css:1421-1425,1836-1841,1920-1924,2656-2660`, `kiosk-theme-view.tsx`, `owner-header.tsx:32-40`, `owner-sidebar.tsx:64-67`, `use-mobile.ts:6,18,30`, `sidebar.tsx`.
+
+**Affected routes.** `/ceo-dashboard/tenants/[id]`, `/ceo-dashboard/plans`, `/ceo-dashboard/promos`, `/owner-dashboard/kiosk-theme`, all `/owner-dashboard/**` in the 768-1023px band.
+
+**Related API.** None.
+
+**Status.** PARTLY UNVERIFIED — **all 7 viewport-width claims (375/390/768/1024/1280/1440/1920) remain UNVERIFIED (AUDIT-LIM-01)**. The CSS and component structure are CONFIRMED (static); rendered behaviour is not.
+
+**Recommended next action (direction only).** Add an `overflow-x: auto` rule to `.ceo-table-wrap`; collapse `.ceo-plans`, `.ceo-promo-grid` and the three `kiosk-theme` `sm:grid-cols-3` blocks below 640px; remove the duplicate 768-1023px hamburger. Validate at 7 viewports once runtime is available.
+
+---
+
+## FE-018 — P2 — Accessibility: strong foundations, seven concrete gaps
+
+**Finding.** P2, UNVERIFIED (WCAG 2.2 AA cannot be asserted in either direction without tooling).
+
+**Evidence — verified compliant, do NOT "fix" these:**
+
+- 151 `aria-label`, 61 `aria-labelledby`, 100 `<label>` + 33 `<Label>`. Every icon-only control is labelled; `sr-only` "Toggle Sidebar" (`sidebar.tsx:262`) and "Close" (`dialog.tsx:68`). 5/5 images have alt text; all other imagery is `aria-hidden`.
+- 34 `role="status"`, 24 `role="alert"`, 6 `role="note"`, 3 `role="dialog"`, 4 `role="img"`. `StatusBadge` is `text + tone`, **never colour-only** (`panel.tsx:38-41`); `machines-view.tsx:6-7` documents the rule. `lang="id-ID"` on both `<html>` elements.
+- Landmarks correct on every shell (`<main>`, `<header>`, `<footer>`, `<nav aria-label>`).
+- Tap targets: `button.tsx:9-13` uses a `before:h-11` transparent hit-area to extend `xs`/`sm` to 44px without changing visual height — a genuinely good solution. Dashboards declare `min-height:44px` on all interactive chrome.
+- `prefers-reduced-motion` in 4 scope scrims + framer-motion `useReducedMotion` in `motion.tsx`; the marquee degrades to `overflow-x:auto` (`globals.css:527-529`).
+- Exactly one `<h1>` per public page (8/8) and dashboard page (`panel.tsx:101` shared `PageIntro`).
+
+**Real gaps:**
+
+1. **No `.owner-shell` focus-visible scrim.** `.public-shell` (`:471-475`), `.auth-shell` (`:693-697`) and `.ceo-shell` (`:2608-2612`) each have a global `outline: 3px` rule. **`.owner-shell` has none** — it relies only on per-element `focus-visible:outline-2/ring-2`. Combined with FE-003, `settings-view.tsx` and `support-view.tsx` inputs have **no focus styling at all** (browser default only).
+2. **No skip link.** `id="owner-main"` (`owner-sidebar.tsx:39`) and `id="ceo-main"` (`ceo-sidebar.tsx:47`) **exist, but nothing links to them** — `grep -rn skip` returns 0. 40+ nav items × 2 dashboards to tab through.
+3. **Contrast risks, UNVERIFIED** (need computed ratios): `text-[#8B5CF6]` violet on `#FFFEF5` cream — 7 uses, 10-12px mono (`(public)/page.tsx:120,139,333`; `fitur/page.tsx:95,109,113`; `tentang/page.tsx:186`) — estimated ≈4.1:1, **likely below AA 4.5:1 for small text**; `text-[#16A34A]` on cream ≈3.4:1 (`fitur/page.tsx:290`); `bg-red-200`/`bg-green-200`/`bg-amber-200` + inherited black (`machines-view.tsx:37-39,118,309`); `border-amber-500` on `bg-amber-50` (`reports-view.tsx:67`). ADR-002:86-97 only audited `red-500`→`red-700` in the reference components.
+4. `reports-view.tsx` renders **two `<h1>`** in one DOM tree (`:62` page title, `:202` print header). `promos-view.tsx` has two (`:34`, `:53`) but in mutually exclusive branches — safe.
+5. `notifications-view.tsx:44-46` renders an **empty, always-present** `role="status"` region.
+6. `focus-visible:outline-violet-600` (`transactions-view.tsx:21`) is a third focus-ring token, unverified for 3:1 on blue.
+7. **`no axe-core` and no a11y test anywhere** (PRD Task 7.14 missing). WCAG 2.2 AA **cannot be asserted** in either direction without tooling.
+
+**Actual.** The semantic foundation is among the better parts of the codebase; one shell lacks a focus scrim, no skip link exists, four contrast pairs are unverified, one page has two `<h1>`, and the verification tooling does not exist.
+
+**Expected.** PRD Task 7.14: WCAG 2.2 AA with axe-core integrated.
+
+**Impact.** Keyboard users on the Owner dashboard get weaker focus affordances than on the other three shells; small-text violet on cream is likely below AA; no automated gate exists to prevent regressions.
+
+**Severity.** P2, UNVERIFIED.
+
+**Affected files.** `globals.css:471-475,693-697,2608-2612`, `owner-sidebar.tsx:39`, `ceo-sidebar.tsx:47`, `settings-view.tsx`, `support-view.tsx`, `reports-view.tsx:62,202`, `notifications-view.tsx:44-46`, `transactions-view.tsx:21`, `machines-view.tsx:37-39,118,309`, `(public)/page.tsx`, `fitur/page.tsx`, `tentang/page.tsx`.
+
+**Affected routes.** All `/owner-dashboard/**` (focus scrim, skip link), `/ceo-dashboard/**` (skip link), `/` `/fitur` `/tentang` (contrast), `/owner-dashboard/reports` (two `<h1>`), `/owner-dashboard/notifications`, `/owner-dashboard/transactions`.
+
+**Related API.** None.
+
+**Status.** UNVERIFIED — no runtime, no a11y tooling (AUDIT-LIM-01). The compliance list above is CONFIRMED (static); the contrast claims are estimates until computed.
+
+**Recommended next action (direction only).** Add a `.owner-shell` focus-visible scrim; add skip links to `#owner-main`/`#ceo-main`; integrate `axe-core`; compute the four flagged contrast ratios; fix the two `<h1>`s in `reports-view`; drop the empty always-present `role="status"`; resolve the third focus-ring token.
+
+---
+
+## FE-019 — P1 — CEO dashboard is a **self-declared mock** for 2 of 13 routes, and its registry admits it
+
+**Finding.** P1. A CEO-facing platform dashboard shows 20 fake tenants on 2 of its routes.
+
+**Evidence.**
+
+- `ceo-dashboard/content.ts:17,20`: `DATA_CONTOH = 'Data contoh'`, `SKELETON_NOTE = 'Skeleton Fase 1. Belum tersambung ke data atau aksi nyata.'`
+- `/ceo-dashboard` (root), `/ceo-dashboard/tenants`, `/ceo-dashboard/devices`, `/ceo-dashboard/activity-log` render from `example-data.ts` (`CONTOH_METRICS/GROWTH/ALERTS/TENANTS[20]/DEVICES[5]/ACTIVITIES[5]`).
+- `/ceo-dashboard/devices` and `/ceo-dashboard/activity-log` have **no route folder at all**; they are reachable only through `[...segments]/page.tsx:56-69` → `view-switch.tsx:24-31`.
+- Real DB-backed: `tenants/new`, `tenants/[id]`, `subscriptions`, `plans`, `broadcast`, `promos`, `settings`, `system-health`, `security`.
+- **Mitigation (good):** `DATA_CONTOH` is rendered in the persistent header (`ceo-header.tsx:68-70`), auto-injected by `Panel` (`panel.tsx:129,133`), and the sidebar footer states the numbers are not production telemetry.
+
+**Actual.** Four routes render mock data; two of them exist only via a catch-all. The rest are real and DB-backed.
+
+**Expected.** A CEO dashboard reads production telemetry.
+
+**Impact.** A CEO-facing platform dashboard showing 20 fake tenants is still a demo surface, despite being honestly labelled.
+
+**Severity.** P1.
+
+**Affected files.** `ceo-dashboard/content.ts`, `example-data.ts`, `[...segments]/page.tsx`, `view-switch.tsx`, `ceo-header.tsx`, `panel.tsx`.
+
+**Affected routes.** `/ceo-dashboard`, `/ceo-dashboard/tenants`, `/ceo-dashboard/devices`, `/ceo-dashboard/activity-log`.
+
+**Related API.** None for the four mock routes.
+
+**Status.** CONFIRMED (static).
+
+**Recommended next action (direction only).** Decide whether the four mock routes get real data loaders or are removed from the CEO nav until they do.
+
+---
+
+## FE-020 — P2 — One dead session path
+
+**Finding.** P1. A shipped login mode that can never succeed.
+
+**Evidence.** `booths.operatorPinHash` is **only ever SELECTed** (`authorization.ts:318`); nothing in the repo WRITES it. `setPinLock` writes the different column `booths.pinLockPinHash` (`machines/actions.ts:257`). `ADR-004:161-163` admits it.
+
+**Actual.** The column the staff-PIN path reads is never written.
+
+**Expected.** A shipped login mode works.
+
+**Impact.** `/login`'s "PIN staf" tab (`login-form.tsx:198-205,262-264`) **can never succeed** — `/api/auth/staff-pin` can only return `PIN_REJECTED`. A login mode is shipped to users that always fails.
+
+**Severity.** P1 (visible, always-failing control).
+
+**Affected files.** `authorization.ts:318`, `machines/actions.ts:257`, `login-form.tsx`, `docs/ADR-004`.
+
+**Affected routes.** `/login` (staff-PIN tab).
+
+**Related API.** `POST /api/auth/staff-pin`. Table: `booths.operator_pin_hash`.
+
+**Status.** CONFIRMED (static).
+
+**Recommended next action (direction only).** Remove or implement the Staff PIN tab. Then add the missing `isSameOrigin` check on `/api/auth/staff-pin` (see BE-009).
+
+---
+
+## FE-021 — P2 — Frontend↔API contract mismatches (concrete)
+
+**Finding.** P2. Nine concrete contract defects between the frontend and the API/DB layer.
+
+| #       | Mismatch                                                                                                                                                                                                                                                                                                                                                                                                                                      | Evidence                                      |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| FE-021a | **`boothStatusSchema` name collision, `DEGRADED` missing.** `domain.ts:25` has 5 members incl. `DEGRADED`; `machine-contract.ts:28` re-declares the **same export name** with 4. A `DEGRADED` booth fails validation in the Owner Machine Manager.                                                                                                                                                                                            | `machine-contract.ts:28` vs `domain.ts:25,78` |
+| FE-021b | **Three incompatible API error envelopes.** (a) PRD §10.13 / `packages/shared/src/errors.ts` `{success:false,error:{code,message,requestId,developerMessage,retryable}}`; (b) `{ok:false,code,message}` (`api/booth/pair-session`, `api/auth/staff-pin`); (c) `{message}` only (`transactions/export/route.ts:18,22,27,31,33,44`, `api/health`, `api/internal/telemetry/*`). The shared envelope is defined but **used by no route handler**. | as cited                                      |
+| FE-021c | **`user:{userId}` channel vs its own RLS.** `events.ts:15` is generic, but `20260101000300_realtime.sql:46-49,84` requires the suffix to be the **Firebase UID**; `Session.userId` is a **UUID**. Any future `user:` subscriber is denied. Latent (nothing publishes there yet).                                                                                                                                                              | as cited                                      |
+| FE-021d | **`payment_status` / `template layoutType` / `package printSize` re-declared locally** in `transaction-contract.ts:5` (identical, 3rd copy), `template-contract.ts:41` (**lowercase** vs free-text column), `package-contract.ts:12` — 5 local enum re-declarations that will drift.                                                                                                                                                          | as cited                                      |
+| FE-021e | **`securitySeveritySchema` 3 members vs `NOTIFICATION_SEVERITIES` 4** (`health-security-contract.ts:15` lacks `ERROR`).                                                                                                                                                                                                                                                                                                                       | as cited                                      |
+| FE-021f | **Bulk ZIP is not photos.** `transactions/export/route.ts:48-86` is a hand-rolled _stored_ (uncompressed) ZIP writer containing **one CSV**. `transactions-view.tsx:87` discloses it. PRD §3.C "bulk ZIP" = not met.                                                                                                                                                                                                                          | as cited                                      |
+| FE-021g | **Manual pairing code always null.** `machine-contract.ts:110` declares `manualCode: string \| null`; `pairing-session/route.ts:114` hardcodes `null`; `machines-view.tsx:305` is a **permanently dead branch**. ADR-001 requires a manual fallback.                                                                                                                                                                                          | as cited                                      |
+| FE-021h | **Frontend→API fetch is only 5 calls** in the whole app: `POST /api/auth/session` (login+logout), `POST /api/auth/staff-pin`, `POST /api/booth/pair-session` (×2 sites), `GET /owner-dashboard/transactions/export`. Everything else is Server Actions. **This is a good architectural property** — no client-supplied `tenantId` anywhere.                                                                                                   | grep                                          |
+| FE-021i | **`SUPPORT_EMAIL`** consumed by `resend.ts:121` but absent from `.env.example`; the support form fails closed.                                                                                                                                                                                                                                                                                                                                | as cited                                      |
+
+**Actual.** Nine concrete mismatches: a schema name collision, three error envelopes, a channel-name type conflict, five drifted local enum copies, a short severity enum, a ZIP that contains only a CSV, a permanently null manual code, and an undeclared env var. One item (FE-021h) is a positive.
+
+**Expected.** Single source of truth for schemas, error envelopes, and channel names.
+
+**Impact.** A `DEGRADED` booth cannot render in the Machine Manager; error handling cannot be written once; the "bulk ZIP" deliverable is a CSV in a ZIP wrapper; the manual pairing fallback required by ADR-001 does not exist.
+
+**Severity.** P2 (P1 for FE-021a and FE-021g, which break or erase required behaviour).
+
+**Affected files.** `machine-contract.ts`, `domain.ts`, `events.ts`, `transaction-contract.ts`, `template-contract.ts`, `package-contract.ts`, `health-security-contract.ts`, `transactions/export/route.ts`, `pairing-session/route.ts`, `machines-view.tsx`, `transactions-view.tsx`, `resend.ts`, `.env.example`, all 8 `/api/**` route handlers.
+
+**Affected routes.** `/owner-dashboard/machines`, `/owner-dashboard/machines/[boothId]`, `/owner-dashboard/transactions`, `/owner-dashboard/transactions/export`, `/owner-dashboard/support`, `/login`.
+
+**Related API.** All 8 `/api/**` route handlers + `transactions/export/route.ts`; 55 server actions.
+
+**Status.** CONFIRMED (static).
+
+**Recommended next action (direction only).** Single `boothStatusSchema` import in `machine-contract.ts`; one error envelope across all 9 route files; delete or wire the duplicate local enums; fix the `user:{userId}` Firebase-UID contract; add `SUPPORT_EMAIL` to the env schema + `.env.example`; implement the manual pairing code or remove the dead branch per PC-02.
+
+---
+
+## FE-022 — P2 — Realtime (frontend side) is a **5-second poll triggered by nothing**
+
+**Finding.** P1 for the false "Realtime aktif" indicator; P2 for the rest.
+
+**Evidence.**
+
+- `use-booth-realtime.ts` is the **only** realtime subscription in the codebase (no `supabase.channel(`/`.subscribe(` anywhere).
+- **Contract break:** `phx_reply` of **any** topic sets `connected: true` (`:70-73`) — including a **rejected** join. The UI shows a green **"Realtime aktif"** dot while the RLS policy silently drops the channel. No `event_id` dedup, no `version` check (violates PRD §10.6 and ADR-011). Fixed 5 s reconnect, no backoff/jitter/cap (`:90`). `joined` is one boolean for N channels, so `phx_leave` is unreliable (`:36,104`).
+- **Payload is discarded** (`:63-81`): the only effect is `tick++` → `router.refresh()` (`machines-view.tsx:62`, `machine-detail-view.tsx:66`). Defensible (server = source of truth) but means **no field-level update, and no way to know which event arrived**.
+- **Nothing publishes to `booth:`** (see `07_REALTIME_AUDIT.md` / BE-016). So the subscription can never fire.
+
+**Actual.** A hand-rolled Phoenix WebSocket client reports success on any reply, reconnects on a fixed 5 s timer, discards every payload, and subscribes to a topic nothing publishes to.
+
+**Expected.** A realtime indicator that reflects reality; dedup + version per PRD §10.6 and ADR-011; backoff with jitter and a cap.
+
+**Impact.** A green "Realtime aktif" dot is shown while the channel is being dropped by RLS. Even if it connected, the user would get a full `router.refresh()` with no field-level update and no indication of which event arrived.
+
+**Severity.** P1 for the false indicator; P2 for the rest.
+
+**Affected files.** `use-booth-realtime.ts`, `machines-view.tsx`, `machine-detail-view.tsx`.
+
+**Affected routes.** `/owner-dashboard/machines`, `/owner-dashboard/machines/[boothId]`.
+
+**Related API.** Phoenix channel `booth:{boothId}`; realtime RLS in `20260101000300_realtime.sql`.
+
+**Status.** CONFIRMED (static).
+
+**Recommended next action (direction only).** Treat a `phx_reply` error as a failure; make `joined` per-topic; add backoff + jitter + cap; add `event_id` dedup and `version` check.
+
+---
+
+---
+
+## §3A — Verified GOOD (do not "fix" these)
+
+An audit that only lists problems is misleading. Each item below was checked against source and **is correct**. They are recorded so a repair pass does not regress them.
+
+| Area                                | Verdict                                                                                                                                                                                                                                                                                                                                                               |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Fonts**                           | All three self-hosted via `next/font/google` (`layout.tsx:19-38`), applied to `<html>` at `:88`, wired to `--font-display` (Space Grotesk) / `--base-font-family` (Inter) / `--font-mono` (JetBrains Mono) and applied in `@layer base` (`:144-159`). **No Google Fonts `<link>`, no `@import`, no default-font leak** (sole exception: `global-error.tsx`, FE-003e). |
+| **All 16 core primitives**          | `Button` `Card` `Badge` `Input` `Textarea` `Label` `Table` `Dialog` `Tabs` `Alert` `Progress` `Slider` `Select` `Empty` `Skeleton` `Sidebar` `Toast` are each `border-2 border-border` + `rounded-base` (5px) + `shadow-shadow` + `font-heading`/`font-base`. **Zero generic shadcn defaults anywhere.**                                                              |
+| **44px tap targets**                | `button.tsx:9-13` uses a `before:h-11` transparent pseudo hit-area to extend `xs`/`sm` to 44px without changing visual height — a principled solution, not a hack.                                                                                                                                                                                                    |
+| **Press physics**                   | Implemented consistently in three independent places (button hover translate, `.public-hard-shadow:active`, `.ceo-plan-foot [aria-pressed]`).                                                                                                                                                                                                                         |
+| **Reduced motion**                  | 4 scope scrims + framer-motion `useReducedMotion`; the marquee degrades to `overflow-x:auto`.                                                                                                                                                                                                                                                                         |
+| **Sidebar responsiveness**          | Mobile `Sheet` drawer <768px, 16rem rail ≥768px, `Cmd/Ctrl+B` toggle, 4px rail hit area. **No fixed-width sidebar.**                                                                                                                                                                                                                                                  |
+| **Token sync guard**                | `scripts/check-token-sync.mjs` + `pnpm check:token-sync` **does** enforce that `globals.css` and `packages/ui/src/styles.css` token blocks are byte-identical — and it passes. (Its _scope_ is the problem — FE-003b — not its correctness.)                                                                                                                          |
+| **Server-only discipline (partly)** | `packages/auth/src/index.ts:11` deliberately does not re-export `./admin`/`./client`, so `firebase-admin` can never enter a browser bundle. `env.ts` structurally separates public/server/secret/third-party schemas and `parseEnv` never interpolates values into error messages. (Gap: BE-034 — the guard is convention for DB modules.)                            |
+| **Server actions**                  | All 55 exports across 20 files gate on `requireCeo()`/`requireOwnerTenant()` — a **fresh DB read**, not a cookie snapshot. All use zod. 20 use transactions. No action trusts a client-supplied `tenantId`.                                                                                                                                                           |
+| **Entitlement engine**              | Fail-closed at every step, correct `UNLIMITED` arithmetic, single shared status list, and a real CI static guard banning tier-as-capability outside a justified allowlist. The best-engineered subsystem in the repo.                                                                                                                                                 |
+| **Pakasir B2B webhook**             | Signature on raw body before parse, `timingSafeEqual` with length/hex pre-checks, idempotency marker **released on any non-2xx**, server-authoritative amount check, monotonic date guard, dead-letter on every failure class.                                                                                                                                        |
+| **Anti-fabrication policy**         | Zero fabricated prices, logos, testimonials, team profiles, or camera-model counts. `[REAL DATA]` / `Coming soon` / fully-disabled controls used consistently, including in the mock dashboards.                                                                                                                                                                      |
+| **`/fitur` and `/tentang` layouts** | Genuinely non-repeating — 6 distinct module compositions, alternating backgrounds, deliberate hairline surgery. Reference-quality page structure.                                                                                                                                                                                                                     |
+| **Frame Studio module**             | `sharp`-based real image validation, server-side thumbnail generation, private storage, real signed URLs. The strongest feature module.                                                                                                                                                                                                                               |
+| **Resend adapter**                  | `fetch`-only, no SDK, HTML escaping, header-injection flattening, 10s timeout, never returns a raw provider body.                                                                                                                                                                                                                                                     |
+| **`Table` primitive**               | Auto-wraps in `overflow-auto` — responsive by default, and most raw tables follow the same pattern.                                                                                                                                                                                                                                                                   |
+
+---
+
+## §3B — Duplicated / hardcoded CSS strings (quantified)
+
+**Finding.** P2. The palette, shadows, and breakpoints that should be tokens are literal strings, duplicated across files with no shared source.
+
+**Evidence.**
+
+- **208 arbitrary-hex Tailwind values** in `.tsx`, concentrated in the public marketing scope: 69 × `border-[#141414]`, 43 × `text-[#141414]`, 22 × `bg-[#FFFEF5]`, 21 × `bg-[#FFDD00]`, 11 × `bg-[#F5F0DC]`, 8 × `text-[#FFFEF5]`, 7 × `text-[#8B5CF6]`, 5 × `bg-[#141414]`, plus `#FF1F8F`/`#8B5CF6`/`#16A34A`/`#F59E0B`/`#DC2626`. Worst files: `(public)/page.tsx` (49), `fitur/page.tsx` (21), `tentang/page.tsx` (11), `public-header.tsx` (8), `public-header-menu.tsx` (6).
+- **6 of the 7 public brand colours have no token at all.** Changing the brand today is a repo-wide find/replace.
+- **`BRAND` — the intended single source of that palette — is dead code:** `content/public.ts:240-258` exports it and **0 files import it**.
+- **28 arbitrary `shadow-[…]` values** bypass `--shadow`/`--shadow-nav`; `packages/ui` itself hardcodes `ring-black`/`ring-offset-white` 7× instead of `ring-ring`/`ring-offset-background` (`button.tsx:13`, `input.tsx:11`, `textarea.tsx:10`, `select.tsx:43`, `dialog.tsx:65`, `toast.tsx:47`, `sidebar.tsx:648`).
+- **Six distinct hard-shadow offsets** for one idea: `4px` (token), `6px` (`.public-hard-shadow`), `8px` (`.ceo-dialog`, `.ceo-plan-active`), plus arbitrary `3px`/`4px`/`6px`/`currentColor`/`#1A1A1A`. `--shadow-nav` is declared and used **0 times**.
+- **~8 duplicate inline-SVG icon sets** because `lucide-react` is `@snapbox/ui`'s dependency and not `apps/web`'s. Two independent nav-glyph maps: `owner-sidebar.tsx:134-156` vs `ceo-sidebar.tsx:158-232`. Also `theme-toggle.tsx:50-83` and the three gallery section files.
+- **9 hand-rolled `@media` breakpoints** (480/640/700/720/768/860/900/1024/1100px) declared inline in `globals.css`; none tokenized. `max-width: 1300px` (`:388`) duplicates `--spacing-container` (`:114`).
+- **Dead tokens:** `--chart-active-dot` declared in `:root` (`:72`) but never mapped in `@theme inline`, so it is never generated; `--chart-1: #5294ff` is a raw hex duplicating `--main: hsl(217 100% 66%)`.
+- **Dead reference-library leftovers:** `px-rounded-md` / `px-border-md` / `px-ring` (8-bit pixel utilities, `globals.css:236-345`, 110 lines) and `[data-slot='star-ring']` (`:347-362`) have **0 usages** in SnapBox.
+- `font-black` (900) ×3 bypasses `--font-weight-heading: 700` — `kiosk-theme-view.tsx:119,427`, `frame-studio-view.tsx:136` — making those three `h1`s visibly heavier than every other.
+- `Alert` `destructive: 'bg-black text-white'` (`packages/ui/src/components/alert.tsx:13`) is an **undocumented** divergence from ADR-002:86-91, which specifies `bg-red-700`.
+
+**Actual.** Every visual constant that should be a token is a literal somewhere, 208 times, with the intended token object already written and imported by nothing.
+
+**Expected.** One place per constant. Changing a brand colour or a shadow offset should be one edit, not a find/replace.
+
+**Impact.** This is the mechanism that made PC-01 half-implemented without anyone noticing: there is no single place to change the brand.
+
+**Severity.** P2.
+
+**Affected files.** `app/globals.css`, `packages/ui/src/components/**`, `app/(public)/**`, `components/public/**`, `content/public.ts:240-258`, 15 owner views.
+
+**Affected routes.** All.
+
+**Related API.** None.
+
+**Status.** CONFIRMED (static).
+
+**Recommended next action (direction only).** Wire the public brand palette into tokens and start consuming the already-exported `BRAND` object (PC-14). Consolidate shadow offsets and breakpoints behind tokens, then delete the dead tokens and reference-library leftovers rather than leaving them.
+
+---
+
+## Cross-references
+
+- §3 findings FE-006, FE-011…FE-018 are expanded in `03_FRONTEND_UX_UI_AUDIT.md`.
+- Findings FE-005, FE-021, FE-022 are expanded in `04_FRONTEND_API_CONTRACT.md`.
+- Full route-by-route status is in `02_FRONTEND_ROUTE_MATRIX.md`.
+- Backend counterparts (BE-001…BE-034) are in `05_BACKEND_API_AUDIT.md`, `06_SECURITY_AUDIT.md`, `07_REALTIME_AUDIT.md`, `08_DATABASE_TENANT_AUDIT.md`.
+- PRD conflicts PC-01…PC-14 are in `09_PRD_IMPLEMENTATION_MATRIX.md`.
+- Ordered remediation direction is in `10_RECOMMENDED_REPAIR_ORDER.md`.

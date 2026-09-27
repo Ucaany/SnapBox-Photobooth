@@ -60,6 +60,9 @@ jobs:
       - name: Token sync guard
         run: pnpm check:token-sync
 
+      - name: Brand palette guard
+        run: pnpm check:brand
+
       - name: Claims sync guard
         run: pnpm check:claims-sync
 
