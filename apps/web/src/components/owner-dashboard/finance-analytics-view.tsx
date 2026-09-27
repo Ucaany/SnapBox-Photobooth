@@ -191,7 +191,7 @@ export function AnalyticsView() {
                 type="monotone"
                 dataKey="revenue"
                 name="Pendapatan"
-                stroke="var(--chart-1)"
+                stroke="var(--metric-revenue)"
                 strokeWidth={3}
                 dot={{ r: days === 7 ? 3 : 0 }}
                 activeDot={{ r: 5 }}
@@ -287,7 +287,7 @@ export function AnalyticsView() {
                   dataKey="count"
                   data={CONVERSION_FUNNEL}
                   isAnimationActive={false}
-                  fill="var(--chart-1)"
+                  fill="var(--metric-revenue)"
                 >
                   <LabelList
                     position="right"
@@ -328,7 +328,7 @@ export function AnalyticsView() {
                 aria-valuemax={100}
                 aria-valuenow={returned}
               >
-                <div className="bg-primary h-full" style={{ width: `${returned}%` }} />
+                <div className="h-full bg-metric-retention" style={{ width: `${returned}%` }} />
               </div>
               {index > 0 && <p className="mt-1 text-sm">dari minggu pertama</p>}
             </div>
@@ -352,7 +352,7 @@ function PageHeading({
     <header className="border-b-2 border-foreground pb-5">
       <p className="text-sm font-semibold tracking-wide uppercase">{eyebrow}</p>
       <h1 className="text-3xl font-bold sm:text-4xl">{title}</h1>
-      <p className="text-muted-foreground mt-1 max-w-2xl">{description}</p>
+      <p className="mt-1 max-w-2xl text-muted-foreground">{description}</p>
     </header>
   );
 }
@@ -373,7 +373,7 @@ function Metric({ label, value, note }: { label: string; value: string; note: st
     <article className="border-2 border-foreground p-4">
       <p className="font-semibold">{label}</p>
       <p className="mt-2 text-2xl font-bold break-words sm:text-3xl">{value}</p>
-      <p className="text-muted-foreground mt-1 text-sm">{note}</p>
+      <p className="mt-1 text-sm text-muted-foreground">{note}</p>
     </article>
   );
 }

@@ -21,7 +21,6 @@
 import * as React from 'react';
 
 import { Button } from '@snapbox/ui';
-import { cn } from '@snapbox/ui';
 
 type LoginMode = 'password' | 'pin';
 
@@ -185,10 +184,15 @@ export function LoginForm({ nextPath }: LoginFormProps) {
         `aria-pressed` memberi tahu pembaca layar mode yang aktif.
       */}
       <div className="auth-switch" role="group" aria-label="Pilih metode masuk">
+        {/*
+          State aktif TIDAK memakai class: `.auth-switch button[aria-pressed='true']`
+          sudah menandainya (latar --brand-primary, font-bold). Class
+          `auth-switch-active` pernah dipanggil di sini tanpa pernah ada
+          atlasesnya, jadi penandanya diam dan tidak pernah bergerak.
+        */}
         <button
           type="button"
           aria-pressed={mode === 'password'}
-          className={cn(mode === 'password' && 'auth-switch-active')}
           onClick={() => switchMode('password')}
           disabled={pending}
         >
@@ -197,7 +201,6 @@ export function LoginForm({ nextPath }: LoginFormProps) {
         <button
           type="button"
           aria-pressed={mode === 'pin'}
-          className={cn(mode === 'pin' && 'auth-switch-active')}
           onClick={() => switchMode('pin')}
           disabled={pending}
         >

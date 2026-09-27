@@ -67,6 +67,14 @@ export default [
       '**/.turbo/**',
       '**/target/**',
       '**/next-env.d.ts',
+      // Scratch sekali-pakai (`*.tmp.mjs`): probe, verifikasi, dan drift check
+      // yang ditulis untuk satu keputusan lalu dibuang. Nama `.tmp.` adalah
+      // penanda yang disengaja, dan isinya BUKAN source: dia memuat `console`
+      // dan `URL` globals yang tidak ada di env paket, jadi `eslint .` akan
+      // gagal padanya dan memblokir lint seluruh repo. Mengabaikan polanya di
+      // sini membuat `pnpm lint` menilai source, bukan beranda. `*.tmp.*` juga
+      // ada di .gitignore, jadi tidak akan ikut ter-commit.
+      '**/*.tmp.mjs',
     ],
   },
 

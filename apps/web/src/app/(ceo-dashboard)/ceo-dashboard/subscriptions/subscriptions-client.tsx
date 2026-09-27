@@ -132,7 +132,7 @@ export function SubscriptionsClient({ rows }: { rows: readonly InvoiceRow[] }) {
         </Badge>
       </PageIntro>
 
-      <section className="ceo-panel" aria-label="Filter invoice">
+      <section className="ceo-panel-static" aria-label="Filter invoice">
         <div className="ceo-toolbar">
           <div className="ceo-field ceo-field-search">
             <label className="ceo-label" htmlFor="invoice-search">

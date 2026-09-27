@@ -45,9 +45,7 @@ export function CeoHeader() {
           onClick={toggleSidebar}
           aria-label={isMobile ? 'Buka menu navigasi' : 'Lipat atau bentangkan sidebar'}
         >
-          <span aria-hidden className="ceo-icon">
-            {isMobile ? <MenuGlyph /> : <PanelGlyph />}
-          </span>
+          <span aria-hidden>{isMobile ? <MenuGlyph /> : <PanelGlyph />}</span>
         </Button>
 
         <div className="ceo-header-title">

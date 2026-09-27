@@ -48,7 +48,7 @@ function DisabledLogin() {
 
 export function PublicHeader() {
   return (
-    <header className="public-header sticky top-0 z-40 border-b-4 border-brand-ink bg-brand-surface">
+    <header className="sticky top-0 z-40 border-b-4 border-brand-ink bg-brand-surface">
       <div className="public-container flex h-16 items-center justify-between gap-4">
         <LogoMark />
 

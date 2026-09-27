@@ -40,15 +40,43 @@
     {
       "idx": 5,
       "version": "7",
-      "when": 1790483809134,
+      "when": 1790489216000,
       "tag": "0005_phase_2_owner_rls",
       "breakpoints": true
     },
     {
       "idx": 6,
       "version": "7",
-      "when": 1790483809135,
+      "when": 1790489216001,
       "tag": "0006_kiosk_theme_blue_defaults",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790489216002,
+      "tag": "0007_promo_redemptions_lookup_idx",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790489216003,
+      "tag": "0008_reconcile_unapplied_ddl",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1790489216004,
+      "tag": "0009_tenant_id_fk",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790489217004,
+      "tag": "0010_download_tokens_tenant_fk",
       "breakpoints": true
     }
   ]

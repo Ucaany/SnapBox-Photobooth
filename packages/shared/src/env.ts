@@ -12,8 +12,9 @@
  * - `secretEnvSchema`  : kunci enkripsi + signing, tidak pernah dikirim ke mana pun.
  * - `thirdPartyEnvSchema`: kredensial vendor, server-only.
  *
- * Validasi dijalankan saat modul di-import (`parseEnv`) sehingga misconfiguration
- * gagal cepat saat boot, bukan saat request pertama masuk.
+ * Validasi bersifat LAZY per call site lewat `parseEnv`: tidak ada proses boot
+ * yang mem-parsing apa pun, sehingga misconfiguration baru muncul saat variabel
+ * itu benar-benar dipakai (request atau eksekusi pertama), bukan saat boot.
  */
 import { z } from 'zod';
 
@@ -37,6 +38,13 @@ export const publicEnvSchema = z.object({
   NEXT_PUBLIC_TURNSTILE_SITE_KEY: nonEmpty.optional(),
   NEXT_PUBLIC_MIDTRANS_CLIENT_KEY: nonEmpty.optional(),
   NEXT_PUBLIC_SENTRY_DSN: urlLike.optional(),
+  /**
+   * Nomor WhatsApp sales untuk CTA landing publik. Dibaca langsung oleh
+   * komponen CTA WhatsApp di client, jadi tidak mungkin lewat env server.
+   * Sengaja duplikat dari `WHATSAPP_SALES_NUMBER` sisi server: dua prefix, satu
+   * konsep, dan hanya yang berprefix `NEXT_PUBLIC_` yang punya konsumen.
+   */
+  NEXT_PUBLIC_SALES_WHATSAPP: nonEmpty.optional(),
 });
 
 /** Variabel server-only: akses database, auth admin, dan service role. */
@@ -95,23 +103,55 @@ export const sessionEnvSchema = z.object({
 });
 
 /**
+ * Skema KHUSUS verifikasi signature webhook Pakasir.
+ *
+ * Pisah ini lahir dari satu bug nyata (BE-026). `readPakasirConfig()` memvalidasi
+ * SELURUH `thirdPartyEnvSchema` sebelum membaca `webhookSecret`, dan skema itu
+ * mensyaratkan `WHATSAPP_SALES_NUMBER` non-kosong. Sekali variabel yang sama
+ * tidak terisi — karena unrelated dengan pembayaran — `readPakasirConfig()`
+ * melempar, `verifyPakasirSignature` menangkap dan mengembalikan `false`, dan
+ * SETIAP webhook pembayaran membalas 401. Tidak ada log, tidak ada error, tidak
+ * ada yang tahu: variabel yang tidak menyangkut tanda tangan Decidepilih siapa
+ * yang tidak boleh masuk.
+ *
+ * Verifikasi signature hanya butuh satu hal. Skema ini karena itu berisi tepat
+ * satu kunci, dan tidak akan pernah diperluas: bila suatu saat butuh kunci lagi,
+ * mintalah di sini secara sadar, bukan dengan menarik seluruh skema vendor.
+ */
+export const pakasirWebhookEnvSchema = z.object({
+  PAKASIR_B2B_WEBHOOK_SECRET: nonEmpty,
+});
+export type PakasirWebhookEnv = z.infer<typeof pakasirWebhookEnvSchema>;
+
+/**
  * Kredensial vendor pihak ketiga. Server-only, rotasi per kuartal.
  */
 export const thirdPartyEnvSchema = z.object({
   PAKASIR_B2B_API_KEY: nonEmpty,
   PAKASIR_B2B_WEBHOOK_SECRET: nonEmpty,
+  /** Base URL API Pakasir B2B. WAJIB HTTPS dan tanpa path endpoint; itu dipaksakan
+   *  oleh adapter, bukan oleh skema ini. Saat ini masih dibaca lewat
+   *  `process.env` mentah, makanya opsional di sini. */
+  PAKASIR_B2B_API_URL: nonEmpty.optional(),
   RESEND_API_KEY: nonEmpty,
   RESEND_FROM_EMAIL: nonEmpty,
+  /** Penerima email dukungan owner. Harus alamat email sungguhan; bentuknya
+   *  divalidasi di call site (`resend.ts`), bukan di skema ini. */
+  SUPPORT_EMAIL: nonEmpty.optional(),
   SENTRY_AUTH_TOKEN: nonEmpty.optional(),
   SENTRY_ORG: nonEmpty.optional(),
   SENTRY_PROJECT: nonEmpty.optional(),
   CLOUDFLARE_API_TOKEN: nonEmpty.optional(),
   CLOUDFLARE_ZONE_ID: nonEmpty.optional(),
   TURNSTILE_SECRET_KEY: nonEmpty.optional(),
+  /** Trio secret telemetry. Dibaca dari `process.env` oleh route telemetry dan
+   *  gagal tertutup dengan 503 saat kosong. Validasi base64-32 dilakukan di call
+   *  site, bukan di skema ini. */
+  TELEMETRY_HASH_SALT: nonEmpty.optional(),
+  WAF_INGEST_SECRET: nonEmpty.optional(),
+  HEARTBEAT_SECRET: nonEmpty.optional(),
   WHATSAPP_SALES_NUMBER: nonEmpty,
 });
-
-/** Kredensial B2C per-tenant tidak lewat env: disimpan terenkripsi di DB (ADR-003). */
 export type PublicEnv = z.infer<typeof publicEnvSchema>;
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
 export type SecretEnv = z.infer<typeof secretEnvSchema>;

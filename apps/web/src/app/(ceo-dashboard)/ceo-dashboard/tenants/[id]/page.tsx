@@ -87,7 +87,7 @@ export default async function TenantDetailPage({ params }: { params: Promise<{ i
         </div>
 
         <div className="ceo-grid-2">
-          <section className="ceo-panel">
+          <section className="ceo-panel-static">
             <h2>Profil</h2>
             <dl className="ceo-review-list">
               <Row label="Perusahaan" value={tenant.companyName} />
@@ -100,7 +100,7 @@ export default async function TenantDetailPage({ params }: { params: Promise<{ i
             </dl>
           </section>
 
-          <section className="ceo-panel">
+          <section className="ceo-panel-static">
             <h2>Akun Owner</h2>
             {owner ? (
               <dl className="ceo-review-list">
@@ -118,7 +118,7 @@ export default async function TenantDetailPage({ params }: { params: Promise<{ i
           </section>
         </div>
 
-        <section className="ceo-panel">
+        <section className="ceo-panel-static">
           <h2>Kuota plan</h2>
           <dl className="ceo-quota-grid">
             <EntitlementQuota label="Perangkat" result={deviceQuota} addon={tenant.addOnDevices} />
@@ -129,7 +129,7 @@ export default async function TenantDetailPage({ params }: { params: Promise<{ i
           </dl>
         </section>
 
-        <section className="ceo-panel">
+        <section className="ceo-panel-static">
           <h2>Riwayat langganan</h2>
           {subscriptions.length === 0 ? (
             <p className="ceo-muted">Belum ada baris langganan.</p>
@@ -170,7 +170,7 @@ export default async function TenantDetailPage({ params }: { params: Promise<{ i
         </section>
 
         <div className="ceo-grid-2">
-          <section className="ceo-panel">
+          <section className="ceo-panel-static">
             <h2>Booth</h2>
             {booths.length === 0 ? (
               <p className="ceo-muted">Belum ada booth.</p>
@@ -190,7 +190,7 @@ export default async function TenantDetailPage({ params }: { params: Promise<{ i
             )}
           </section>
 
-          <section className="ceo-panel">
+          <section className="ceo-panel-static">
             <h2>Aktivitas terbaru</h2>
             {activity.length === 0 ? (
               <p className="ceo-muted">Belum ada aktivitas tercatat untuk tenant ini.</p>

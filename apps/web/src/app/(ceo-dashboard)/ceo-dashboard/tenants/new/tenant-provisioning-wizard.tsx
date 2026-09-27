@@ -180,7 +180,7 @@ export function TenantProvisioningWizard({
 
   if (result) {
     return (
-      <section className="ceo-panel ceo-wizard-done" aria-live="polite">
+      <section className="ceo-panel-static ceo-wizard-done" aria-live="polite">
         <p className="ceo-kicker">Langkah selesai</p>
         <h1>Tenant dibuat</h1>
         <p className="ceo-feedback" role="status">
@@ -207,7 +207,7 @@ export function TenantProvisioningWizard({
   }
 
   return (
-    <section className="ceo-panel ceo-wizard" aria-label="Wizard tenant baru">
+    <section className="ceo-panel-static ceo-wizard" aria-label="Wizard tenant baru">
       <ol className="ceo-steps">
         {STEPS.map((label, index) => (
           <li

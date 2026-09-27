@@ -80,6 +80,62 @@
   --chart-4: #05e17a;
   --chart-5: #7a83ff;
   --chart-active-dot: #000;
+
+  /* ---- Set warna semantik -----------------------------------------------
+   *
+   * Kenapa blok ini ada. Tailwind v4 tidak Issuing apa pun untuk utility yang
+   * menunjuk variabel tema yang tidak ada: `text-muted-foreground` tanpa
+   * `--color-muted-foreground` menghasilkan satu class yang TIDAK ADA, bukan
+   * error, bukan warning, bukan kegagalan build. Audit menemukan 66 class
+   * seperti itu dan 19 keluarga class, semuanya senyap, dan itu sebabnya
+   * dashboard Owner tidak punya hierarki tipografi sementara tidak ada satu pun
+   * alat yang bergerak. `scripts/check-style-tokens.mjs` menjaga blok ini.
+   *
+   * SETIAP warna semantik punya DUA lapis dan keduanya wajib: nilai di sini,
+   * lalu nama `--color-*` di `@theme inline` di bawah. Hanya salah satu berarti
+   * kelas terbit dengan nilai kosong.
+   *
+   * Nilai diambil dari palet Tailwind yang sudah terpasang, bukan hex baru, agar
+   * rasio kontras yang sudah diukur di `packages/ui` (lihat catatan
+   * `text-red-700` di field.tsx) tetap berlaku.
+   */
+
+  /* Teks sekunder: label, keterangan, waktu. 7.9:1 di --background, 9.1:1 di
+   * secondary-background. Jauh di atas AA 4.5:1, dan tetap jelas lebih redup
+   * dari --foreground yang hitam penuh. */
+  --muted-foreground: oklch(27.9% 0.041 260.031);
+  /* Warna status kegagalan di atas latar terang. Nilai ini persis Tailwind
+   * red-700, yang sudah terukur 5.31:1 di --background #dcebfe. */
+  --destructive: oklch(50.5% 0.213 27.518);
+
+  /* Warna aksi utama. primary-foreground gelap, bukan putih: #141414 di atas
+   * #5294ff = 6.1:1, sedangkan putih hanya 2.7:1 dan gagal. */
+  --primary: var(--brand-primary);
+  --primary-foreground: var(--brand-ink);
+
+  /* Rel dan rail off-canvas di primitive Sidebar: putih di atas --background
+   * biru muda, sama seperti surface konten. */
+  --sidebar: var(--secondary-background);
+  --sidebar-foreground: var(--foreground);
+
+  /* Set status: satu warna per KONDISI, bukan per layar. Repo punya dua peta
+   * status yang berbeda — STATUS_CLASS di machines-view.tsx memakai tint,
+   * STATUS_CLASSES di gallery memakai seri chart — dan keduanya memakai warna
+   * yang sama untuk kondisi berbeda. Keempat nilai di bawah adalah hasil
+   * rekonsiliasi; peta status tunggal yang mengonsumsi token ini dikerjakan di
+   * Fase 5, dan sampai saat itu pemakaian lama sengaja tidak disentuh. */
+  --status-success: oklch(92.5% 0.084 155.995);
+  --status-warning: oklch(92.4% 0.12 95.746);
+  --status-danger: oklch(88.5% 0.062 18.334);
+  --status-neutral: var(--secondary-background);
+
+  /* Metric-type scale. Slot seri --chart-1..5 tetap dipakai chart Recharts
+   * lewat var() dan bukan lewat utility. Alias di bawah memberi NAMA pada dua
+   * jenis mark yang selama ini tidak punya warna sendiri, dan keduanya adalah
+   * bug yang ditemukan audit: meter retensi dipinjam warna tombol aktif, bukan
+   * warna data. */
+  --metric-revenue: var(--chart-1);
+  --metric-retention: var(--chart-1);
 }
 
 @theme inline {
@@ -112,6 +168,28 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+
+  /* Pasangan `--color-*` untuk set semantik di `:root`. Tanpa baris di sini,
+   * utility seperti `text-muted-foreground` TIDAK akan terbit sama sekali.
+   * Nama var() di sebelah kanan wajib ada di `:root`; guard 1 memeriksa itu
+   * juga, karena `--color-x: var(--tak-ada)` tetap terbit dan tetap tanpa
+   * warna. */
+  --color-muted-foreground: var(--muted-foreground);
+  --color-destructive: var(--destructive);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+
+  --color-status-success: var(--status-success);
+  --color-status-warning: var(--status-warning);
+  --color-status-danger: var(--status-danger);
+  --color-status-neutral: var(--status-neutral);
+
+  --color-metric-revenue: var(--metric-revenue);
+  --color-metric-retention: var(--metric-retention);
 
   --spacing-boxShadowX: var(--box-shadow-x);
   --spacing-boxShadowY: var(--box-shadow-y);
@@ -1406,6 +1484,127 @@ body::-webkit-scrollbar-thumb,
   }
 }
 
+/* ------------------------------------------------- settings & support view --
+ *
+ * Dua halaman ini memakai tiga class yang didefinisikan DI MANA pun, sehingga
+ * elemennya dirender sebagai HTML mentah: `<section>` tanpa border, `<input>`
+ * tanpa radius dan tanpa ring fokus, `<button>` tanpa target sentuh. Aturan di
+ * bawah memakai bahasa yang sama dengan 19 halaman Owner lain: border 2px
+ * --foreground, radius --border-radius, bayangan keras, eyebrow mono uppercase.
+ *
+ * P-F-05 memutuskan apakah kedua halaman ini ditulis ulang memakai primitive
+ * `@snapbox/ui`. Kalau ya, tiga aturan ini ikut dihapus; jangan menambahkan
+ * selector yang tidak punya pekerjaan hanya agar guard ini diam. */
+
+.owner-section {
+  border: 2px solid var(--border);
+  border-radius: var(--border-radius);
+  background-color: var(--secondary-background);
+  padding: 1.25rem;
+  box-shadow: var(--shadow);
+}
+
+.owner-section > h1 {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 4vw, 2.25rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+.owner-section > h2 {
+  margin-top: 1.5rem;
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.owner-section > p {
+  margin-top: 0.5rem;
+  max-width: 62ch;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.owner-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.owner-form {
+  display: grid;
+  gap: 0.875rem;
+  margin-top: 1.25rem;
+  max-width: 34rem;
+}
+
+.owner-form label {
+  display: grid;
+  gap: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.owner-form input,
+.owner-form select,
+.owner-form textarea {
+  min-height: 44px;
+  width: 100%;
+  border: 2px solid var(--border);
+  border-radius: var(--border-radius);
+  background-color: var(--background);
+  padding: 0.5rem 0.75rem;
+  font: inherit;
+  color: inherit;
+}
+
+.owner-form textarea {
+  min-height: 8rem;
+  resize: vertical;
+}
+
+.owner-form input[readonly] {
+  background-color: var(--secondary-background);
+  color: var(--muted-foreground);
+}
+
+.owner-form :is(input, select, textarea):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.owner-form :is(input, select, textarea)[aria-invalid='true'] {
+  border-color: var(--destructive);
+}
+
+.owner-form button {
+  min-height: 44px;
+  justify-self: start;
+  border: 2px solid var(--border);
+  border-radius: var(--border-radius);
+  background-color: var(--main);
+  padding: 0.5rem 1rem;
+  font-weight: 700;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+}
+
+.owner-form button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.owner-form [role='status'],
+.owner-form [role='alert'] {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
 /* --------------------------------------------------------------- outlets */
 
 .owner-outlet-layout {
@@ -1541,6 +1740,28 @@ body::-webkit-scrollbar-thumb,
   max-width: 62ch;
   font-size: 0.875rem;
   line-height: 1.6;
+}
+
+/* Kicker: label kecil mono di atas judul (breadcrumb tenant, label langkah
+ * wizard). Bahasa visualnya sama dengan `.ceo-header-kicker`, ukuran sedikit
+ * lebih besar karena berdiri sendiri, bukan di dalam header. */
+.ceo-kicker {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1.4;
+}
+
+/* `.ceo-intro p` (0,1,1) lebih spesifik daripada `.ceo-kicker` (0,1,0) dan
+ * akan menimpa ukuran serta line-height, sehingga kicker di dalam intro perlu
+ * diulang dengan spesifisitas lebih tinggi. */
+.ceo-intro .ceo-kicker {
+  margin-top: 0;
+  max-width: none;
+  font-size: 0.6875rem;
+  line-height: 1.4;
 }
 
 .ceo-intro-actions {
@@ -2079,6 +2300,16 @@ body::-webkit-scrollbar-thumb,
   font-family: var(--font-display);
   font-size: 1rem;
   font-weight: 700;
+}
+
+/* Judul panel aksi tenant. Tanpa ini `<h2>` di dalam panel hanya mendapat
+ * `font-heading` dari @layer base: tanpa ukuran, tanpa jarak, dan beda jelas
+ * dari paragraf di bawahnya. */
+.ceo-tenant-actions h2 {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
 /* --------------------------------------------------- plans editor (1.5) */

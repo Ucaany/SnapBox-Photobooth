@@ -234,7 +234,26 @@ export async function POST(request: Request) {
   }
 
   const signature = request.headers.get('x-pakasir-signature');
-  if (!verifyPakasirSignature(rawBody, signature)) {
+
+  // Verifikasi signature SELALU sebelum parse, dan dua kegagalan dibedakan
+  // (BE-026). `false` berarti provider mengirim signature yang salah: 401, dan
+  // TIDAK dicatat sebagai event karena bisa jadi probe. `NOT_CONFIGURED` berarti
+  // server ini salah konfigurasi — sebelumnya itu ikut jadi 401, sehingga satu
+  // `PAKASIR_B2B_WEBHOOK_SECRET` yang kosong terlihat-identik dengan signature
+  // palsu, tidak pernah tercatat, dan setiap pembayaran gagal diam-diam. Itu
+  // 500 supaya provider mencoba ulang dan operator melihatnya di log.
+  let signatureValid: boolean;
+  try {
+    signatureValid = verifyPakasirSignature(rawBody, signature);
+  } catch (cause) {
+    const message =
+      cause instanceof Error ? cause.message : 'Verifikasi webhook gagal dikonfigurasi.';
+    console.error('[pakasir-webhook] konfigurasi verifikasi tidak lengkap:', message);
+    await recordFailure(null, `Konfigurasi webhook tidak lengkap: ${message}`);
+    return json({ ok: false, error: 'configuration_error' }, 500);
+  }
+
+  if (!signatureValid) {
     // Signature invalid TIDAK disimpan sebagai event valid (bisa jadi probe).
     return json({ ok: false, error: 'invalid_signature' }, 401);
   }

@@ -7,6 +7,15 @@ import { getSiteUrl } from '@/lib/public-metadata';
  * dokumentasi, dan unduh) tetapi melarang area privat: API, galeri internal,
  * dashboard, dan tautan unduhan bertoken (`/download/`).
  *
+ * PENTING — INI BUKAN KONTROL AKSES. `robots.txt` adalah permintaan, bukan
+ * pernyataan: crawler yang patuh memperhatikannya, crawler yang tidak patuh
+ * mengabaikannya, dan siapa pun yang mengetik URL tidak pernah membaca
+ * `DISALLOW` sama sekali. Setiap entri di `DISALLOW` di bawah perlu gate-nya
+ * sendiri di aplikasi. `/gallery` punya: `notFound()` di
+ * `app/gallery/page.tsx` menolaknya di setiap lingkungan yang bukan
+ * `development`. Kalau sebuah area privat tidak punya gate, mendaftarkannya di
+ * sini tidak menambah perlindungan apa pun — hanya menyesatkan.
+ *
  * Rute hukum (mis. `/privacy`, `/terms`) sengaja tidak disebut karena belum
  * ada halamannya; memblokir URL yang tidak ada akan menyesatkan crawler.
  */

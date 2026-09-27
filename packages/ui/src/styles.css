@@ -69,6 +69,62 @@
   --chart-4: #05e17a;
   --chart-5: #7a83ff;
   --chart-active-dot: #000;
+
+  /* ---- Set warna semantik -----------------------------------------------
+   *
+   * Kenapa blok ini ada. Tailwind v4 tidak Issuing apa pun untuk utility yang
+   * menunjuk variabel tema yang tidak ada: `text-muted-foreground` tanpa
+   * `--color-muted-foreground` menghasilkan satu class yang TIDAK ADA, bukan
+   * error, bukan warning, bukan kegagalan build. Audit menemukan 66 class
+   * seperti itu dan 19 keluarga class, semuanya senyap, dan itu sebabnya
+   * dashboard Owner tidak punya hierarki tipografi sementara tidak ada satu pun
+   * alat yang bergerak. `scripts/check-style-tokens.mjs` menjaga blok ini.
+   *
+   * SETIAP warna semantik punya DUA lapis dan keduanya wajib: nilai di sini,
+   * lalu nama `--color-*` di `@theme inline` di bawah. Hanya salah satu berarti
+   * kelas terbit dengan nilai kosong.
+   *
+   * Nilai diambil dari palet Tailwind yang sudah terpasang, bukan hex baru, agar
+   * rasio kontras yang sudah diukur di `packages/ui` (lihat catatan
+   * `text-red-700` di field.tsx) tetap berlaku.
+   */
+
+  /* Teks sekunder: label, keterangan, waktu. 7.9:1 di --background, 9.1:1 di
+   * secondary-background. Jauh di atas AA 4.5:1, dan tetap jelas lebih redup
+   * dari --foreground yang hitam penuh. */
+  --muted-foreground: oklch(27.9% 0.041 260.031);
+  /* Warna status kegagalan di atas latar terang. Nilai ini persis Tailwind
+   * red-700, yang sudah terukur 5.31:1 di --background #dcebfe. */
+  --destructive: oklch(50.5% 0.213 27.518);
+
+  /* Warna aksi utama. primary-foreground gelap, bukan putih: #141414 di atas
+   * #5294ff = 6.1:1, sedangkan putih hanya 2.7:1 dan gagal. */
+  --primary: var(--brand-primary);
+  --primary-foreground: var(--brand-ink);
+
+  /* Rel dan rail off-canvas di primitive Sidebar: putih di atas --background
+   * biru muda, sama seperti surface konten. */
+  --sidebar: var(--secondary-background);
+  --sidebar-foreground: var(--foreground);
+
+  /* Set status: satu warna per KONDISI, bukan per layar. Repo punya dua peta
+   * status yang berbeda — STATUS_CLASS di machines-view.tsx memakai tint,
+   * STATUS_CLASSES di gallery memakai seri chart — dan keduanya memakai warna
+   * yang sama untuk kondisi berbeda. Keempat nilai di bawah adalah hasil
+   * rekonsiliasi; peta status tunggal yang mengonsumsi token ini dikerjakan di
+   * Fase 5, dan sampai saat itu pemakaian lama sengaja tidak disentuh. */
+  --status-success: oklch(92.5% 0.084 155.995);
+  --status-warning: oklch(92.4% 0.12 95.746);
+  --status-danger: oklch(88.5% 0.062 18.334);
+  --status-neutral: var(--secondary-background);
+
+  /* Metric-type scale. Slot seri --chart-1..5 tetap dipakai chart Recharts
+   * lewat var() dan bukan lewat utility. Alias di bawah memberi NAMA pada dua
+   * jenis mark yang selama ini tidak punya warna sendiri, dan keduanya adalah
+   * bug yang ditemukan audit: meter retensi dipinjam warna tombol aktif, bukan
+   * warna data. */
+  --metric-revenue: var(--chart-1);
+  --metric-retention: var(--chart-1);
 }
 
 @theme inline {
@@ -101,6 +157,28 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+
+  /* Pasangan `--color-*` untuk set semantik di `:root`. Tanpa baris di sini,
+   * utility seperti `text-muted-foreground` TIDAK akan terbit sama sekali.
+   * Nama var() di sebelah kanan wajib ada di `:root`; guard 1 memeriksa itu
+   * juga, karena `--color-x: var(--tak-ada)` tetap terbit dan tetap tanpa
+   * warna. */
+  --color-muted-foreground: var(--muted-foreground);
+  --color-destructive: var(--destructive);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+
+  --color-status-success: var(--status-success);
+  --color-status-warning: var(--status-warning);
+  --color-status-danger: var(--status-danger);
+  --color-status-neutral: var(--status-neutral);
+
+  --color-metric-revenue: var(--metric-revenue);
+  --color-metric-retention: var(--metric-retention);
 
   --spacing-boxShadowX: var(--box-shadow-x);
   --spacing-boxShadowY: var(--box-shadow-y);

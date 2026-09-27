@@ -194,7 +194,7 @@ export function PromosEditor({ promos }: { readonly promos: readonly EditablePro
         </p>
       ) : null}
 
-      <section className="ceo-panel" aria-label="Filter promo">
+      <section className="ceo-panel-static" aria-label="Filter promo">
         <div className="ceo-toolbar">
           <div className="ceo-field ceo-field-search">
             <label className="ceo-label" htmlFor="promo-search">

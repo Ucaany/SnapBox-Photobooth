@@ -104,6 +104,7 @@ Vercel mem-build dari root repo dan gagal menemukan `@snapbox/web`.
 | `PAKASIR_B2B_WEBHOOK_SECRET`       | Preview, Production              | Runtime                   | Dasbor Pakasir                            |
 | `RESEND_API_KEY`                   | Preview, Production              | Runtime                   | Dasbor Resend                             |
 | `RESEND_FROM_EMAIL`                | Preview, Production              | Runtime                   | Alamat terverifikasi Resend               |
+| `SUPPORT_EMAIL`                    | Preview, Production              | Runtime                   | Alamat email dukungan, bukan dari Resend  |
 | `SENTRY_AUTH_TOKEN`                | Production (opsional Preview)    | **Build-only**            | Sentry → Auth Tokens                      |
 | `SENTRY_ORG`                       | Production (opsional Preview)    | Build-only                | Sentry                                    |
 | `SENTRY_PROJECT`                   | Production (opsional Preview)    | Build-only                | Sentry                                    |
@@ -121,6 +122,17 @@ Catatan:
   bukan runtime klien. Menaruhnya di runtime menambah permukaan bocor tanpa
   manfaat. Tanpa token, `sourcemaps.disable` aktif dan build tetap sukses
   (Task 0.6).
+- `PAKASIR_B2B_WEBHOOK_SECRET` **berdiri sendiri** dan tidak boleh dianggap
+  terikat ke vendor lain (BE-026). Verifikasi signature webhook membacanya lewat
+  `pakasirWebhookEnvSchema`, yang berisi tepat satu kunci.
+  "PAKASIR_B2B_WEBHOOK_SECRET tidak ada di environment" adalah kesalahan
+  konfigurasi yang muncul keras (HTTP 500 + dead-letter), **bukan** penolakan
+  signature — jadi ia tidak pernah terlihat sebagai 401 yang diam. Sebaliknya,
+  `WHATSAPP_SALES_NUMBER` yang kosong tidak boleh, dan tidak lagi, membuat
+  verifikasi pembayaran gagal: variabel itu tidak ada hubungannya dengan tanda
+  tangan. Kalau suatu saat menambah kunci ke skema verifikasi webhook,
+  penambahan itu harus sadar dan sendirian — jangan dengan menarik seluruh
+  `thirdPartyEnvSchema`.
 - Variabel publik dan server-only dipisah tegas: jangan pernah menaruh secret di
   `NEXT_PUBLIC_*`.
 - `vercel env add` atau provisioning lewat dasbor dilakukan **operator yang
@@ -132,6 +144,11 @@ Catatan:
   heartbeat routes return `503` when their shared secret is absent; database
   telemetry failures are best-effort and must not grant access or fail valid
   authentication. Never place these values in `NEXT_PUBLIC_*` or `VITE_*`.
+- `CEO_EMAIL` hanya dipakai `firebase-admin-script/set-ceo.js` lewat shell sekali
+  jalan, jadi tidak perlu ada di Vercel. Script itu auth lewat
+  `applicationDefault()`, jadi butuh `GOOGLE_APPLICATION_CREDENTIALS` yang menunjuk
+  file JSON service account, bukan `FIREBASE_ADMIN_*`. `SENTRY_RELEASE` hanya diisi
+  CI (`.github/workflows/tauri.yml`) atau diekspor manual untuk build desktop lokal.
 
 ## 4. GitHub Actions secrets minimum
 

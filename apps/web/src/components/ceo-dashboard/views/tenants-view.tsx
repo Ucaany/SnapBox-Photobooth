@@ -107,7 +107,7 @@ export function TenantsView() {
         </Button>
       </PageIntro>
 
-      <section className="ceo-panel ceo-lookup" aria-label="Buka tenant berdasarkan id">
+      <section className="ceo-panel-static ceo-lookup" aria-label="Buka tenant berdasarkan id">
         <form className="ceo-form" onSubmit={onLookup}>
           <label htmlFor="tenant-id-lookup">Buka tenant tersimpan berdasarkan id</label>
           <Input

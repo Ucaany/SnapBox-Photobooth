@@ -20,6 +20,14 @@ coverage/
 playwright-report/
 test-results/
 
+# Scratch sekali-pakai: probe, verifikasi, drift check. Ditulis untuk satu
+# keputusan lalu dibuang. prefixed `*.tmp.` supaya tidak pernah ter-commit, dan
+# diabaikan eslint juga (lihat eslint.config.mjs) supaya `pnpm lint` tidak
+# gagal pada `console`/`URL` globals di dalam skrip yang bukan source.
+*.tmp.mjs
+*.tmp.ts
+*.tmp.sql
+
 # Environment. Secrets DILARANG masuk repo (PRD Bab 8.2).
 .env
 .env.*

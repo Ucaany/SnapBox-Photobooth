@@ -17,7 +17,7 @@
  */
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
-import { thirdPartyEnvSchema } from '@snapbox/shared/env';
+import { pakasirWebhookEnvSchema, thirdPartyEnvSchema } from '@snapbox/shared/env';
 import { z } from 'zod';
 
 const PAKASIR_TIMEOUT_MS = 10_000;
@@ -75,6 +75,36 @@ interface PakasirConfig {
 }
 
 /**
+ * Membaca webhook secret Pakasir.
+ *
+ * PASCALOKAL: skema di sini HANYA berisi `PAKASIR_B2B_WEBHOOK_SECRET`. Bukan
+ * `thirdPartyEnvSchema` (BE-026). Kalau skema yang lebar ikut divalidasi di
+ * sini, satu variabel yang tidak ada hubungannya — `WHATSAPP_SALES_NUMBER`,
+ * `RESEND_FROM_EMAIL`, apa pun — akan membuat verifikasi signature gagal
+ * tertutup, dan setiap webhook pembayaran membalas 401 tanpa log apa pun.
+ * Verifikasi signature tidak butuh kredensial lain, jadi ia tidak boleh menuntut
+ * kredensial lain.
+ *
+ * Secret yang kosong adalah KESALAHAN KONFIGURASI, bukan signature yang salah,
+ * jadi fungsi ini melempar `PakasirError('NOT_CONFIGURED')` dan bukan
+ * mengembalikan `false`. Pemanggil wajib membedakan keduanya: `false` berarti
+ * "provider mengirim signature yang salah" (401, tidak dicatat), `NOT_CONFIGURED`
+ * berarti "server ini salah konfigurasi" (500, dicatat, dan provider boleh
+ * mencoba ulang setelah diperbaiki). Mengembalikan `false` untuk keduanya
+ * persis yang membuat bug ini tidak terlihat.
+ */
+export function readPakasirWebhookSecret(): string {
+  const parsed = pakasirWebhookEnvSchema.safeParse(process.env);
+  if (!parsed.success) {
+    throw new PakasirError(
+      'NOT_CONFIGURED',
+      'PAKASIR_B2B_WEBHOOK_SECRET belum diset; verifikasi signature tidak dapat dijalankan.',
+    );
+  }
+  return parsed.data.PAKASIR_B2B_WEBHOOK_SECRET;
+}
+
+/**
  * Membaca konfigurasi Pakasir lazily.
  *
  * `thirdPartyEnvSchema` sudah dipakai modul env bersama sehingga nama variabel
@@ -82,6 +112,10 @@ interface PakasirConfig {
  * Task 1.6 dan sengaja dibaca langsung: ia belum ada di skema lama, dan
  * menambahkannya ke inventaris wajib akan memaksa setiap environment mengisi
  * nilai yang belum tentu dimiliki.
+ *
+ * CATATAN: fungsi ini TIDAK boleh dipakai di jalur verifikasi signature.
+ * Pemanggil yang butuh `webhookSecret` saja harus memakai
+ * `readPakasirWebhookSecret()`.
  */
 export function readPakasirConfig(): PakasirConfig {
   const parsed = thirdPartyEnvSchema.safeParse(process.env);
@@ -221,6 +255,13 @@ export function retryPakasirInvoice(input: CreatePakasirInvoiceInput): Promise<P
  * tanpa memanggil `timingSafeEqual` yang akan melempar pada buffer tak sama
  * panjang. Signature kosong/bukan hex gagal tertutup.
  *
+ * `NOT_CONFIGURED` TIDAK lagi diteruskan sebagai `false` (BE-026). Secret yang
+ * tidak terisi adalah kesalahan konfigurasi server, dan membalas 401 untuk
+ * kesalahan konfigurasi membuatnya terlihat seperti penolakan signature — tidak
+ * ada log, tidak ada provider yang diberi tahu, dan setiap pembayaran gagal
+ * diam-diam. Yang dilempar ke pemanggil, yang wajib membalas 500 dan
+ * mencatatnya.
+ *
  * @param rawBody Body mentah persis seperti diterima; JANGAN pakai hasil parse.
  * @param signature Header signature dari provider.
  * @param secret Webhook secret; default dari env.
@@ -234,9 +275,10 @@ export function verifyPakasirSignature(
 
   let webhookSecret: string;
   try {
-    webhookSecret = secret ?? readPakasirConfig().webhookSecret;
-  } catch {
-    return false;
+    webhookSecret = secret ?? readPakasirWebhookSecret();
+  } catch (cause) {
+    if (cause instanceof PakasirError) throw cause;
+    throw new PakasirError('NOT_CONFIGURED', 'Kredensial webhook Pakasir tidak dapat dibaca.');
   }
 
   const expected = createHmac('sha256', webhookSecret).update(rawBody, 'utf8').digest('hex');

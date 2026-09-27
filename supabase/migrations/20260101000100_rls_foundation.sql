@@ -43,11 +43,19 @@ comment on schema app is 'Fungsi helper RLS SnapBox. Tidak menyimpan data apa pu
 -- third-party yang sebenarnya saat Realtime dipasang (Fase 3/6).
 -- Ini HANYA jaring pengaman: service layer WAJIB selalu mengirim
 -- `session.tenant_id` dan tidak boleh memercayai input klien (PRD Bab 5.5).
--- Fallback GUC dipakai ketika koneksi role RLS-enforced (bukan service_role)
+-- Lapis 3 (GUC `app.tenant_id`) dipakai ketika koneksi role RLS-enforced
 -- hendak menegakkan RLS, dengan men-set nilai per request:
 --     set local app.tenant_id = '<uuid-tenant>';
 -- `set local` otomatis kembali ke nilai semula di akhir transaksi, jadi nilai
 -- tidak bocor antar request pada koneksi pool.
+--
+-- CATATAN STATUS 2026-09-27 (D-03): lapis 3 itu BELUM dipakai. Kombinasi
+-- `set_config`/`set local` nol kemunculan di `apps/web/src`, jadi pada jalur
+-- aplikasi `app.current_tenant_id()` selalu NULL dan RLS akan mengembalikan nol
+-- baris, bukan error. Inilah yang menahan role `snapbox_app` untuk belum
+-- dipakaikan sebagai `DATABASE_URL`. Jangan diubah ke `set_config(..., false)`
+-- (session-level): pada koneksi pool, nilai tenant A akan bocor ke request
+-- tenant B berikutnya.
 create or replace function app.current_tenant_id()
 returns uuid
 language sql
@@ -72,13 +80,18 @@ comment on function app.current_tenant_id() is
 -- ----------------------------------------------------------------------------
 -- app.is_ceo()
 -- ----------------------------------------------------------------------------
--- True bila pemanggil adalah CEO. DUA syarat, bukan satu:
+-- True bila pemanggil adalah CEO. DUA syarat, bukan satu, dan KEDUA-DUA nya
+-- wajib terpenuhi:
 --   (1) klaim role aplikasi = 'CEO' (fallback berlapis, lihat di bawah), DAN
---   (2) BILA tabel `public.users` sudah ada, ADA baris user yang cocok dengan
---       `auth.uid()` (klaim `sub`) yang ber-role CEO dan belum dinonaktifkan.
+--   (2) ADA baris user yang cocok dengan `auth.uid()` (klaim `sub`) di
+--       `public.users`, ber-role CEO, belum dinonaktifkan, belum dihapus.
+--
 -- Syarat (2) menghentikan kepercayaan buta pada klaim tunggal: token yang
 -- memalsukan/menambah klaim `app_role` tetap ditolak bila tidak ada baris server
--- yang mengonfirmasinya.
+-- yang mengonfirmasinya. `(2)` tidak punya jalur pintas: bila `public.users`
+-- tidak ada, `is_ceo()` mengembalikan FALSE, bukan true (BE-022). Tabel yang
+-- hilang berarti verifikasi tidak bisa dilakukan, dan verifikasi yang tidak
+-- bisa dilakukan berarti tidak terotorisasi.
 --
 -- Sumber klaim role aplikasi (urutan jelas, fallback berlapis agar token bentuk
 -- lama maupun baru sama-sama bekerja):
@@ -112,9 +125,19 @@ comment on function app.current_tenant_id() is
 -- TODO (Task 0.8): saat `public.users` tersedia, verifikasi server aktif
 -- otomatis. WAJIB diverifikasi lewat test: user NON-CEO dengan klaim
 -- `app_role='CEO'` palsu harus DITOLAK, dan user CEO asli harus lolos.
--- KENAPA BUKAN `role` saja: lihat (2) di atas.
 -- Jalur klaim baseline WAJIB diverifikasi terhadap bentuk token Firebase
 -- third-party yang sebenarnya saat Realtime dipasang (Fase 3/6).
+--
+-- KASUS REKURSI SAUDARA (dicatat, sudah terikat). `app.is_ceo()` `security
+-- invoker` dan membaca `public.users`, jadi setiap pemanggilannya
+-- mengevaluasi `snapbox_users_scope` (packages/db/migrations/0001:81-90) yang
+-- `for all`. Policy itu SENGAJA tidak memanggil `app.is_ceo()` — itulah
+-- persis JANJI yang menahan rekursi, dan sudah tertulis di 0001:79-80.
+-- `snapbox_notifications_scope` (0001:94-118) juga membaca `public.users` dengan
+-- bentuk yang sama: kedalaman satu, tanpa rantai. Batasnya satu lapis dan tidak
+-- perlu perubahan; yang MENJAGA batas itu adalah policy `users` yang tidak
+-- memanggil `is_ceo()`, jadi perubahan di masa depan pada salah satunya wajib
+-- mempertahankan invariant itu.
 --
 -- PERINGATAN `security invoker` + RLS REKURSIF (dibuktikan lewat eksekusi):
 -- fungsi ini `security invoker`, jadi `select ... from public.users` di dalam
@@ -164,7 +187,23 @@ begin
   end if;
 
   if to_regclass('public.users') is null then
-    return true;
+    -- BE-022: cabang ini dulu `return true`. Itu fail-open: kalau `public.users`
+    -- hilang, di-rename, atau salah configured di search_path, token yang sekadar
+    -- membawa klaim `app_role='CEO'` langsung menjadi CEO tanpa satu pun
+    -- verifikasi database. Branch yang sama di fungsi ini sudah pernah
+    -- diperbaiki sekali di atas (coalesce pada v_claim); ini yang kedua.
+    --
+    -- Toleransi create-time TIDAK hilang. Yang membuat fungsi ini bisa dibuat
+    -- sebelum `public.users` ada adalah `language plpgsql` + `EXECUTE` (lihat
+    -- catatan panjang di atas): relasi hanya di-resolve saat fungsi DIPANGGIL.
+    -- Jadi database tanpa `public.users` tetap bisa menjalankan
+    -- `create or replace function app.is_ceo()` seperti sebelumnya; ia hanya
+    -- menolak memberi otoritas, dan itu memang bentuk yang benar.
+    --
+    -- Alternatif (bootstrap flag per-fase migrasi) sengaja TIDAK dipakai: satu
+    -- flag yang mengaktifkan bypass untuk seluruh instance akan menjadi jalur
+    -- fail-open yang baru, tepat setelah yang lama ditutup.
+    return false;
   end if;
 
   execute $q$
@@ -183,7 +222,7 @@ end
 $$;
 
 comment on function app.is_ceo() is
-  'True bila pemanggil CEO: klaim role aplikasi (app_role, lalu role token lama, app_metadata.role, terakhir GUC app.role) = CEO DAN -- bila tabel public.users sudah ada -- ada baris server dengan firebase_uid = klaim sub, role = CEO, belum disabled/deleted. Implementasi WAJIB plpgsql + EXECUTE agar resolusi public.users lazy; mengubahnya kembali ke language sql akan merusak create or replace function pada database tanpa public.users. Guard to_regclass membuat fungsi aman sebelum public.users ada (Task 0.8). DRAFT: bentuk klaim diverifikasi saat Realtime dipasang (Fase 3/6).';
+  'True bila pemanggil CEO: klaim role aplikasi (app_role, lalu role token lama, app_metadata.role, terakhir GUC app.role) = CEO DAN ada baris server di public.users dengan firebase_uid = klaim sub, role = CEO, belum disabled/deleted. Kedua syarat wajib terpenuhi; tidak ada jalur pintas. Bila public.users tidak ada, fungsi mengembalikan FALSE (BE-022) — verifikasi yang tidak bisa dilakukan berarti tidak terotorisasi. Implementasi WAJIB plpgsql + EXECUTE agar resolusi public.users lazy; mengubahnya kembali ke language sql akan merusak create or replace function pada database tanpa public.users. Batas rekursi: policy snapbox_users_scope (packages/db/migrations/0001) sengaja tidak memanggil app.is_ceo(). DRAFT: bentuk klaim diverifikasi saat Realtime dipasang (Fase 3/6).';
 
 -- ----------------------------------------------------------------------------
 -- app.enforce_rls(p_table regclass)
@@ -191,26 +230,34 @@ comment on function app.is_ceo() is
 -- Helper tunggal yang dipanggil Task 0.8 satu kali per tabel aplikasi supaya
 -- tidak ada satu pun `enable row level security` yang terlupa. Aman dipanggil
 -- berulang: `enable row level security` sifatnya idempotent.
--- FORCE row level security SENGAJA tidak dipakai: aplikasi terhubung langsung
--- sebagai role owner (Supabase `postgres`, lihat bentuk DATABASE_URL di
--- .env.example) dan migration/seed Drizzle berjalan sebagai role itu. Dengan
--- FORCE, tabel owner ikut tunduk RLS dan jalur langsung tersebut akan ditolak
--- sebelum ada policy. PRD Bab 10.2/ADR-004 hanya meminta RLS aktif sebagai
--- lapisan kedua, bukan FORCE.
--- KETERBATASAN (eksplisit): `DATABASE_URL` aplikasi connect sebagai owner
--- tabel, dan owner MELEWATI RLS kecuali FORCE di-set. Jadi helper ini, dengan
--- `enable` saja, TIDAK bisa menjadi security boundary tunggal: ia hanya
--- melindungi jalur non-owner (mis. PostgREST/Realtime via `authenticated`),
--- sedangkan jalur owner/`DATABASE_URL` tetap bebas. `enable` tanpa FORCE inert
--- di jalur owner/direct.
--- Jalur upgrade (konkret): buat role DML non-owner khusus aplikasi (role owner
--- dipertahankan HANYA untuk migration), arahkan `DATABASE_URL` aplikasi ke role
--- itu, lalu set `force row level security` untuk role tersebut sehingga policy
--- benar-benar berlaku di jalur aplikasi.
--- ponytail: ceiling = jalur direct/owner dan service_role-bypass harus tetap
--- jalan; jalur upgrade = dedicated non-owner DML role (owner dicadangkan untuk
--- migration) + `force row level security` untuk role itu, setelah SEMUA akses
--- memakai role non-owner dengan policy eksplisit.
+--
+-- STATUS 2026-09-27 (D-03 / BE-001, diverifikasi ke database live).
+-- Paragraf lama di blok ini menyatakan "owner MELEWATI RLS kecuali FORCE di-set"
+-- dan menyebut FORCE sebagai bagian dari jalur upgrade. Keduanya TIDAK LENGKAP
+-- dan menyesatkan, jadi dikoreksi di sini. Berkas ini sudah ter-apply, jadi
+-- koreksinya hanya untuk pembaca; tidak ada DDL yang berubah.
+--
+-- 1. `DATABASE_URL` aplikasi connect sebagai `postgres`, yang di database nyata
+--   _MEMEGANG ATRIBUT_ `BYPASSRLS` (rolsuper=false, rolbypassrls=true) dan
+--    sekaligus OWNER 35/35 tabel aplikasi. Jalur aplikasi melewati RLS dua kali.
+-- 2. `FORCE ROW LEVEL SECURITY` hanya mencabut pengecualian OWNER. Ia tidak
+--    menundukkan role ber-atribut `BYPASSRLS`. Jadi untuk kredensial yang sekarang
+--    FORCE akan mengubah TIDAK APA-APA, termasuk pada jalur migrasi/seed.
+-- 3. Untuk role NON-owner, RLS sudah berlaku begitu `enable` di-set. FORCE tidak
+--    diperlukan agar policy berjalan pada role itu. Yang membuat policy berlaku
+--    adalah role-nya: bukan owner, dan tidak memegang BYPASSRLS.
+-- 4. Role itu sudah dibuat: `snapbox_app` (lihat
+--    `20260101000800_app_dml_role.sql`). Ia anggota `authenticated`, jadi 35
+--    policy `FOR ALL TO authenticated` yang sudah ada berlaku tanpa disalin.
+--
+-- Sampai primitive itu ada, role itu belum boleh dipakai sebagai `DATABASE_URL`: `app.tenant_id`
+-- belum pernah di-set di kode aplikasi (nol `set_config`/`set local`), sehingga
+-- `app.current_tenant_id()` selalu NULL dan setiap tabel tenant mengembalikan NOL
+-- BARIS. Perbaikan itu butuh primitive per-request (`set local app.tenant_id`
+-- di dalam transaksi) yang belum ada. Fail-closed disengaja sampai itu ada.
+-- Bukti ukurannya: sebagai `snapbox_app` dengan `app.tenant_id` = tenant A dan
+-- query TANPA predikat tenant, hanya 1 tenant yang terlihat; sebagai `postgres`
+-- dengan query identik, 4 tenant terlihat.
 -- Fungsi ini TIDAK dipanggil untuk tabel apa pun di file ini.
 create or replace function app.enforce_rls(p_table regclass)
 returns void

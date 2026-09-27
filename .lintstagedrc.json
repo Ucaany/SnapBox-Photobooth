@@ -1,10 +1,17 @@
 {
-  "*.{ts,tsx,mts,cts}": ["eslint --fix --max-warnings=0", "prettier --write"],
+  "*.{ts,tsx,mts,cts}": [
+    "eslint --fix --max-warnings=0",
+    "prettier --write",
+    "pnpm run check:style-tokens",
+    "pnpm run check:css-classes"
+  ],
   "*.{js,jsx,mjs,cjs,json,css,md,yml,yaml}": ["prettier --write"],
   "{packages/ui/src/styles.css,apps/web/src/app/globals.css}": [
     "prettier --write",
-    "pnpm run check:token-sync"
+    "pnpm run check:token-sync",
+    "pnpm run check:style-tokens"
   ],
   "{packages/shared/src/auth.ts,packages/auth/src/claims.ts}": ["pnpm run check:claims-sync"],
+  "packages/db/migrations/**": ["pnpm run check:migration-journal"],
   "infra/cloudflare/**": ["prettier --write", "pnpm run check:infra-drafts"]
 }

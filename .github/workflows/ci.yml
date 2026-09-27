@@ -60,6 +60,20 @@ jobs:
       - name: Token sync guard
         run: pnpm check:token-sync
 
+      # Tiga guard di bawah menutup kelas defect yang senyap: token warna yang
+      # tidak ada, class CSS yang tidak ada, dan migrasi yang tidak pernah
+      # dijalankan. Semuanya menjalankan self-test lebih dulu — guard yang tidak
+      # bisa menangkap input buruk yang diketahui tidak boleh dipercaya hanya
+      # karena ia hijau.
+      - name: Undefined colour token guard
+        run: pnpm check:style-tokens
+
+      - name: Undefined CSS class guard
+        run: pnpm check:css-classes
+
+      - name: Migration journal parity guard
+        run: pnpm check:migration-journal
+
       - name: Brand palette guard
         run: pnpm check:brand
 

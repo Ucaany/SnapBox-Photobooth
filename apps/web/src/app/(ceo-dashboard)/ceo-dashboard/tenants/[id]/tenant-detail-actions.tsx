@@ -213,7 +213,7 @@ export function TenantDetailActions({
   const activeSpec = open ? (ACTIONS.find((spec) => spec.kind === open) ?? null) : null;
 
   return (
-    <section className="ceo-panel ceo-tenant-actions" aria-label="Aksi tenant">
+    <section className="ceo-panel-static ceo-tenant-actions" aria-label="Aksi tenant">
       <h2>Aksi tenant</h2>
       <p className="ceo-muted">
         Semua aksi meminta konfirmasi dan alasan, lalu dicatat di activity log. Status langganan

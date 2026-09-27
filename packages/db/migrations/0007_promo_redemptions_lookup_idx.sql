@@ -1,0 +1,45 @@
+-- Index lookup redemption promo per (promo, customer).
+--
+-- ASAL MIGRASI. Berkas ini sebelumnya `0005_owner_promo_code_scope.sql`, dibuat
+-- bersama Task 2.9 (ff089f3) dan TIDAK PERNAH diberi entry di
+-- `meta/_journal.json`. Migrator Drizzle hanya menjalankan entri journal, jadi
+--Berkas tersebut tidak pernah dieksekusi di database mana pun, dan index yang
+-- satu-satunya artefak novel di dalamnya pun tidak pernah ada. Akibatnya
+-- `owner/promos/actions.ts` melakukan sequential scan per redemption.
+--
+-- Kenapa dirombak, bukan sekadar dijurnal:
+--   1. Baris 2-10 berkas lama adalah no-op terhadap 0004. 0004 sudah
+--      `DROP INDEX IF EXISTS public.promos_code_lower_idx` lalu membuat
+--      `promos_tenant_code_lower_idx` dan `promos_global_code_lower_idx` dengan
+--      `IF NOT EXISTS`. 0005_phase_2_owner_rls dan 0006 tidak menyentuh index
+--      promo, jadi saat berkas ini dijalankan ketiga operasi itu tidak
+--      melakukan apa pun. Membawakannya hanya menambah kebingungan.
+--   2. Prefiks 0005 dipakai dua berkas. Prefiks yang bentrok membuat urutan
+--      migrasi ambigu, jadi berkas ini dipindah ke 0007 dan diberi entry
+--      journal dengan idx 7.
+--
+-- Definisi index TIDAK diubah dari berkas asalnya, kecuali satu hal yang
+-- terbukti salah, dan koreksinya wajib ada di sini.
+--
+-- KOREKSI (2026-09-27): index aslinya adalah
+--   (tenant_id, promo_id, customer_email)
+-- yang TIDAK cocok dengan query yang benar-benar berjalan
+-- (`apps/web/src/app/(owner-dashboard)/owner-dashboard/promos/actions.ts:166`):
+--     select count(*) as count from promo_redemptions
+--      where promo_id = $1 and customer_email = $2
+-- Predicate itu TIDAK memuat `tenant_id`. Pada btree, kolom paling kiri hanya
+-- berguna kalau predikatnya ikut dipaksakan; tanpa itu, index
+-- `(tenant_id, promo_id, customer_email)` tidak bisa dipakai sebagai pemindaian
+-- terarah dan planner jatuh ke sequential scan -- persis masalah yang berkas ini
+-- anakkan untuk diperbaiki. `packages/db/src/schema.ts:548` sudah mendeklarasikan
+-- bentuk yang benar (`redemption_promo_customer_idx` pada
+-- `(promoId, customerEmail)`), jadi bentuk itu yang dipertahankan di sini.
+-- Kolom tenant TIDAK ditambahkan: menambahkan kolom paling kiri yang tidak
+-- difilter membuat index makin besar tanpa speeding up query ini.
+--
+-- Nama index memakai bentuk yang sudah dipakai schema.ts, bukan
+-- `promo_redemptions_tenant_customer_idx`, supaya generate berikutnya tidak
+-- melihat index asing dan tidak mengusulkan drop+create atas nama lain.
+
+CREATE INDEX IF NOT EXISTS redemption_promo_customer_idx
+  ON public.promo_redemptions (promo_id, customer_email);
