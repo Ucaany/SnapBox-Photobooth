@@ -225,18 +225,16 @@ export async function createBroadcast(input: unknown): Promise<BroadcastActionRe
       if (!row) throw new Error('Broadcast insert failed.');
       broadcastId = row.id;
       if (recipients.length)
-        await tx
-          .insert(notifications)
-          .values(
-            recipients.map((recipient) => ({
-              userId: recipient.id,
-              tenantId: recipient.tenantId,
-              type: NOTIFICATION_TYPE,
-              title: data.title,
-              message: data.message,
-              metadata: { broadcastId, version: 1 },
-            })),
-          );
+        await tx.insert(notifications).values(
+          recipients.map((recipient) => ({
+            userId: recipient.id,
+            tenantId: recipient.tenantId,
+            type: NOTIFICATION_TYPE,
+            title: data.title,
+            message: data.message,
+            metadata: { broadcastId, version: 1 },
+          })),
+        );
       await writeAuditLogTx(
         tx,
         {
